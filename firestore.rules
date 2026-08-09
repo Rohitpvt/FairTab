@@ -1,0 +1,514 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // User Profile security rules
+    match /users/{userId} {
+      function isOwner(userId) {
+        return request.auth != null && request.auth.uid == userId;
+      }
+      
+      function allowedFields() {
+        return [
+          'uid', 'displayName', 'displayNameLower', 'email', 'photoURL',
+          'defaultCurrency', 'locale', 'timeZone', 'onboardingCompleted',
+          'accountStatus', 'createdAt', 'createdBy', 'updatedAt', 'updatedBy',
+          'version', 'schemaVersion'
+        ];
+      }
+
+      allow read: if isOwner(userId);
+      
+      allow create: if isOwner(userId)
+        && request.resource.data.uid == userId
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.createdBy == userId
+        && request.resource.data.updatedBy == userId
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.version == 1
+        && request.resource.data.schemaVersion == 1
+        && request.resource.data.accountStatus == 'active'
+        && request.resource.data.onboardingCompleted == false
+        && request.resource.data.keys().hasOnly(allowedFields());
+        
+      allow update: if isOwner(userId)
+        && request.resource.data.uid == resource.data.uid
+        && request.resource.data.email == resource.data.email
+        && request.resource.data.createdBy == resource.data.createdBy
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.schemaVersion == resource.data.schemaVersion
+        && request.resource.data.accountStatus == resource.data.accountStatus
+        && request.resource.data.updatedBy == request.auth.uid
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.version == resource.data.version + 1
+        && request.resource.data.keys().hasOnly(allowedFields());
+        
+      allow delete: if false;
+    }
+
+    // Helper functions for Group access check bounds
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function getGroup(groupId) {
+      return get(/databases/$(database)/documents/groups/$(groupId)).data;
+    }
+
+    function getGroupAfter(groupId) {
+      return getAfter(/databases/$(database)/documents/groups/$(groupId)).data;
+    }
+
+    function getMemberDoc(groupId, uid) {
+      return get(/databases/$(database)/documents/groups/$(groupId)/members/$(uid)).data;
+    }
+
+    function getMemberDocAfter(groupId, uid) {
+      return getAfter(/databases/$(database)/documents/groups/$(groupId)/members/$(uid)).data;
+    }
+
+    function getInvitationDocAfter(invitationId) {
+      return getAfter(/databases/$(database)/documents/invitations/$(invitationId)).data;
+    }
+
+    function isActiveMember(groupId, uid) {
+      return isSignedIn() && uid in getGroup(groupId).memberUserIds;
+    }
+
+    function isActiveMemberAfter(groupId, uid) {
+      return isSignedIn() && uid in getGroupAfter(groupId).memberUserIds;
+    }
+
+    function isOwner(groupId, uid) {
+      return isSignedIn() && getMemberDoc(groupId, uid).role == 'owner' && getMemberDoc(groupId, uid).status == 'active';
+    }
+
+    function isAdmin(groupId, uid) {
+      return isSignedIn() && getMemberDoc(groupId, uid).role == 'admin' && getMemberDoc(groupId, uid).status == 'active';
+    }
+
+    function isOwnerOrAdmin(groupId, uid) {
+      return isOwner(groupId, uid) || isAdmin(groupId, uid);
+    }
+
+    // Group Document Security Rules
+    match /groups/{groupId} {
+      allow read: if isActiveMember(groupId, request.auth.uid);
+      
+      allow create: if isSignedIn()
+        && request.resource.data.id == groupId
+        && request.resource.data.ownerUserId == request.auth.uid
+        && request.resource.data.memberUserIds == [request.auth.uid]
+        && request.resource.data.activeMemberCount == 1
+        && request.resource.data.status == 'active'
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.latestActivityAt == request.time
+        && request.resource.data.createdBy == request.auth.uid
+        && request.resource.data.updatedBy == request.auth.uid
+        && request.resource.data.version == 1
+        && request.resource.data.schemaVersion == 1
+        && 'initialActivityId' in request.resource.data
+        // Ensure atomic batch writes membership, index and creation activity document as owner
+        && getMemberDocAfter(groupId, request.auth.uid).role == 'owner'
+        && getMemberDocAfter(groupId, request.auth.uid).status == 'active'
+        && getAfter(/databases/$(database)/documents/userGroupIndex/$(request.auth.uid)/groups/$(groupId)).data.role == 'owner'
+        && getAfter(/databases/$(database)/documents/userGroupIndex/$(request.auth.uid)/groups/$(groupId)).data.status == 'active'
+        && getAfter(/databases/$(database)/documents/groups/$(groupId)/activities/$(request.resource.data.initialActivityId)).data.type == 'group_created';
+        
+      allow update: if request.resource.data.id == resource.data.id
+        && request.resource.data.ownerUserId == resource.data.ownerUserId
+        && request.resource.data.createdBy == resource.data.createdBy
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.schemaVersion == resource.data.schemaVersion
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.updatedBy == request.auth.uid
+        && request.resource.data.version == resource.data.version + 1
+        && request.resource.data.memberUserIds.size() <= 100
+        && (
+          // Case 2: New member joining group atomically via invitation (invitee is actor)
+          (!isActiveMember(groupId, request.auth.uid)) ? (
+            request.resource.data.status == 'active'
+            && request.resource.data.memberUserIds.hasAll(resource.data.memberUserIds)
+            && request.resource.data.memberUserIds.size() == resource.data.memberUserIds.size() + 1
+            && request.resource.data.memberUserIds.hasAny([request.auth.uid])
+            && request.resource.data.activeMemberCount == resource.data.activeMemberCount + 1
+            && getMemberDocAfter(groupId, request.auth.uid).status == 'active'
+            && getMemberDocAfter(groupId, request.auth.uid).joinedAt == request.time
+          ) :
+          // Case 1: Existing active member is the actor
+          (
+            // Sub-case 1.1: Self-leave operation (actor is leaving)
+            (getMemberDocAfter(groupId, request.auth.uid).status == 'left' && getMemberDoc(groupId, request.auth.uid).status == 'active') ?
+              (
+                request.resource.data.status == resource.data.status
+                && !request.resource.data.memberUserIds.hasAny([request.auth.uid])
+                && request.resource.data.memberUserIds.size() == resource.data.memberUserIds.size() - 1
+                && request.resource.data.activeMemberCount == resource.data.activeMemberCount - 1
+              ) :
+            // Sub-case 1.2: Remove/add member/placeholder or settings (actor is owner/admin)
+            (isOwnerOrAdmin(groupId, request.auth.uid)) ?
+              (
+                // 1.2.1 Archive the group (owner only)
+                (request.resource.data.status == 'archived' && resource.data.status == 'active') ?
+                  isOwner(groupId, request.auth.uid) :
+                  // 1.2.2 Normal metadata/settings update (no member changes, group must be active)
+                  (resource.data.status == 'active'
+                   && request.resource.data.status == 'active'
+                   && request.resource.data.memberUserIds == resource.data.memberUserIds
+                   && request.resource.data.activeMemberCount == resource.data.activeMemberCount) ||
+                  // 1.2.3 Removal of an account member (group must be active)
+                  (resource.data.status == 'active'
+                   && request.resource.data.status == 'active'
+                   && request.resource.data.memberUserIds.size() == resource.data.memberUserIds.size() - 1
+                   && request.resource.data.activeMemberCount == resource.data.activeMemberCount - 1) ||
+                  // 1.2.4 Removal of a placeholder (group must be active)
+                  (resource.data.status == 'active'
+                   && request.resource.data.status == 'active'
+                   && request.resource.data.memberUserIds == resource.data.memberUserIds
+                   && request.resource.data.activeMemberCount == resource.data.activeMemberCount - 1) ||
+                  // 1.2.5 Adding a placeholder (group must be active)
+                  (resource.data.status == 'active'
+                   && request.resource.data.status == 'active'
+                   && request.resource.data.memberUserIds == resource.data.memberUserIds
+                   && request.resource.data.activeMemberCount == resource.data.activeMemberCount + 1)
+              ) :
+              false
+          )
+        );
+
+      allow delete: if false;
+
+      // Group Membership rules
+      match /members/{memberId} {
+        allow read: if isActiveMember(groupId, request.auth.uid) || (isSignedIn() && request.auth.uid == memberId);
+        
+        allow create: if isSignedIn()
+          && request.resource.data.groupId == groupId
+          && request.resource.data.status == 'active'
+          && request.resource.data.version == 1
+          && request.resource.data.schemaVersion == 1
+          && request.resource.data.createdAt == request.time
+          && request.resource.data.createdBy == request.auth.uid
+          && request.resource.data.updatedAt == request.time
+          && request.resource.data.updatedBy == request.auth.uid
+          && getGroupAfter(groupId).status == 'active'
+          && (
+            // Placeholder creation: requires owner/admin, role is member, no invitation link
+            (request.resource.data.kind == 'placeholder' && !('userId' in request.resource.data)
+             && isOwnerOrAdmin(groupId, request.auth.uid) && request.resource.data.role == 'member'
+             && !('joinedViaInvitationId' in request.resource.data))
+            ||
+            // Account-backed member creation: matching document ID
+            (request.resource.data.kind == 'account' && request.resource.data.userId == memberId && (
+              // Case A: Owner bootstrapping (no invitation link)
+              (request.resource.data.role == 'owner'
+               && getGroupAfter(groupId).ownerUserId == memberId
+               && getGroupAfter(groupId).createdAt == request.time
+               && !('joinedViaInvitationId' in request.resource.data))
+              ||
+              // Case B: Account member joining via atomic invitation acceptance
+              ('joinedViaInvitationId' in request.resource.data
+               && request.resource.data.role != 'owner'
+               && getInvitationDocAfter(request.resource.data.joinedViaInvitationId).status == 'accepted'
+               && getInvitationDocAfter(request.resource.data.joinedViaInvitationId).acceptedBy == request.auth.uid
+               && getInvitationDocAfter(request.resource.data.joinedViaInvitationId).groupId == groupId
+               && request.resource.data.role == getInvitationDocAfter(request.resource.data.joinedViaInvitationId).proposedRole)
+            ))
+          );
+          
+        allow update: if isActiveMember(groupId, request.auth.uid)
+          && request.resource.data.groupId == resource.data.groupId
+          && request.resource.data.kind == resource.data.kind
+          && request.resource.data.createdAt == resource.data.createdAt
+          && request.resource.data.createdBy == resource.data.createdBy
+          && request.resource.data.schemaVersion == resource.data.schemaVersion
+          && request.resource.data.get('joinedViaInvitationId', null) == resource.data.get('joinedViaInvitationId', null)
+          && (
+            // 1. Leave action: self-demotion to left (allowed even on archived groups)
+            (request.auth.uid == memberId && request.resource.data.status == 'left') ?
+              (resource.data.role != 'owner'
+               && request.resource.data.role == resource.data.role
+               && 'activityId' in request.resource.data
+               && getAfter(/databases/$(database)/documents/groups/$(groupId)/activities/$(request.resource.data.activityId)).data.type == 'member_left') :
+              // 2. Remove member: owner/admin marks target as removed (requires active group)
+              (request.resource.data.status == 'removed' && resource.data.status == 'active') ?
+                (getGroupAfter(groupId).status == 'active'
+                 && isOwnerOrAdmin(groupId, request.auth.uid) 
+                 && (resource.data.role != 'owner')
+                 && (isAdmin(groupId, request.auth.uid) ? resource.data.role != 'admin' : true)
+                 && 'activityId' in request.resource.data
+                 && getAfter(/databases/$(database)/documents/groups/$(groupId)/activities/$(request.resource.data.activityId)).data.type == 'member_removed') :
+                // 3. Role modification: owner or admin (requires active group)
+                (request.resource.data.role != resource.data.role && request.resource.data.status == 'active' && resource.data.status == 'active') ?
+                  (getGroupAfter(groupId).status == 'active'
+                   && request.auth.uid != memberId
+                   && request.resource.data.role != 'owner' 
+                   && resource.data.role != 'owner'
+                   && (
+                     isOwner(groupId, request.auth.uid) ||
+                     // Admin can only change member <-> viewer
+                     (isAdmin(groupId, request.auth.uid) 
+                      && (resource.data.role == 'member' || resource.data.role == 'viewer')
+                      && (request.resource.data.role == 'member' || request.resource.data.role == 'viewer'))
+                   )
+                   && 'activityId' in request.resource.data
+                   && getAfter(/databases/$(database)/documents/groups/$(groupId)/activities/$(request.resource.data.activityId)).data.type == 'role_changed') :
+                  false
+          );
+
+        allow delete: if false;
+      }
+
+      // Group Activity timeline rules
+      match /activities/{activityId} {
+        allow read: if isActiveMember(groupId, request.auth.uid);
+        
+        allow create: if isSignedIn()
+          && request.resource.data.id == activityId
+          && request.resource.data.groupId == groupId
+          && request.resource.data.actorUserId == request.auth.uid
+          && request.resource.data.createdAt == request.time
+          && request.resource.data.summary.size() <= 200
+          && (
+            // 1. group_created
+            (request.resource.data.type == 'group_created') ? (
+              getGroupAfter(groupId).ownerUserId == request.auth.uid
+              && getMemberDocAfter(groupId, request.auth.uid).role == 'owner'
+              && getAfter(/databases/$(database)/documents/userGroupIndex/$(request.auth.uid)/groups/$(groupId)).data.role == 'owner'
+            ) :
+            // 2. group_updated
+            (request.resource.data.type == 'group_updated') ? (
+              isOwnerOrAdmin(groupId, request.auth.uid)
+              && getGroupAfter(groupId).status == 'active'
+            ) :
+            // 3. invitation_created
+            (request.resource.data.type == 'member_invited') ? (
+              isOwnerOrAdmin(groupId, request.auth.uid)
+              && getGroupAfter(groupId).status == 'active'
+              && getInvitationDocAfter(request.resource.data.entityId).groupId == groupId
+              && getInvitationDocAfter(request.resource.data.entityId).invitedBy == request.auth.uid
+            ) :
+            // 4. member_joined
+            (request.resource.data.type == 'member_joined') ? (
+              getMemberDocAfter(groupId, request.auth.uid).status == 'active'
+              && getMemberDocAfter(groupId, request.auth.uid).joinedAt == request.time
+            ) :
+            // 5. placeholder_added
+            (request.resource.data.type == 'placeholder_added') ? (
+              isOwnerOrAdmin(groupId, request.auth.uid)
+              && getGroupAfter(groupId).status == 'active'
+              && getMemberDocAfter(groupId, request.resource.data.entityId).kind == 'placeholder'
+              && getMemberDocAfter(groupId, request.resource.data.entityId).status == 'active'
+            ) :
+            // 6. member_removed
+            (request.resource.data.type == 'member_removed') ? (
+              isOwnerOrAdmin(groupId, request.auth.uid)
+              && getGroupAfter(groupId).status == 'active'
+              && getMemberDocAfter(groupId, request.resource.data.entityId).status == 'removed'
+            ) :
+            // 7. member_left
+            (request.resource.data.type == 'member_left') ? (
+              getMemberDocAfter(groupId, request.auth.uid).status == 'left'
+            ) :
+            // 8. role_changed
+            (request.resource.data.type == 'role_changed') ? (
+              isOwnerOrAdmin(groupId, request.auth.uid)
+              && getGroupAfter(groupId).status == 'active'
+              && getMemberDocAfter(groupId, request.resource.data.entityId).role == getAfter(/databases/$(database)/documents/userGroupIndex/$(request.resource.data.entityId)/groups/$(groupId)).data.role
+            ) :
+            // 9. group_archived
+            (request.resource.data.type == 'group_archived') ? (
+              isOwner(groupId, request.auth.uid)
+              && getGroupAfter(groupId).status == 'archived'
+            ) :
+            false
+          );
+
+        allow update, delete: if false;
+      }
+
+      // Expense Ledger Rules
+      match /expenses/{expenseId} {
+        allow read: if isActiveMember(groupId, request.auth.uid);
+        allow write: if false;
+
+        match /revisions/{version} {
+          allow read: if isActiveMember(groupId, request.auth.uid);
+          allow write: if false;
+        }
+      }
+
+      // Expense operation receipts (idempotency audits)
+      match /expenseOperations/{clientOperationId} {
+        allow read, write: if false;
+      }
+
+      // Settlement Ledger Rules
+      match /settlements/{settlementId} {
+        allow read: if isActiveMember(groupId, request.auth.uid);
+        allow write: if false;
+
+        match /revisions/{version} {
+          allow read: if isActiveMember(groupId, request.auth.uid);
+          allow write: if false;
+        }
+      }
+
+      // Settlement operation receipts (idempotency audits)
+      match /settlementOperations/{clientOperationId} {
+        allow read, write: if false;
+      }
+
+      // Receipt Rules
+      match /receipts/{receiptId} {
+        allow read: if isActiveMember(groupId, request.auth.uid);
+        allow write: if false;
+
+        match /revisions/{version} {
+          allow read: if isActiveMember(groupId, request.auth.uid);
+          allow write: if false;
+        }
+      }
+
+      // Receipt operation receipts (idempotency audits)
+      match /receiptOperations/{clientOperationId} {
+        allow read, write: if false;
+      }
+
+      // Recurring Templates & Occurrences Rules
+      match /recurringTemplates/{templateId} {
+        allow read: if isActiveMember(groupId, request.auth.uid);
+        allow write: if false;
+
+        match /occurrences/{occurrenceId} {
+          allow read: if isActiveMember(groupId, request.auth.uid);
+          allow write: if false;
+        }
+      }
+
+      // Recurring operation receipts (idempotency audits)
+      match /recurringOperations/{clientOperationId} {
+        allow read, write: if false;
+      }
+
+      // Budget Rules
+      match /budgets/{budgetId} {
+        allow read: if isActiveMember(groupId, request.auth.uid);
+        allow write: if false;
+
+        match /revisions/{version} {
+          allow read: if isActiveMember(groupId, request.auth.uid);
+          allow write: if false;
+        }
+      }
+
+      // Budget operation receipts (idempotency audits)
+      match /budgetOperations/{clientOperationId} {
+        allow read, write: if false;
+      }
+    }
+
+    // Invitations Document Rules
+    match /invitations/{invitationId} {
+      allow list: if isSignedIn() && (
+        resource.data.get('invitedUserId', null) == request.auth.uid ||
+        (request.auth.token.email_verified == true && resource.data.get('invitedEmailLower', null) == request.auth.token.email.lower())
+      );
+      
+      allow get: if isSignedIn() && (
+        request.auth.uid == resource.data.get('invitedUserId', null) ||
+        (resource.data.get('invitedEmailLower', null) != null && request.auth.token.email.lower() == resource.data.get('invitedEmailLower', null)) ||
+        request.auth.uid == resource.data.invitedBy
+      );
+      
+      allow create: if isSignedIn()
+        && request.resource.data.id == invitationId
+        && request.resource.data.status == 'pending'
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.invitedBy == request.auth.uid
+        && request.resource.data.proposedRole != 'owner'
+        && getGroupAfter(request.resource.data.groupId).status == 'active'
+        && isOwnerOrAdmin(request.resource.data.groupId, request.auth.uid);
+        
+      allow update: if isSignedIn()
+        && (
+          // Revoke invitation (inviter/owner/admin)
+          (request.resource.data.status == 'revoked' && resource.data.status == 'pending') ?
+            (request.auth.uid == resource.data.invitedBy || isOwnerOrAdmin(resource.data.groupId, request.auth.uid)) :
+            // Decline invitation (invitee)
+            (request.resource.data.status == 'declined' && resource.data.status == 'pending') ?
+              (request.auth.uid == resource.data.get('invitedUserId', null) || (resource.data.get('invitedEmailLower', null) != null && request.auth.token.email.lower() == resource.data.get('invitedEmailLower', null))) :
+              // Accept invitation (invitee via atomic transaction)
+              (request.resource.data.status == 'accepted' && resource.data.status == 'pending') ?
+                (
+                  // Validate invitation target email verification
+                  (resource.data.get('invitedEmailLower', null) != null ? 
+                    (request.auth.token.email.lower() == resource.data.get('invitedEmailLower', null) && request.auth.token.email_verified == true) : 
+                    true)
+                  && (resource.data.get('invitedUserId', null) != null ? (request.auth.uid == resource.data.get('invitedUserId', null)) : true)
+                  && request.time < resource.data.expiresAt
+                  // Invariant accept checks
+                  && request.resource.data.acceptedBy == request.auth.uid
+                  && request.resource.data.acceptedAt == request.time
+                  && request.resource.data.proposedRole == resource.data.proposedRole
+                  && 'acceptedActivityId' in request.resource.data
+                  // Ensure matching membership added atomically in the same transaction batch
+                  && getMemberDocAfter(resource.data.groupId, request.auth.uid).role == resource.data.proposedRole
+                  && getMemberDocAfter(resource.data.groupId, request.auth.uid).status == 'active'
+                  && getMemberDocAfter(resource.data.groupId, request.auth.uid).joinedViaInvitationId == invitationId
+                  // Ensure group size validation & index added atomically
+                  && request.auth.uid in getGroupAfter(resource.data.groupId).memberUserIds
+                  && getGroupAfter(resource.data.groupId).activeMemberCount == getGroup(resource.data.groupId).activeMemberCount + 1
+                  && getAfter(/databases/$(database)/documents/userGroupIndex/$(request.auth.uid)/groups/$(resource.data.groupId)).data.role == resource.data.proposedRole
+                  && getAfter(/databases/$(database)/documents/userGroupIndex/$(request.auth.uid)/groups/$(resource.data.groupId)).data.status == 'active'
+                  && getAfter(/databases/$(database)/documents/groups/$(resource.data.groupId)/activities/$(request.resource.data.acceptedActivityId)).data.type == 'member_joined'
+                ) :
+                false
+        );
+
+      allow delete: if false;
+    }
+
+    // User Group Index Rules
+    match /userGroupIndex/{uid}/groups/{groupId} {
+      allow read: if isSignedIn() && uid == request.auth.uid;
+      
+      allow write: if isSignedIn()
+        && (
+          // Self-write case:
+          (uid == request.auth.uid) ? (
+            // Creation index must match corresponding membership document state
+            (request.resource.data.groupId == groupId && request.resource.data.status == 'active'
+             && getMemberDocAfter(groupId, uid).role == request.resource.data.role
+             && getMemberDocAfter(groupId, uid).status == request.resource.data.status)
+            ||
+            // Role update: index role must match membership role
+            (request.resource.data.role != resource.data.role
+             && getMemberDocAfter(groupId, uid).role == request.resource.data.role
+             && request.resource.data.status == resource.data.status)
+            ||
+            // Archive
+            (request.resource.data.status == 'archived'
+             && getGroupAfter(groupId).status == 'archived')
+            ||
+            // Leave or removed
+            ((request.resource.data.status == 'left' || request.resource.data.status == 'removed')
+             && getMemberDocAfter(groupId, uid).status == request.resource.data.status)
+          ) :
+          // Admin/Owner write case:
+          (
+            isOwnerOrAdmin(groupId, request.auth.uid)
+            && request.resource.data.groupId == groupId
+            // Corresponding membership changed atomically
+            && getMemberDocAfter(groupId, uid).status == request.resource.data.status
+            && getMemberDocAfter(groupId, uid).role == request.resource.data.role
+            // Only role or status can be updated; other fields are unchanged
+            && request.resource.data.groupName == resource.data.groupName
+            && request.resource.data.latestActivityAt == resource.data.latestActivityAt
+          )
+        );
+    }
+  }
+}

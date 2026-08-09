@@ -1,0 +1,123 @@
+@import "tailwindcss";
+@import "./tokens.css";
+
+@theme {
+  --color-bg-base: hsl(var(--bg-base));
+  --color-bg-deep: hsl(var(--bg-deep));
+  --color-surface-primary: hsl(var(--surface-primary));
+  --color-surface-secondary: hsl(var(--surface-secondary));
+  --color-surface-elevated: hsl(var(--surface-elevated));
+  --color-surface-hover: hsl(var(--surface-hover));
+
+  --color-text-primary: hsl(var(--text-primary));
+  --color-text-secondary: hsl(var(--text-secondary));
+  --color-text-muted: hsl(var(--text-muted));
+  --color-text-disabled: hsl(var(--text-disabled));
+
+  --color-accent-indigo: hsl(var(--accent-indigo));
+  --color-accent-violet: hsl(var(--accent-violet));
+  --color-accent-cyan: hsl(var(--accent-cyan));
+
+  --color-success: hsl(var(--success));
+  --color-warning: hsl(var(--warning));
+  --color-danger: hsl(var(--danger));
+  --color-info: hsl(var(--info));
+
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
+  --radius-2xl: var(--radius-2xl);
+
+  --animate-shimmer: shimmer 2s infinite linear;
+
+  @keyframes shimmer {
+    0% {
+      background-position: -200% 0;
+    }
+    100% {
+      background-position: 200% 0;
+    }
+  }
+}
+
+/* Custom Base Styles */
+body {
+  margin: 0;
+  font-family: Inter, Geist, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: hsl(var(--text-primary));
+  background-color: hsl(var(--bg-base));
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+/* App Background Composition */
+.app-background {
+  min-height: 100dvh;
+  background:
+    radial-gradient(circle at 15% 10%, rgba(124, 108, 255, 0.17), transparent 32%),
+    radial-gradient(circle at 86% 12%, rgba(34, 211, 238, 0.10), transparent 30%),
+    radial-gradient(circle at 52% 92%, rgba(168, 85, 247, 0.11), transparent 34%),
+    linear-gradient(145deg, #060810 0%, #090d18 52%, #070a12 100%);
+}
+
+/* Financial Numbers Tabular Styling */
+.financial-number {
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+/* Glassmorphism Styles */
+.glass-subtle {
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.055);
+  backdrop-filter: blur(10px) saturate(120%);
+  -webkit-backdrop-filter: blur(10px) saturate(120%);
+}
+
+.glass-standard {
+  background: rgba(15, 21, 35, 0.62);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow:
+    0 18px 50px rgba(0, 0, 0, 0.30),
+    inset 0 1px 0 rgba(255, 255, 255, 0.045);
+  backdrop-filter: blur(20px) saturate(135%);
+  -webkit-backdrop-filter: blur(20px) saturate(135%);
+}
+
+.glass-elevated {
+  background: rgba(18, 25, 42, 0.80);
+  border: 1px solid rgba(255, 255, 255, 0.105);
+  box-shadow:
+    0 28px 80px rgba(0, 0, 0, 0.44),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(28px) saturate(150%);
+  -webkit-backdrop-filter: blur(28px) saturate(150%);
+}
+
+/* Fallback Opaque Surfaces (backdrop-filter unsupported) */
+@supports not (backdrop-filter: blur(10px)) {
+  .glass-subtle,
+  .glass-standard,
+  .glass-elevated {
+    background: rgba(14, 20, 34, 0.96);
+  }
+}
+
+/* Accessible focus styling */
+*:focus-visible {
+  outline: 2px solid hsl(var(--accent-cyan));
+  outline-offset: 2px;
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0s !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0s !important;
+    scroll-behavior: auto !important;
+  }
+}

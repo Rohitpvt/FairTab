@@ -1,0 +1,21 @@
+{
+  "name": "@fairtab/functions",
+  "version": "0.0.0",
+  "private": true,
+  "main": "lib/index.js",
+  "engines": {
+    "node": "20"
+  },
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w"
+  },
+  "dependencies": {
+    "firebase-admin": "^12.1.0",
+    "firebase-functions": "^5.0.0",
+    "@fairtab/domain": "*"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  }
+}

@@ -1,0 +1,37 @@
+:root {
+  /* HSL bases for Tailwind integration */
+  --bg-base: 224 38% 5%;
+  --bg-deep: 225 35% 7%;
+  --surface-primary: 224 32% 10%;
+  --surface-secondary: 222 29% 13%;
+  --surface-elevated: 222 26% 16%;
+  --surface-hover: 221 24% 19%;
+
+  --text-primary: 220 33% 97%;
+  --text-secondary: 220 18% 72%;
+  --text-muted: 221 13% 51%;
+  --text-disabled: 220 10% 38%;
+
+  --accent-indigo: 246 100% 71%;
+  --accent-violet: 271 91% 65%;
+  --accent-cyan: 188 86% 53%;
+
+  --success: 158 64% 52%;
+  --warning: 43 96% 56%;
+  --danger: 350 89% 70%;
+  --info: 198 93% 60%;
+
+  /* Radii */
+  --radius-sm: 0.625rem;
+  --radius-md: 0.875rem;
+  --radius-lg: 1.125rem;
+  --radius-xl: 1.5rem;
+  --radius-2xl: 2rem;
+  --radius-full: 9999px;
+
+  /* Durations */
+  --duration-fast: 120ms;
+  --duration-standard: 180ms;
+  --duration-slow: 260ms;
+  --ease-standard: cubic-bezier(0.2, 0.8, 0.2, 1);
+}

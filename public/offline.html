@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FairTab — Offline Fallback</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: Inter, system-ui, -apple-system, sans-serif;
+        background: linear-gradient(145deg, #060810 0%, #090d18 52%, #070a12 100%);
+        color: #f5f7fa;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        text-align: center;
+      }
+      .container {
+        padding: 2rem;
+        background: rgba(15, 21, 35, 0.62);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 1.125rem;
+        box-shadow: 0 18px 50px rgba(0, 0, 0, 0.3);
+        max-width: 400px;
+        backdrop-filter: blur(20px);
+      }
+      h1 {
+        font-size: 1.75rem;
+        margin-bottom: 0.5rem;
+        background: linear-gradient(135deg, #7c6cff 0%, #9d5cff 48%, #22d3ee 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+      p {
+        color: #adbac7;
+        font-size: 1rem;
+        line-height: 1.5;
+        margin-bottom: 1.5rem;
+      }
+      .badge {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        background: rgba(245, 158, 11, 0.15);
+        color: #f59e0b;
+        font-size: 0.85rem;
+        margin-bottom: 1.5rem;
+        font-weight: 500;
+        border: 1px solid rgba(245, 158, 11, 0.2);
+      }
+      .btn {
+        background: linear-gradient(135deg, #7c6cff 0%, #22d3ee 100%);
+        color: #f5f7fa;
+        border: none;
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.875rem;
+        font-weight: 600;
+        cursor: pointer;
+        width: 100%;
+        box-sizing: border-box;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="badge">No Connection</div>
+      <h1>FairTab</h1>
+      <p>It looks like you're currently offline. Previously cached screens and operations are available, but you need a network connection to load new sections.</p>
+      <button class="btn" onclick="window.location.reload()">Retry Connection</button>
+    </div>
+  </body>
+</html>

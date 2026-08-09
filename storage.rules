@@ -1,0 +1,23 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /groups/{groupId}/receipts/{receiptId}/{version}/{fileName} {
+      allow read: if request.auth != null
+        && firestore.exists(/databases/(default)/documents/groups/$(groupId))
+        && request.auth.uid in firestore.get(/databases/(default)/documents/groups/$(groupId)).data.memberUserIds;
+
+      allow create: if request.auth != null
+        && firestore.exists(/databases/(default)/documents/groups/$(groupId))
+        && request.auth.uid in firestore.get(/databases/(default)/documents/groups/$(groupId)).data.memberUserIds
+        && firestore.get(/databases/(default)/documents/groups/$(groupId)).data.status == 'active'
+        && firestore.exists(/databases/(default)/documents/groups/$(groupId)/members/$(request.auth.uid))
+        && firestore.get(/databases/(default)/documents/groups/$(groupId)/members/$(request.auth.uid)).data.status == 'active'
+        && request.resource.size < 5 * 1024 * 1024
+        && (request.resource.contentType == 'image/jpeg' 
+            || request.resource.contentType == 'image/png' 
+            || request.resource.contentType == 'application/pdf');
+
+      allow update, delete: if false;
+    }
+  }
+}
