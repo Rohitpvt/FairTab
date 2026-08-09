@@ -50,5 +50,5 @@ jobs:
       - name: Production Build
         run: npm run build
         env:
-          VITE_APP_BASE_PATH: /fairtab/
+          VITE_APP_BASE_PATH: /FairTab/
 

@@ -57,7 +57,21 @@ jobs:
       - name: Build
         run: npm run build
         env:
-          VITE_APP_BASE_PATH: /fairtab/
+          VITE_APP_BASE_PATH: /FairTab/
+          VITE_USE_FIREBASE_EMULATORS: false
+          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
+          VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
+          VITE_FIREBASE_PROJECT_ID: fairtab-48340
+          VITE_FIREBASE_STORAGE_BUCKET: ${{ secrets.VITE_FIREBASE_STORAGE_BUCKET }}
+          VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
+          VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
+
+      - name: Deploy Firebase Backend
+        uses: w9jds/firebase-action@v2.2.8
+        with:
+          args: deploy --project=fairtab-48340 --only firestore:rules,firestore:indexes,storage,functions
+        env:
+          GCP_SA_KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
