@@ -64,7 +64,6 @@ jobs:
           VITE_FIREBASE_API_KEY: mock-api-key
           VITE_FIREBASE_AUTH_DOMAIN: mock-auth-domain
           VITE_FIREBASE_PROJECT_ID: mock-project-id
-          VITE_FIREBASE_STORAGE_BUCKET: mock-storage-bucket
           VITE_FIREBASE_MESSAGING_SENDER_ID: mock-sender-id
           VITE_FIREBASE_APP_ID: mock-app-id
 
@@ -79,14 +78,13 @@ jobs:
       - name: Build
         run: npm run build
         env:
-          VITE_APP_BASE_PATH: /FairTab/
-          VITE_USE_FIREBASE_EMULATORS: false
-          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
-          VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
-          VITE_FIREBASE_PROJECT_ID: fairtab-48340
-          VITE_FIREBASE_STORAGE_BUCKET: ${{ secrets.VITE_FIREBASE_STORAGE_BUCKET }}
-          VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
-          VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
+          VITE_APP_BASE_PATH: ${{ vars.VITE_APP_BASE_PATH || '/FairTab/' }}
+          VITE_USE_FIREBASE_EMULATORS: ${{ vars.VITE_USE_FIREBASE_EMULATORS || 'false' }}
+          VITE_FIREBASE_API_KEY: ${{ vars.VITE_FIREBASE_API_KEY }}
+          VITE_FIREBASE_AUTH_DOMAIN: ${{ vars.VITE_FIREBASE_AUTH_DOMAIN }}
+          VITE_FIREBASE_PROJECT_ID: ${{ vars.VITE_FIREBASE_PROJECT_ID || 'fairtab-48340' }}
+          VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ vars.VITE_FIREBASE_MESSAGING_SENDER_ID }}
+          VITE_FIREBASE_APP_ID: ${{ vars.VITE_FIREBASE_APP_ID }}
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
