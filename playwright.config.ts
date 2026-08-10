@@ -9,7 +9,7 @@ export default defineConfig({
   // Limit to 1 worker because the local single-instance Firebase Emulator
   // has shared global state (local emulator storage and ports).
   workers: 1,
-  reporter: "list",
+  reporter: [["list"], ["html", { open: "never" }]],
   use: {
     baseURL: "http://127.0.0.1:5173/FairTab/",
     trace: "on-first-retry",
