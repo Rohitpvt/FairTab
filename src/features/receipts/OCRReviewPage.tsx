@@ -12,6 +12,7 @@ import { TaxTipAllocator, allocateLargestRemainder } from "./TaxTipAllocator";
 import { ReceiptUploadStatus } from "./ReceiptUploadStatus";
 import { syncManager } from "../../infrastructure/offline/syncManager";
 import { auth, functions } from "../../infrastructure/firebase/firebase";
+import { receiptStorage } from "../../infrastructure/storage/receiptStorage";
 import { httpsCallable } from "firebase/functions";
 import { toast } from "sonner";
 import { Loader2, ArrowLeft, Send, Sparkles } from "lucide-react";
@@ -128,16 +129,11 @@ export const OCRReviewPage: React.FC = () => {
 
     try {
       if (syncManager.isOnline) {
-        // Upload temporary file to Firebase Storage to process OCR on the server
+        // Upload temporary file to S3 Storage to process OCR on the server
         const version = 1;
-        const storagePath = `groups/${groupId}/receipts/${receiptId}/v${version}/${file.name}`;
         
-        // Dynamic import to keep bundler slim
-        const { storage: storageInstance } = await import("../../infrastructure/firebase/firebase");
-        const { ref: storageRef, uploadBytes: uploadFile } = await import("firebase/storage");
-
-        const fileRef = storageRef(storageInstance, storagePath);
-        await uploadFile(fileRef, file, { contentType: file.type });
+        const meta = await receiptStorage.uploadReceipt(groupId!, receiptId, file, file.name, version);
+        const storagePath = meta.objectKey;
 
         // Trigger processReceiptOCR cloud function
         const processOcrFn = httpsCallable<{ groupId: string; storagePath: string }, any>(

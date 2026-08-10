@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { offlineDb, purgeUserOfflineData } from "./db";
 import type { OutboxOperation, OutboxAttempt } from "./db";
-import { auth, functions, storage } from "../firebase/firebase";
+import { auth, functions } from "../firebase/firebase";
 import { httpsCallable } from "firebase/functions";
-import { ref, uploadBytes } from "firebase/storage";
+import { receiptStorage } from "../storage/receiptStorage";
 
 export type SyncStatusListener = (status: {
   isOnline: boolean;
@@ -474,11 +474,10 @@ class ForegroundSyncManager {
 
       try {
         const version = 1;
-        const storagePath = `groups/${draft.groupId}/receipts/${draft.id}/v${version}/${draft.fileName}`;
-        const storageRef = ref(storage, storagePath);
-
-        // Upload file blob to Firebase Storage
-        await uploadBytes(storageRef, draft.fileBlob, { contentType: draft.fileType });
+        
+        // Upload file blob using the S3 receiptStorage provider
+        const meta = await receiptStorage.uploadReceipt(draft.groupId, draft.id, draft.fileBlob, draft.fileName, version);
+        const storagePath = meta.objectKey;
 
         // Call the Cloud Function createReceipt to create authoritative record in Firestore
         const createReceiptFn = httpsCallable<any, any>(functions, "createReceipt");

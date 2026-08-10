@@ -12,8 +12,7 @@ import {
 } from "firebase/firestore";
 import type { Firestore } from "firebase/firestore";
 import { getFunctions, connectFunctionsEmulator, type Functions } from "firebase/functions";
-import { getStorage, connectStorageEmulator } from "firebase/storage";
-import type { FirebaseStorage } from "firebase/storage";
+
 
 const isTest =
   typeof process !== "undefined" &&
@@ -49,7 +48,6 @@ let app: FirebaseApp;
 let auth: Auth;
 let db: Firestore;
 let functionsInstance: Functions;
-let storage: FirebaseStorage;
 
 const g = typeof window !== "undefined" ? (window as unknown as Record<string, unknown>) : (global as unknown as Record<string, unknown>);
 const GLOBAL_DB_KEY = "__FAIRTAB_FIRESTORE_INSTANCE__";
@@ -85,7 +83,6 @@ if (getApps().length === 0) {
   g[GLOBAL_DB_KEY] = db;
   auth = getAuth(app);
   functionsInstance = getFunctions(app);
-  storage = getStorage(app);
 
   const useEmulators = import.meta.env.VITE_USE_FIREBASE_EMULATORS === "true" || isTest;
   if (useEmulators) {
@@ -93,7 +90,7 @@ if (getApps().length === 0) {
       connectAuthEmulator(auth, "http://127.0.0.1:9099", { disableWarnings: true });
       connectFirestoreEmulator(db, "127.0.0.1", 8080);
       connectFunctionsEmulator(functionsInstance, "127.0.0.1", 5001);
-      connectStorageEmulator(storage, "127.0.0.1", 9199);
+
       g[GLOBAL_EMULATORS_KEY] = true;
       console.log("Connected to Firebase Emulators (Auth: 9099, Firestore: 8080, Functions: 5001, Storage: 9199)");
     }
@@ -102,7 +99,7 @@ if (getApps().length === 0) {
   app = getApp();
   auth = getAuth(app);
   functionsInstance = getFunctions(app);
-  storage = getStorage(app);
+
   if (g[GLOBAL_DB_KEY]) {
     db = g[GLOBAL_DB_KEY] as Firestore;
   } else {
@@ -117,5 +114,5 @@ if (getApps().length === 0) {
   }
 }
 
-export { auth, db, functionsInstance as functions, storage };
+export { auth, db, functionsInstance as functions };
 export default app;

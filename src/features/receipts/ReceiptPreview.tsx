@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useRef, useReducer } from "react";
-import { storage } from "../../infrastructure/firebase/firebase";
-import { ref, getBlob } from "firebase/storage";
+import { receiptStorage } from "../../infrastructure/storage/receiptStorage";
 import { FileText, Loader2, RefreshCw } from "lucide-react";
 
 interface ReceiptPreviewProps {
@@ -53,8 +52,7 @@ function useStorageBlob(storagePath: string | null | undefined, skip: boolean) {
 
     const fetchBlob = async () => {
       try {
-        const storageRef = ref(storage, storagePath);
-        const blob = await getBlob(storageRef);
+        const blob = await receiptStorage.getReceiptBlob(storagePath);
         if (active) {
           const url = URL.createObjectURL(blob);
           urlRef.current = url;
