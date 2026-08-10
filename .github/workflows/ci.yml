@@ -23,6 +23,12 @@ jobs:
       - name: Install
         run: npm ci
 
+      - name: Build Domain Package
+        run: npm run build -w @fairtab/domain
+
+      - name: Build Functions Package
+        run: npm run build --prefix functions
+
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
