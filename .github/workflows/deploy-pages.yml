@@ -56,6 +56,8 @@ jobs:
 
       - name: Playwright E2E Tests (Emulator-backed)
         run: npm run test:e2e
+        env:
+          VITE_USE_FIREBASE_EMULATORS: true
 
       - name: Build
         run: npm run build
