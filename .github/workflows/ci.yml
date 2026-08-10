@@ -55,6 +55,14 @@ jobs:
         env:
           VITE_USE_FIREBASE_EMULATORS: true
 
+      - name: Upload Playwright Report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 5
+
       - name: Production Build
         run: npm run build
         env:
