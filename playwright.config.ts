@@ -11,7 +11,7 @@ export default defineConfig({
   workers: 1,
   reporter: "list",
   use: {
-    baseURL: "http://localhost:5173/FairTab/",
+    baseURL: "http://127.0.0.1:5173/FairTab/",
     trace: "on-first-retry",
   },
   projects: [
@@ -21,8 +21,8 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: "npm run dev",
-    url: "http://localhost:5173/FairTab/",
+    command: "npm run dev -- --strictPort",
+    url: "http://127.0.0.1:5173/FairTab/",
     reuseExistingServer: !process.env.CI,
     timeout: 60000,
   },
