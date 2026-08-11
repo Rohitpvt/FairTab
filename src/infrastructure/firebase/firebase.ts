@@ -35,13 +35,8 @@ if (!isTest) {
   });
 }
 
-const rawApiKey = import.meta.env.VITE_FIREBASE_API_KEY;
-const correctedApiKey = rawApiKey === "AIzaSyA3ABTFjcF1KTenusLtnbRdvgz8IQQjMSE"
-  ? "AIzaSyA3ABTfJcF1KTenusLtnbRdvgz8IQQjMSE"
-  : (rawApiKey || "mock-api-key");
-
 const firebaseConfig = {
-  apiKey: correctedApiKey,
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "mock-api-key",
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "mock-auth-domain",
   projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "mock-project-id",
   storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "mock-storage-bucket",
