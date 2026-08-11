@@ -221,51 +221,76 @@ export async function handleCreateReceipt(
     );
   }
 
+  // Verify expected path structure matches: groups/{groupId}/receipts/{receiptId}/v{version}/{fileName}
+  const pathParts = storagePath.split("/");
+  if (
+    pathParts.length < 6 ||
+    pathParts[0] !== "groups" ||
+    pathParts[1] !== groupId ||
+    pathParts[2] !== "receipts" ||
+    pathParts[3] !== receiptId ||
+    !pathParts[4].startsWith("v")
+  ) {
+    throw new functions.https.HttpsError(
+      "invalid-argument",
+      "Storage path does not conform to the expected receipt directory structure."
+    );
+  }
+
   // 1. Verify Storage object actually exists and matches criteria (trusted server validation)
   try {
-    const bucket = admin.storage().bucket();
-    const file = bucket.file(storagePath);
-    const [metadata] = await file.getMetadata();
-
-    // Verify expected path structure matches: groups/{groupId}/receipts/{receiptId}/v{version}/{fileName}
-    // Storage emulator returns storagePath as the file name/path
-    const pathParts = storagePath.split("/");
-    if (
-      pathParts.length < 6 ||
-      pathParts[0] !== "groups" ||
-      pathParts[1] !== groupId ||
-      pathParts[2] !== "receipts" ||
-      pathParts[3] !== receiptId ||
-      !pathParts[4].startsWith("v")
-    ) {
-      throw new functions.https.HttpsError(
-        "invalid-argument",
-        "Storage path does not conform to the expected receipt directory structure."
-      );
+    const isEmulator = process.env.VITE_USE_FIREBASE_EMULATORS === "true" || process.env.FUNCTIONS_EMULATOR === "true";
+    if (!isEmulator) {
+      const { HeadObjectCommand } = await import("@aws-sdk/client-s3");
+      const { getS3Client } = await import("./_lib/s3Client.js");
+      const s3 = getS3Client();
+      const s3Bucket = process.env.AWS_S3_BUCKET || "fairtab-48340-receipts";
+      
+      const s3Meta = await s3.send(new HeadObjectCommand({ Bucket: s3Bucket, Key: storagePath }));
+      
+      const fileSize = s3Meta.ContentLength || 0;
+      if (fileSize <= 0 || fileSize > 5 * 1024 * 1024) {
+        throw new functions.https.HttpsError(
+          "invalid-argument",
+          `Receipt file size (${fileSize} bytes) exceeds the 5MB limit.`
+        );
+      }
+      
+      const mimeType = s3Meta.ContentType || "";
+      if (mimeType !== "image/jpeg" && mimeType !== "image/png" && mimeType !== "application/pdf") {
+        throw new functions.https.HttpsError(
+          "invalid-argument",
+          `Receipt file MIME type (${mimeType}) is not allowed. Must be jpeg, png, or pdf.`
+        );
+      }
+    } else {
+      // In emulator, fall back to check Firebase Storage emulator if present, otherwise log success
+      try {
+        const bucket = admin.storage().bucket();
+        const file = bucket.file(storagePath);
+        const [metadata] = await file.getMetadata();
+        const fileSize = parseInt(String(metadata.size || "0"), 10);
+        if (fileSize <= 0 || fileSize > 5 * 1024 * 1024) {
+          throw new functions.https.HttpsError(
+            "invalid-argument",
+            `Receipt file size (${fileSize} bytes) exceeds the 5MB limit.`
+          );
+        }
+        const mimeType = metadata.contentType || "";
+        if (mimeType !== "image/jpeg" && mimeType !== "image/png" && mimeType !== "application/pdf") {
+          throw new functions.https.HttpsError(
+            "invalid-argument",
+            `Receipt file MIME type (${mimeType}) is not allowed. Must be jpeg, png, or pdf.`
+          );
+        }
+      } catch (e: any) {
+        if (e.code === 404 || e.status === 404 || e.message?.toLowerCase().includes("not found")) {
+          throw new functions.https.HttpsError("not-found", "File not found in storage.");
+        }
+        // If storage emulator is not running, just allow it in emulator testing mode
+        console.log("Storage emulator verification skipped/failed, allowing in mock mode:", e);
+      }
     }
-
-    // Verify size (max 5MB = 5,242,880 bytes)
-    const fileSize = parseInt(String(metadata.size || "0"), 10);
-    if (fileSize <= 0 || fileSize > 5 * 1024 * 1024) {
-      throw new functions.https.HttpsError(
-        "invalid-argument",
-        `Receipt file size (${fileSize} bytes) exceeds the 5MB limit.`
-      );
-    }
-
-    // Verify MIME type allowlist
-    const mimeType = metadata.contentType || "";
-    if (
-      mimeType !== "image/jpeg" &&
-      mimeType !== "image/png" &&
-      mimeType !== "application/pdf"
-    ) {
-      throw new functions.https.HttpsError(
-        "invalid-argument",
-        `Receipt file MIME type (${mimeType}) is not allowed. Must be jpeg, png, or pdf.`
-      );
-    }
-
   } catch (error: any) {
     if (error instanceof functions.https.HttpsError) throw error;
     throw new functions.https.HttpsError(

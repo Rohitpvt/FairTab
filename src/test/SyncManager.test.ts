@@ -3,14 +3,43 @@ import "fake-indexeddb/auto";
 import { describe, test, expect, beforeEach, vi, type Mock } from "vitest";
 import { offlineDb, purgeUserOfflineData } from "../infrastructure/offline/db";
 import { syncManager } from "../infrastructure/offline/syncManager";
-import { httpsCallable } from "firebase/functions";
+import { fairtabApi } from "../infrastructure/api/fairtabApi";
 
-// Mock firebase/functions
-vi.mock("firebase/functions", async () => {
-  const actual = await vi.importActual<typeof import("firebase/functions")>("firebase/functions");
+// Mock fairtabApi
+vi.mock("../infrastructure/api/fairtabApi", () => {
   return {
-    ...actual,
-    httpsCallable: vi.fn(),
+    fairtabApi: {
+      expenses: {
+        create: vi.fn(),
+        update: vi.fn(),
+        void: vi.fn(),
+      },
+      settlements: {
+        create: vi.fn(),
+        void: vi.fn(),
+      },
+      budgets: {
+        create: vi.fn(),
+        update: vi.fn(),
+        delete: vi.fn(),
+      },
+      recurring: {
+        createTemplate: vi.fn(),
+        updateTemplate: vi.fn(),
+        generateDrafts: vi.fn(),
+        approveDraft: vi.fn(),
+        skipOccurrence: vi.fn(),
+      },
+      accounts: {
+        delete: vi.fn(),
+      },
+      receipts: {
+        create: vi.fn(),
+        presignUpload: vi.fn(),
+        presignDownload: vi.fn(),
+        processOcr: vi.fn(),
+      }
+    }
   };
 });
 
@@ -25,8 +54,8 @@ describe("Foreground Sync Manager Unit Tests", () => {
   });
 
   test("queueCreateExpense enqueues operation and runs sync successfully", async () => {
-    const mockCall = vi.fn().mockResolvedValue({ data: { expenseId: "exp-1", version: 1 } });
-    (httpsCallable as Mock).mockReturnValue(mockCall);
+    const mockCall = vi.fn().mockResolvedValue({ expenseId: "exp-1", version: 1 });
+    (fairtabApi.expenses.create as Mock).mockImplementation(mockCall);
 
     const payload = {
       clientOperationId: "op-create-test",
@@ -64,11 +93,11 @@ describe("Foreground Sync Manager Unit Tests", () => {
   });
 
   test("handling transient network errors retries with incremented attempts", async () => {
-    // Mock callable throwing transient network error
+    // Mock api call throwing transient network error
     const transientError = new Error("Network timeout");
     (transientError as any).code = "unavailable"; // transient code
     const mockCall = vi.fn().mockRejectedValue(transientError);
-    (httpsCallable as Mock).mockReturnValue(mockCall);
+    (fairtabApi.expenses.create as Mock).mockImplementation(mockCall);
 
     const payload = {
       clientOperationId: "op-transient-test",
@@ -97,11 +126,11 @@ describe("Foreground Sync Manager Unit Tests", () => {
   });
 
   test("handling permanent validation errors marks operation as failed", async () => {
-    // Mock callable throwing permanent validation error
+    // Mock api call throwing permanent validation error
     const permanentError = new Error("Invalid splits sum");
     (permanentError as any).code = "invalid-argument"; // permanent code
     const mockCall = vi.fn().mockRejectedValue(permanentError);
-    (httpsCallable as Mock).mockReturnValue(mockCall);
+    (fairtabApi.expenses.create as Mock).mockImplementation(mockCall);
 
     const payload = {
       clientOperationId: "op-perm-test",

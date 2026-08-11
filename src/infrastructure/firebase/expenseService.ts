@@ -106,4 +106,19 @@ export const expenseService = {
       }
     );
   },
+
+  async createExpense(data: unknown): Promise<unknown> {
+    const { fairtabApi } = await import("../api/fairtabApi");
+    return fairtabApi.expenses.create(data);
+  },
+
+  async updateExpense(data: unknown): Promise<unknown> {
+    const { fairtabApi } = await import("../api/fairtabApi");
+    return fairtabApi.expenses.update(data);
+  },
+
+  async voidExpense(data: unknown): Promise<unknown> {
+    const { fairtabApi } = await import("../api/fairtabApi");
+    return fairtabApi.expenses.void(data);
+  },
 };

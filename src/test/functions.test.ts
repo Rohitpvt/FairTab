@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, test, expect, beforeAll, afterAll, beforeEach } from "vitest";
-import { auth, functions } from "../infrastructure/firebase/firebase";
+import { auth } from "../infrastructure/firebase/firebase";
 import {
   initializeTestEnvironment,
   type RulesTestEnvironment,
@@ -17,8 +17,59 @@ import {
   collection,
   getDocs,
 } from "firebase/firestore";
-import { httpsCallable } from "firebase/functions";
 import type { ExpenseDocument } from "@fairtab/domain";
+import type { VercelRequest, VercelResponse } from "@vercel/node";
+
+async function executeVercelHandler(
+  handler: any,
+  reqOpts: {
+    method?: string;
+    headers?: Record<string, string>;
+    body?: any;
+  }
+) {
+  let status = 200;
+  let jsonPayload: any = null;
+  let ended = false;
+
+  const req = {
+    method: reqOpts.method || "POST",
+    headers: reqOpts.headers || {},
+    body: reqOpts.body || {},
+  } as unknown as VercelRequest;
+
+  const res = {
+    setHeader: () => {},
+    status: (code: number) => {
+      status = code;
+      return res;
+    },
+    json: (payload: any) => {
+      jsonPayload = payload;
+      ended = true;
+      return res;
+    },
+    end: () => {
+      ended = true;
+      return res;
+    },
+    get writableEnded() {
+      return ended;
+    }
+  } as unknown as VercelResponse;
+
+  await handler(req, res);
+
+  if (status >= 400) {
+    const error: any = new Error(jsonPayload?.message || "Vercel API error");
+    error.code = jsonPayload?.code || "unknown";
+    error.details = jsonPayload?.details || null;
+    error.status = status;
+    throw error;
+  }
+
+  return jsonPayload;
+}
 
 describe("Cloud Functions Integration Tests", () => {
   let testEnv: RulesTestEnvironment;
@@ -35,9 +86,36 @@ describe("Cloud Functions Integration Tests", () => {
   let charlieUid = "";
 
   const groupId = "group-func-test";
-  const createExpenseFn = httpsCallable<any, any>(functions, "createExpense");
-  const updateExpenseFn = httpsCallable<any, any>(functions, "updateExpense");
-  const voidExpenseFn = httpsCallable<any, any>(functions, "voidExpense");
+  
+  const createExpenseFn = async (data: any) => {
+    const handler = (await import("../../api/expenses/create.js")).default;
+    const token = await auth.currentUser?.getIdToken();
+    const res = await executeVercelHandler(handler, {
+      headers: { authorization: `Bearer ${token}` },
+      body: data
+    });
+    return { data: res };
+  };
+
+  const updateExpenseFn = async (data: any) => {
+    const handler = (await import("../../api/expenses/update.js")).default;
+    const token = await auth.currentUser?.getIdToken();
+    const res = await executeVercelHandler(handler, {
+      headers: { authorization: `Bearer ${token}` },
+      body: data
+    });
+    return { data: res };
+  };
+
+  const voidExpenseFn = async (data: any) => {
+    const handler = (await import("../../api/expenses/void.js")).default;
+    const token = await auth.currentUser?.getIdToken();
+    const res = await executeVercelHandler(handler, {
+      headers: { authorization: `Bearer ${token}` },
+      body: data
+    });
+    return { data: res };
+  };
 
   beforeAll(async () => {
     // Start Rules Test Environment to bootstrap database with rules disabled
@@ -613,8 +691,25 @@ describe("Cloud Functions Integration Tests", () => {
   });
 
   describe("Settlement Operations Callables", () => {
-    const createSettlementFn = httpsCallable<any, any>(functions, "createSettlement");
-    const voidSettlementFn = httpsCallable<any, any>(functions, "voidSettlement");
+    const createSettlementFn = async (data: any) => {
+      const handler = (await import("../../api/settlements/create.js")).default;
+      const token = await auth.currentUser?.getIdToken();
+      const res = await executeVercelHandler(handler, {
+        headers: { authorization: `Bearer ${token}` },
+        body: data
+      });
+      return { data: res };
+    };
+
+    const voidSettlementFn = async (data: any) => {
+      const handler = (await import("../../api/settlements/void.js")).default;
+      const token = await auth.currentUser?.getIdToken();
+      const res = await executeVercelHandler(handler, {
+        headers: { authorization: `Bearer ${token}` },
+        body: data
+      });
+      return { data: res };
+    };
 
     test("createSettlement succeeds for member participant and enforces zero-sum", async () => {
       // Sign in as Bob
@@ -799,8 +894,25 @@ describe("Receipt Cloud Functions Integration Tests", () => {
   const alicePassword2 = "password123";
   let aliceReceiptUid = "";
 
-  const createReceiptFn = httpsCallable<any, any>(functions, "createReceipt");
-  const processReceiptOCRFn = httpsCallable<any, any>(functions, "processReceiptOCR");
+  const createReceiptFn = async (data: any) => {
+    const handler = (await import("../../api/receipts/create.js")).default;
+    const token = await auth.currentUser?.getIdToken();
+    const res = await executeVercelHandler(handler, {
+      headers: { authorization: `Bearer ${token}` },
+      body: data
+    });
+    return { data: res };
+  };
+
+  const processReceiptOCRFn = async (data: any) => {
+    const handler = (await import("../../api/receipts/process-ocr.js")).default;
+    const token = await auth.currentUser?.getIdToken();
+    const res = await executeVercelHandler(handler, {
+      headers: { authorization: `Bearer ${token}` },
+      body: data
+    });
+    return { data: res };
+  };
 
   const receiptGroupId = "group-receipt-test";
 
@@ -956,10 +1068,45 @@ describe("Receipt Cloud Functions Integration Tests", () => {
   });
 
   describe("Recurring Expenses & Scheduling", () => {
-    const createRecurringTemplateFn = httpsCallable<any, any>(functions, "createRecurringTemplate");
-    const generateRecurringDraftsFn = httpsCallable<any, any>(functions, "generateRecurringDrafts");
-    const approveRecurringDraftFn = httpsCallable<any, any>(functions, "approveRecurringDraft");
-    const skipRecurringOccurrenceFn = httpsCallable<any, any>(functions, "skipRecurringOccurrence");
+    const createRecurringTemplateFn = async (data: any) => {
+      const handler = (await import("../../api/recurring/create-template.js")).default;
+      const token = await auth.currentUser?.getIdToken();
+      const res = await executeVercelHandler(handler, {
+        headers: { authorization: `Bearer ${token}` },
+        body: data
+      });
+      return { data: res };
+    };
+
+    const generateRecurringDraftsFn = async (data: any) => {
+      const handler = (await import("../../api/recurring/generate-drafts.js")).default;
+      const token = await auth.currentUser?.getIdToken();
+      const res = await executeVercelHandler(handler, {
+        headers: { authorization: `Bearer ${token}` },
+        body: data
+      });
+      return { data: res };
+    };
+
+    const approveRecurringDraftFn = async (data: any) => {
+      const handler = (await import("../../api/recurring/approve-draft.js")).default;
+      const token = await auth.currentUser?.getIdToken();
+      const res = await executeVercelHandler(handler, {
+        headers: { authorization: `Bearer ${token}` },
+        body: data
+      });
+      return { data: res };
+    };
+
+    const skipRecurringOccurrenceFn = async (data: any) => {
+      const handler = (await import("../../api/recurring/skip-occurrence.js")).default;
+      const token = await auth.currentUser?.getIdToken();
+      const res = await executeVercelHandler(handler, {
+        headers: { authorization: `Bearer ${token}` },
+        body: data
+      });
+      return { data: res };
+    };
 
     const recGroupId = "rec-group-123";
     const tempId = "rec-temp-123";
@@ -978,7 +1125,7 @@ describe("Receipt Cloud Functions Integration Tests", () => {
     let recCharlieUid = "";
 
     beforeAll(async () => {
-      const admin = await import("firebase-admin");
+      const admin: any = await import("firebase-admin");
       if (admin.apps.length === 0) {
         admin.initializeApp({
           projectId: "mock-project-id",
@@ -1370,9 +1517,35 @@ describe("Receipt Cloud Functions Integration Tests", () => {
 
   describe("Budget Operations", () => {
     const bgtGroupId = "group-budget-test";
-    const createBudgetFn = httpsCallable<any, any>(functions, "createBudget");
-    const updateBudgetFn = httpsCallable<any, any>(functions, "updateBudget");
-    const deleteBudgetFn = httpsCallable<any, any>(functions, "deleteBudget");
+    const createBudgetFn = async (data: any) => {
+      const handler = (await import("../../api/budgets/create.js")).default;
+      const token = await auth.currentUser?.getIdToken();
+      const res = await executeVercelHandler(handler, {
+        headers: { authorization: `Bearer ${token}` },
+        body: data
+      });
+      return { data: res };
+    };
+
+    const updateBudgetFn = async (data: any) => {
+      const handler = (await import("../../api/budgets/update.js")).default;
+      const token = await auth.currentUser?.getIdToken();
+      const res = await executeVercelHandler(handler, {
+        headers: { authorization: `Bearer ${token}` },
+        body: data
+      });
+      return { data: res };
+    };
+
+    const deleteBudgetFn = async (data: any) => {
+      const handler = (await import("../../api/budgets/delete.js")).default;
+      const token = await auth.currentUser?.getIdToken();
+      const res = await executeVercelHandler(handler, {
+        headers: { authorization: `Bearer ${token}` },
+        body: data
+      });
+      return { data: res };
+    };
 
     let bgtAliceUid = "";
     let bgtBobUid = "";
@@ -1632,8 +1805,25 @@ describe("Group & Account Deletion Integration Tests", () => {
   const bobDPass = "password123";
   let bobDUid = "";
 
-  const delGroupFn = httpsCallable<any, any>(functions, "deleteGroup");
-  const delAccountFn = httpsCallable<any, any>(functions, "deleteAccount");
+  const delGroupFn = async (data: any) => {
+    const handler = (await import("../../api/groups/delete.js")).default;
+    const token = await auth.currentUser?.getIdToken();
+    const res = await executeVercelHandler(handler, {
+      headers: { authorization: `Bearer ${token}` },
+      body: data
+    });
+    return { data: res };
+  };
+
+  const delAccountFn = async (data: any) => {
+    const handler = (await import("../../api/accounts/delete.js")).default;
+    const token = await auth.currentUser?.getIdToken();
+    const res = await executeVercelHandler(handler, {
+      headers: { authorization: `Bearer ${token}` },
+      body: data
+    });
+    return { data: res };
+  };
 
   beforeAll(async () => {
     testEnvDel = await initializeTestEnvironment({

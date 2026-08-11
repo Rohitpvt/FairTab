@@ -69,4 +69,19 @@ export const budgetService = {
       }
     );
   },
+
+  async createBudget(data: unknown): Promise<unknown> {
+    const { fairtabApi } = await import("../api/fairtabApi");
+    return fairtabApi.budgets.create(data);
+  },
+
+  async updateBudget(data: unknown): Promise<unknown> {
+    const { fairtabApi } = await import("../api/fairtabApi");
+    return fairtabApi.budgets.update(data);
+  },
+
+  async deleteBudget(data: unknown): Promise<unknown> {
+    const { fairtabApi } = await import("../api/fairtabApi");
+    return fairtabApi.budgets.delete(data);
+  },
 };

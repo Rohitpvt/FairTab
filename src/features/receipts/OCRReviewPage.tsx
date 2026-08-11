@@ -11,9 +11,9 @@ import { ItemizedSplitEditor } from "./ItemizedSplitEditor";
 import { TaxTipAllocator, allocateLargestRemainder } from "./TaxTipAllocator";
 import { ReceiptUploadStatus } from "./ReceiptUploadStatus";
 import { syncManager } from "../../infrastructure/offline/syncManager";
-import { auth, functions } from "../../infrastructure/firebase/firebase";
+import { auth } from "../../infrastructure/firebase/firebase";
 import { receiptStorage } from "../../infrastructure/storage/receiptStorage";
-import { httpsCallable } from "firebase/functions";
+import { receiptService } from "../../infrastructure/firebase/receiptService";
 import { toast } from "sonner";
 import { Loader2, ArrowLeft, Send, Sparkles } from "lucide-react";
 
@@ -135,13 +135,20 @@ export const OCRReviewPage: React.FC = () => {
         const meta = await receiptStorage.uploadReceipt(groupId!, receiptId, file, file.name, version);
         const storagePath = meta.objectKey;
 
-        // Trigger processReceiptOCR cloud function
-        const processOcrFn = httpsCallable<{ groupId: string; storagePath: string }, any>(
-          functions,
-          "processReceiptOCR"
-        );
-        const res = await processOcrFn({ groupId: groupId!, storagePath });
-        const ocrData = res.data;
+        // Trigger processReceiptOCR via Vercel endpoint
+        const ocrData = await receiptService.processReceiptOCR({ groupId: groupId!, storagePath }) as {
+          merchant?: string;
+          date?: string;
+          currency?: string;
+          subtotal?: number;
+          tax?: number;
+          tip?: number;
+          discount?: number;
+          total?: number;
+          confidence?: Record<string, number>;
+          items?: Array<{ description?: string; amountMinor?: number; confidence?: number }>;
+          isSimulated?: boolean;
+        };
 
         // Populate state from OCR results
         setMerchant(ocrData.merchant || "Supermarket");
@@ -154,7 +161,7 @@ export const OCRReviewPage: React.FC = () => {
         setTotalMinor(ocrData.total || 0);
         setConfidence(ocrData.confidence || {});
 
-        const mappedItems: ItemizedLine[] = (ocrData.items || []).map((it: any) => ({
+        const mappedItems: ItemizedLine[] = (ocrData.items || []).map((it) => ({
           description: it.description || "Line Item",
           amountMinor: it.amountMinor || 0,
           confidence: it.confidence !== undefined ? it.confidence : 1.0,

@@ -7,6 +7,7 @@ export async function handleDeleteAccount(
   data: any,
   context: functions.https.CallableContext
 ): Promise<{ success: boolean }> {
+  void data;
   if (!context.auth) {
     throw new functions.https.HttpsError("unauthenticated", "Authentication required.");
   }

@@ -6,11 +6,13 @@ import {
   executeCreateExpenseInTransaction,
   computePayloadHash,
 } from "./expenseOperations.js";
-import {
+import type {
   ExpenseCategory,
   SplitMethod,
   ExpensePayer,
   ExpenseSplit,
+} from "@fairtab/domain";
+import {
   calculateOccurrenceSequence,
   getOccurrenceDate,
   getLocalDateInTimezone,

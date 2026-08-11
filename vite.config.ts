@@ -71,6 +71,10 @@ export default defineConfig({
   ],
   resolve: {
     alias: {
+      "firebase-admin/app": path.resolve(__dirname, "./node_modules/firebase-admin/lib/app/index.js"),
+      "firebase-admin/firestore": path.resolve(__dirname, "./node_modules/firebase-admin/lib/firestore/index.js"),
+      "firebase-admin/auth": path.resolve(__dirname, "./node_modules/firebase-admin/lib/auth/index.js"),
+      "firebase-admin": path.resolve(__dirname, "./node_modules/firebase-admin/lib/index.js"),
       "@/app": path.resolve(__dirname, "./src/app"),
       "@/components": path.resolve(__dirname, "./src/components"),
       "@/features": path.resolve(__dirname, "./src/features"),

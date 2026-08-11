@@ -11,7 +11,7 @@ import {
   getFirestore
 } from "firebase/firestore";
 import type { Firestore } from "firebase/firestore";
-import { getFunctions, connectFunctionsEmulator, type Functions } from "firebase/functions";
+
 
 
 const isTest =
@@ -47,7 +47,6 @@ const firebaseConfig = {
 let app: FirebaseApp;
 let auth: Auth;
 let db: Firestore;
-let functionsInstance: Functions;
 
 const g = typeof window !== "undefined" ? (window as unknown as Record<string, unknown>) : (global as unknown as Record<string, unknown>);
 const GLOBAL_DB_KEY = "__FAIRTAB_FIRESTORE_INSTANCE__";
@@ -82,14 +81,12 @@ if (getApps().length === 0) {
 
   g[GLOBAL_DB_KEY] = db;
   auth = getAuth(app);
-  functionsInstance = getFunctions(app);
 
   const useEmulators = import.meta.env.VITE_USE_FIREBASE_EMULATORS === "true" || isTest;
   if (useEmulators) {
     if (!g[GLOBAL_EMULATORS_KEY]) {
       connectAuthEmulator(auth, "http://127.0.0.1:9099", { disableWarnings: true });
       connectFirestoreEmulator(db, "127.0.0.1", 8080);
-      connectFunctionsEmulator(functionsInstance, "127.0.0.1", 5001);
 
       g[GLOBAL_EMULATORS_KEY] = true;
       console.log("Connected to Firebase Emulators (Auth: 9099, Firestore: 8080, Functions: 5001, Storage: 9199)");
@@ -98,7 +95,6 @@ if (getApps().length === 0) {
 } else {
   app = getApp();
   auth = getAuth(app);
-  functionsInstance = getFunctions(app);
 
   if (g[GLOBAL_DB_KEY]) {
     db = g[GLOBAL_DB_KEY] as Firestore;
@@ -114,5 +110,5 @@ if (getApps().length === 0) {
   }
 }
 
-export { auth, db, functionsInstance as functions };
+export { auth, db };
 export default app;

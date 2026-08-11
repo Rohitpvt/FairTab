@@ -18,8 +18,7 @@ import { Button } from "../../components/ui/Button";
 import { Dialog } from "../../components/ui/Dialogs";
 import { useAuth } from "../auth/AuthProvider";
 import { profileService } from "../../infrastructure/firebase/profileService";
-import { functions } from "../../infrastructure/firebase/firebase";
-import { httpsCallable } from "firebase/functions";
+import { accountService } from "../../infrastructure/firebase/accountService";
 import { EmailAuthProvider, reauthenticateWithCredential, GoogleAuthProvider, reauthenticateWithPopup } from "firebase/auth";
 import { purgeUserOfflineData } from "../../infrastructure/offline/db";
 import { fetchUserExportData, generateCsvLedger, triggerDownload } from "../../utils/exportHelper";
@@ -116,8 +115,7 @@ export const SettingsPage: React.FC = () => {
 
       // 2. Call deleteAccount Cloud Function for server-side ownership check and index leaving
       toast.loading("Running server-side group and profile cleanups...", { id: toastId });
-      const deleteAccountFn = httpsCallable(functions, "deleteAccount");
-      await deleteAccountFn();
+      await accountService.deleteAccount({});
 
       // 3. Purge user-scoped IndexedDB tables
       await purgeUserOfflineData(user.uid);

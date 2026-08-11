@@ -106,4 +106,14 @@ export const settlementService = {
       }
     );
   },
+
+  async createSettlement(data: unknown): Promise<unknown> {
+    const { fairtabApi } = await import("../api/fairtabApi");
+    return fairtabApi.settlements.create(data);
+  },
+
+  async voidSettlement(data: unknown): Promise<unknown> {
+    const { fairtabApi } = await import("../api/fairtabApi");
+    return fairtabApi.settlements.void(data);
+  },
 };

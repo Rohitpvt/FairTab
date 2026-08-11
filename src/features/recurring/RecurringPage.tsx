@@ -140,12 +140,8 @@ export const RecurringPage: React.FC = () => {
     toast.loading("Scanning for due recurring occurrence drafts...", { id: "scan-toast" });
 
     try {
-      const { httpsCallable } = await import("firebase/functions");
-      const { functions } = await import("../../../src/infrastructure/firebase/firebase");
-      const generateRecurringDraftsFn = httpsCallable<any, any>(functions, "generateRecurringDrafts");
-      const res = await generateRecurringDraftsFn({ groupId: selectedGroupId });
-      
-      const count = res.data?.createdCount || 0;
+      const res = await recurringService.generateRecurringDrafts({ groupId: selectedGroupId }) as { createdCount?: number };
+      const count = res.createdCount || 0;
       toast.success(
         count > 0
           ? `Draft generator completed: generated ${count} new pending drafts.`
@@ -176,10 +172,7 @@ export const RecurringPage: React.FC = () => {
     try {
       if (syncStatus.isOnline) {
         toast.loading(`${newStatus === "active" ? "Resuming" : "Pausing"} template...`, { id: "toggle-toast" });
-        const { httpsCallable } = await import("firebase/functions");
-        const { functions } = await import("../../../src/infrastructure/firebase/firebase");
-        const updateRecurringTemplateFn = httpsCallable<any, any>(functions, "updateRecurringTemplate");
-        await updateRecurringTemplateFn(payload);
+        await recurringService.updateRecurringTemplate(payload);
         toast.success(`Template ${newStatus === "active" ? "resumed" : "paused"} successfully.`, { id: "toggle-toast" });
       } else {
         await syncManager.queueUpdateRecurringTemplate(selectedGroupId, payload);
@@ -204,10 +197,7 @@ export const RecurringPage: React.FC = () => {
     try {
       if (syncStatus.isOnline) {
         toast.loading("Skipping occurrence...", { id: "skip-toast" });
-        const { httpsCallable } = await import("firebase/functions");
-        const { functions } = await import("../../../src/infrastructure/firebase/firebase");
-        const skipFn = httpsCallable<any, any>(functions, "skipRecurringOccurrence");
-        await skipFn(payload);
+        await recurringService.skipRecurringOccurrence(payload);
         toast.success(`Occurrence ${occ.occurrenceDate} skipped.`, { id: "skip-toast" });
       } else {
         await syncManager.queueSkipRecurringDraft(selectedGroupId, payload);
@@ -236,10 +226,7 @@ export const RecurringPage: React.FC = () => {
     try {
       if (syncStatus.isOnline) {
         toast.loading("Posting recurring expense...", { id: "appr-toast" });
-        const { httpsCallable } = await import("firebase/functions");
-        const { functions } = await import("../../../src/infrastructure/firebase/firebase");
-        const approveFn = httpsCallable<any, any>(functions, "approveRecurringDraft");
-        await approveFn(payload);
+        await recurringService.approveRecurringDraft(payload);
         toast.success("Recurring draft posted to ledger!", { id: "appr-toast" });
       } else {
         await syncManager.queueApproveRecurringDraft(selectedGroupId, payload);
@@ -519,10 +506,7 @@ export const RecurringPage: React.FC = () => {
 
               if (syncStatus.isOnline) {
                 toast.loading("Creating recurring template...", { id: "create-toast" });
-                const { httpsCallable } = await import("firebase/functions");
-                const { functions } = await import("../../../src/infrastructure/firebase/firebase");
-                const createFn = httpsCallable<any, any>(functions, "createRecurringTemplate");
-                await createFn(fullPayload);
+                await recurringService.createRecurringTemplate(fullPayload);
                 toast.success("Recurring template created!", { id: "create-toast" });
               } else {
                 await syncManager.queueCreateRecurringTemplate(selectedGroupId, fullPayload);

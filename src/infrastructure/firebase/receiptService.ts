@@ -106,4 +106,24 @@ export const receiptService = {
       }
     );
   },
+
+  async createReceipt(data: unknown): Promise<unknown> {
+    const { fairtabApi } = await import("../api/fairtabApi");
+    return fairtabApi.receipts.create(data);
+  },
+
+  async processReceiptOCR(data: unknown): Promise<unknown> {
+    const { fairtabApi } = await import("../api/fairtabApi");
+    return fairtabApi.receipts.processOcr(data);
+  },
+
+  async presignUpload(data: unknown): Promise<unknown> {
+    const { fairtabApi } = await import("../api/fairtabApi");
+    return fairtabApi.receipts.presignUpload(data);
+  },
+
+  async presignDownload(data: unknown): Promise<unknown> {
+    const { fairtabApi } = await import("../api/fairtabApi");
+    return fairtabApi.receipts.presignDownload(data);
+  },
 };

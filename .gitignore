@@ -35,3 +35,6 @@ ui-debug.log
 lib/
 functions/lib/
 
+
+.vercel
+.env*

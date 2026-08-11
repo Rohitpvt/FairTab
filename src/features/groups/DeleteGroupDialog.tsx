@@ -3,8 +3,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Dialog } from "../../components/ui/Dialogs";
 import { Button } from "../../components/ui/Button";
-import { functions } from "../../infrastructure/firebase/firebase";
-import { httpsCallable } from "firebase/functions";
+import { groupService } from "../../infrastructure/firebase/groupService";
 import { toast } from "sonner";
 
 interface DeleteGroupDialogProps {
@@ -33,13 +32,11 @@ export const DeleteGroupDialog: React.FC<DeleteGroupDialogProps> = ({
     setIsLoading(true);
     const toastId = toast.loading(`Soft-deleting group "${groupName}"...`);
     try {
-      const deleteGroupFn = httpsCallable(functions, "deleteGroup");
-      
       // Perform idempotent paging delete call until completed
-      let res: any = await deleteGroupFn({ groupId });
-      while (res.data?.status === "processing") {
-        toast.loading(`Processing member index cleanups (cleaned: ${res.data.processedCount})...`, { id: toastId });
-        res = await deleteGroupFn({ groupId });
+      let res: any = await groupService.deleteGroup({ groupId });
+      while (res.status === "processing") {
+        toast.loading(`Processing member index cleanups (cleaned: ${res.processedCount})...`, { id: toastId });
+        res = await groupService.deleteGroup({ groupId });
       }
 
       toast.success(`Group "${groupName}" soft-deleted successfully.`, { id: toastId });

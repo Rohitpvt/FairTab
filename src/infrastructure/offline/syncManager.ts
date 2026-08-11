@@ -1,9 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { offlineDb, purgeUserOfflineData } from "./db";
 import type { OutboxOperation, OutboxAttempt } from "./db";
-import { auth, functions } from "../firebase/firebase";
-import { httpsCallable } from "firebase/functions";
+import { auth } from "../firebase/firebase";
 import { receiptStorage } from "../storage/receiptStorage";
+import { fairtabApi } from "../api/fairtabApi";
+import { receiptService } from "../firebase/receiptService";
 
 export type SyncStatusListener = (status: {
   isOnline: boolean;
@@ -291,36 +292,39 @@ class ForegroundSyncManager {
     await offlineDb.expenseOutbox.update(op.clientOperationId, { status: "processing" });
     this.notifyListeners();
 
-    const callableName =
+    const apiCall =
       op.type === "create"
-        ? "createExpense"
+        ? fairtabApi.expenses.create
         : op.type === "update"
-        ? "updateExpense"
+        ? fairtabApi.expenses.update
         : op.type === "void"
-        ? "voidExpense"
+        ? fairtabApi.expenses.void
         : op.type === "create_settlement"
-        ? "createSettlement"
+        ? fairtabApi.settlements.create
         : op.type === "void_settlement"
-        ? "voidSettlement"
+        ? fairtabApi.settlements.void
         : op.type === "create_recurring_template"
-        ? "createRecurringTemplate"
+        ? fairtabApi.recurring.createTemplate
         : op.type === "update_recurring_template"
-        ? "updateRecurringTemplate"
+        ? fairtabApi.recurring.updateTemplate
         : op.type === "approve_recurring_draft"
-        ? "approveRecurringDraft"
+        ? fairtabApi.recurring.approveDraft
         : op.type === "skip_recurring_draft"
-        ? "skipRecurringOccurrence"
+        ? fairtabApi.recurring.skipOccurrence
         : op.type === "create_budget"
-        ? "createBudget"
+        ? fairtabApi.budgets.create
         : op.type === "update_budget"
-        ? "updateBudget"
+        ? fairtabApi.budgets.update
         : op.type === "delete_budget"
-        ? "deleteBudget"
-        : "skipRecurringOccurrence";
-    const callableFn = httpsCallable<any, any>(functions, callableName);
+        ? fairtabApi.budgets.delete
+        : null;
+
+    if (!apiCall) {
+      throw new Error(`Unknown outbox operation type: ${op.type}`);
+    }
 
     try {
-      await callableFn(op.payload);
+      await apiCall(op.payload);
 
       // Success! Remove from outbox queue
       await offlineDb.expenseOutbox.delete(op.clientOperationId);
@@ -372,11 +376,11 @@ class ForegroundSyncManager {
     }
   }
 
-  /**
-   * Determine if an error code is permanent (won't resolve with retries)
-   */
   private checkIfPermanentError(err: any): boolean {
-    const code = err.code || "";
+    let code = (err.code || "").toLowerCase();
+    if (code.startsWith("functions/")) {
+      code = code.replace("functions/", "");
+    }
     // Permanent firebase callable errors:
     // permission-denied, invalid-argument, not-found, already-exists (if payload mismatch), failed-precondition, out-of-range, unauthenticated, aborted
     const permanentCodes = [
@@ -388,14 +392,6 @@ class ForegroundSyncManager {
       "out-of-range",
       "unauthenticated",
       "aborted",
-      "functions/permission-denied",
-      "functions/invalid-argument",
-      "functions/not-found",
-      "functions/already-exists",
-      "functions/failed-precondition",
-      "functions/out-of-range",
-      "functions/unauthenticated",
-      "functions/aborted",
     ];
 
     return permanentCodes.includes(code);
@@ -479,8 +475,7 @@ class ForegroundSyncManager {
         const meta = await receiptStorage.uploadReceipt(draft.groupId, draft.id, draft.fileBlob, draft.fileName, version);
         const storagePath = meta.objectKey;
 
-        // Call the Cloud Function createReceipt to create authoritative record in Firestore
-        const createReceiptFn = httpsCallable<any, any>(functions, "createReceipt");
+        // Call the receiptService.createReceipt to create authoritative record in Firestore
         const clientOperationId = crypto.randomUUID();
 
         // Map cached OCR details if they exist
@@ -502,7 +497,7 @@ class ForegroundSyncManager {
           })),
         } : undefined;
 
-        await createReceiptFn({
+        await receiptService.createReceipt({
           clientOperationId,
           groupId: draft.groupId,
           receiptId: draft.id,

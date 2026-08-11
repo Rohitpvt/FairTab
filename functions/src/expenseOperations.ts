@@ -3,13 +3,15 @@ import * as admin from "firebase-admin";
 import * as functions from "firebase-functions";
 import * as crypto from "crypto";
 import { FieldValue, Timestamp } from "firebase-admin/firestore";
-import {
+import type {
   ExpenseCategory,
   SplitMethod,
   ExpensePayer,
   ExpenseSplit,
   ExpenseDocument,
   ExpenseOperationReceipt,
+} from "@fairtab/domain";
+import {
   splitEqual,
   splitPercentage,
   splitShares,

@@ -73,8 +73,9 @@ describe("App Shell and Layout", () => {
 
     fireEvent.click(groupsLink);
 
-    // Content should transition to groups and load the lazy component
-    const groupsTitle = await screen.findByText("My Groups");
+    // Content should transition to groups — header title updates after route change
+    // Use extended timeout for heavy JSDOM re-renders with lazy-loaded routes
+    const groupsTitle = await screen.findByText("My Groups", {}, { timeout: 5000 });
     expect(groupsTitle).toBeInTheDocument();
   });
 

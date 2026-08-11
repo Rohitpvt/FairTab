@@ -144,4 +144,29 @@ export const recurringService = {
       unsubscribes.forEach((unsub) => unsub());
     };
   },
+
+  async createRecurringTemplate(data: unknown): Promise<unknown> {
+    const { fairtabApi } = await import("../api/fairtabApi");
+    return fairtabApi.recurring.createTemplate(data);
+  },
+
+  async updateRecurringTemplate(data: unknown): Promise<unknown> {
+    const { fairtabApi } = await import("../api/fairtabApi");
+    return fairtabApi.recurring.updateTemplate(data);
+  },
+
+  async generateRecurringDrafts(data: unknown): Promise<unknown> {
+    const { fairtabApi } = await import("../api/fairtabApi");
+    return fairtabApi.recurring.generateDrafts(data);
+  },
+
+  async approveRecurringDraft(data: unknown): Promise<unknown> {
+    const { fairtabApi } = await import("../api/fairtabApi");
+    return fairtabApi.recurring.approveDraft(data);
+  },
+
+  async skipRecurringOccurrence(data: unknown): Promise<unknown> {
+    const { fairtabApi } = await import("../api/fairtabApi");
+    return fairtabApi.recurring.skipOccurrence(data);
+  },
 };

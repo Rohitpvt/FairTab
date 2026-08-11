@@ -668,5 +668,10 @@ export const groupService = {
         console.error(`Failed to watch activities of group ${groupId}:`, error);
       }
     );
-  }
+  },
+
+  async deleteGroup(data: unknown): Promise<unknown> {
+    const { fairtabApi } = await import("../api/fairtabApi");
+    return fairtabApi.groups.delete(data);
+  },
 };

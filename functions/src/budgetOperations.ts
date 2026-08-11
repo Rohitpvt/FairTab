@@ -3,7 +3,7 @@ import * as admin from "firebase-admin";
 import * as functions from "firebase-functions";
 import { FieldValue } from "firebase-admin/firestore";
 import { computePayloadHash } from "./expenseOperations.js";
-import { ExpenseCategory } from "@fairtab/domain";
+import type { ExpenseCategory } from "@fairtab/domain";
 
 const VALID_CATEGORIES: ExpenseCategory[] = [
   "food", "transport", "shopping", "housing", "utilities",
