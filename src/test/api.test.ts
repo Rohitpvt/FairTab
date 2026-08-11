@@ -18,6 +18,7 @@ async function executeVercelHandler(
     method?: string;
     headers?: Record<string, string>;
     body?: any;
+    url?: string;
   }
 ) {
   let status = 200;
@@ -28,6 +29,7 @@ async function executeVercelHandler(
     method: reqOpts.method || "POST",
     headers: reqOpts.headers || {},
     body: reqOpts.body || {},
+    url: reqOpts.url || "/",
   } as unknown as VercelRequest;
 
   const res = {
@@ -289,4 +291,85 @@ describe("Vercel Serverless Backend API Validation Tests", () => {
       expect(res.body.objectKey).toContain("groups/group-api-test/receipts/rec-mime-valid/v1/receipt.png");
     });
   });
+
+  describe("Vercel Cron Recurring Drafts Scheduler Validations", () => {
+    const cronHandler = async (req: any, res: any) => {
+      const handler = (await import("../../api/index.js")).default;
+      return handler(req, res);
+    };
+
+    test("fails closed with 401 when CRON_SECRET is not configured in env", async () => {
+      const originalSecret = process.env.CRON_SECRET;
+      delete process.env.CRON_SECRET;
+      try {
+        const res = await executeVercelHandler(cronHandler, {
+          method: "GET",
+          url: "/api/cron/recurring-drafts",
+          headers: { authorization: "Bearer some-token" },
+          body: {}
+        });
+        expect(res.status).toBe(401);
+        expect(res.body.code).toBe("unauthenticated");
+      } finally {
+        process.env.CRON_SECRET = originalSecret;
+      }
+    });
+
+    test("fails closed with 401 when authorization header is missing", async () => {
+      const originalSecret = process.env.CRON_SECRET;
+      process.env.CRON_SECRET = "super-secret-token";
+      try {
+        const res = await executeVercelHandler(cronHandler, {
+          method: "GET",
+          url: "/api/cron/recurring-drafts",
+          headers: {},
+          body: {}
+        });
+        expect(res.status).toBe(401);
+        expect(res.body.code).toBe("unauthenticated");
+      } finally {
+        process.env.CRON_SECRET = originalSecret;
+      }
+    });
+
+    test("fails closed with 401 when authorization token does not match CRON_SECRET", async () => {
+      const originalSecret = process.env.CRON_SECRET;
+      process.env.CRON_SECRET = "super-secret-token";
+      try {
+        const res = await executeVercelHandler(cronHandler, {
+          method: "GET",
+          url: "/api/cron/recurring-drafts",
+          headers: { authorization: "Bearer wrong-token" },
+          body: {}
+        });
+        expect(res.status).toBe(401);
+        expect(res.body.code).toBe("unauthenticated");
+      } finally {
+        process.env.CRON_SECRET = originalSecret;
+      }
+    });
+
+    test("succeeds with 200 and returns execution metrics when valid CRON_SECRET is passed", async () => {
+      const originalSecret = process.env.CRON_SECRET;
+      process.env.CRON_SECRET = "super-secret-token";
+      try {
+        const res = await executeVercelHandler(cronHandler, {
+          method: "GET",
+          url: "/api/cron/recurring-drafts",
+          headers: { authorization: "Bearer super-secret-token" },
+          body: {}
+        });
+        expect(res.status).toBe(200);
+        expect(res.body.templatesScanned).toBeDefined();
+        expect(res.body.draftsCreated).toBeDefined();
+        expect(res.body.templatesSkipped).toBeDefined();
+        expect(res.body.errors).toBeDefined();
+        expect(res.body.executionDate).toBeDefined();
+        expect(res.body.duration).toBeDefined();
+      } finally {
+        process.env.CRON_SECRET = originalSecret;
+      }
+    });
+  });
 });
+

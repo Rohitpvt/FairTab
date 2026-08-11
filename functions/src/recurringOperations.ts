@@ -450,7 +450,7 @@ export async function executeGenerateDraftsForGroup(groupId: string, nowMs: numb
   const groupRef = db.doc(`groups/${groupId}`);
   const groupSnap = await groupRef.get();
   if (!groupSnap.exists || groupSnap.data()?.status === "archived" || groupSnap.data()?.status === "deleted") {
-    return { createdCount: 0 };
+    return { createdCount: 0, templatesScanned: 0, templatesSkipped: 0 };
   }
 
   // Load active group members
@@ -467,10 +467,14 @@ export async function executeGenerateDraftsForGroup(groupId: string, nowMs: numb
 
   const templatesSnap = await db.collection(`groups/${groupId}/recurringTemplates`).get();
   let createdCount = 0;
+  let templatesScanned = 0;
+  let templatesSkipped = 0;
 
   for (const templateDoc of templatesSnap.docs) {
     const template = templateDoc.data();
+    templatesScanned++;
     if (template.status !== "active") {
+      templatesSkipped++;
       continue;
     }
 
@@ -592,7 +596,7 @@ export async function executeGenerateDraftsForGroup(groupId: string, nowMs: numb
     }
   }
 
-  return { createdCount };
+  return { createdCount, templatesScanned, templatesSkipped };
 }
 
 export async function handleGenerateRecurringDrafts(
@@ -631,6 +635,9 @@ export async function handleScheduledDraftGeneration() {
   const db = admin.firestore();
   const groupsSnap = await db.collection("groups").get();
   let totalCreated = 0;
+  let templatesScanned = 0;
+  let templatesSkipped = 0;
+  let errors = 0;
 
   for (const groupDoc of groupsSnap.docs) {
     const group = groupDoc.data();
@@ -638,14 +645,30 @@ export async function handleScheduledDraftGeneration() {
       try {
         const res = await executeGenerateDraftsForGroup(group.id, Date.now());
         totalCreated += res.createdCount;
+        templatesScanned += res.templatesScanned;
+        templatesSkipped += res.templatesSkipped;
       } catch (err) {
         console.error(`Error generating drafts for group ${group.id}:`, err);
+        errors++;
+      }
+    } else {
+      // Skipped because group is not active (deleted or archived)
+      try {
+        const templatesSnap = await db.collection(`groups/${group.id}/recurringTemplates`).get();
+        templatesSkipped += templatesSnap.size;
+      } catch (err) {
+        console.error(`Error scanning skipped group templates for ${group.id}:`, err);
       }
     }
   }
 
   console.log(`Scheduled draft generation complete. Created ${totalCreated} pending drafts.`);
-  return { totalCreated };
+  return {
+    totalCreated,
+    templatesScanned,
+    templatesSkipped,
+    errors
+  };
 }
 
 // ----------------------------------------------------

@@ -17,8 +17,9 @@ interface ApiError extends Error {
 
 let isInitialized = false;
 
-async function ensureFirebaseInitialized() {
+export async function ensureFirebaseInitialized() {
   const useOidc = !!(
+    process.env.VERCEL &&
     process.env.GCP_PROJECT_NUMBER &&
     process.env.GCP_SERVICE_ACCOUNT_EMAIL &&
     process.env.GCP_WORKLOAD_IDENTITY_POOL_ID &&
@@ -67,8 +68,12 @@ async function ensureFirebaseInitialized() {
       process.env.GOOGLE_APPLICATION_CREDENTIALS = originalGac;
     }
   } else if (projectId && clientEmail && privateKey) {
+    const credentialFactory = admin.credential || (admin as unknown as { default?: { credential?: typeof admin.credential } }).default?.credential;
+    if (!credentialFactory) {
+      throw new Error("Firebase Admin credential factory not found");
+    }
     initializeApp({
-      credential: (admin.credential || (admin as any).default?.credential).cert({
+      credential: credentialFactory.cert({
         projectId,
         clientEmail,
         privateKey: privateKey.replace(/\\n/g, "\n"),

@@ -2,5 +2,11 @@
   "buildCommand": "echo 'Skipping frontend build'",
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/index.ts" }
+  ],
+  "crons": [
+    {
+      "path": "/api/cron/recurring-drafts",
+      "schedule": "0 0 * * *"
+    }
   ]
 }

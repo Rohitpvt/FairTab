@@ -1,4 +1,5 @@
 import { withAuth, createHandlerContext } from "./_lib/middleware.js";
+import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { handleDeleteAccount } from "../functions/src/accountOperations.js";
 import { handleCreateBudget, handleUpdateBudget, handleDeleteBudget } from "../functions/src/budgetOperations.js";
 import { handleCreateExpense, handleUpdateExpense, handleVoidExpense } from "../functions/src/expenseOperations.js";
@@ -16,7 +17,8 @@ import { getS3Client } from "./_lib/s3Client.js";
 import { createPresignedPost } from "@aws-sdk/s3-presigned-post";
 import { GetObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import * as admin from "firebase-admin";
+import { handleCronRecurringDrafts } from "./_lib/cronRecurringDrafts.js";
+import admin from "firebase-admin";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const adminApp = admin as any;
@@ -98,7 +100,7 @@ const standardHandlers: Record<string, (data: any, context: any) => Promise<any>
   "/api/settlements/void": handleVoidSettlement,
 };
 
-export default withAuth(async (req, res, context) => {
+const authenticatedRouter = withAuth(async (req, res, context) => {
   // Parse clean URL path
   const url = new URL(req.url || "", `http://${req.headers.host || "localhost"}`);
   let path = url.pathname;
@@ -176,3 +178,17 @@ export default withAuth(async (req, res, context) => {
 
   return handler(req.body, createHandlerContext(context.uid, context.token));
 });
+
+export default async function (req: VercelRequest, res: VercelResponse) {
+  const url = new URL(req.url || "", `http://${req.headers.host || "localhost"}`);
+  let path = url.pathname;
+  if (path.endsWith("/")) {
+    path = path.slice(0, -1);
+  }
+
+  if (path === "/api/cron/recurring-drafts") {
+    return handleCronRecurringDrafts(req, res);
+  }
+
+  return authenticatedRouter(req, res);
+}
