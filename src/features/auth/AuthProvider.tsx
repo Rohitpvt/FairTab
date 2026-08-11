@@ -49,7 +49,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setProfile(p);
         
         // Google authentication uses Firebase verified-email state
-        const isVerified = auth.currentUser.emailVerified || auth.currentUser.providerData.some(p => p.providerId === "google.com");
+        const requireVerification = import.meta.env.VITE_REQUIRE_EMAIL_VERIFICATION !== "false";
+        const isVerified = !requireVerification || auth.currentUser.emailVerified || auth.currentUser.providerData.some(p => p.providerId === "google.com");
         
         if (!isVerified) {
           setAuthState("email-verification-required");
@@ -107,7 +108,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           if (p) {
             setProfile(p);
             
-            const isVerified = u.emailVerified || u.providerData.some(prov => prov.providerId === "google.com");
+            const requireVerification = import.meta.env.VITE_REQUIRE_EMAIL_VERIFICATION !== "false";
+            const isVerified = !requireVerification || u.emailVerified || u.providerData.some(prov => prov.providerId === "google.com");
             
             if (!isVerified) {
               setAuthState("email-verification-required");
