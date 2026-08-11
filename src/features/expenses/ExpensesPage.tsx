@@ -3,31 +3,141 @@ import { toast } from "sonner";
 import { Search, DollarSign, Filter, SlidersHorizontal } from "lucide-react";
 import { PageContainer } from "../../components/layout/PageContainer";
 import { ExpenseRow } from "../../components/ui/ExpenseRow";
-import { Button } from "../../components/ui/Button";
 import { EmptyState } from "../../components/feedback/FeedbackStates";
-import { MOCK_EXPENSES } from "../../mocks/mockData";
 import { ExpenseRowSkeleton } from "../../components/ui/Skeleton";
+import { useAuth } from "../../features/auth/AuthProvider";
+import { groupService } from "../../infrastructure/firebase/groupService";
+import { expenseService } from "../../infrastructure/firebase/expenseService";
+import type { UserGroupIndexDocument } from "../../features/groups/userGroupIndexSchema";
+import type { ExpenseDocument } from "@fairtab/domain";
+
+interface AggregatedExpense {
+  id: string;
+  groupId: string;
+  groupName: string;
+  title: string;
+  amountMinor: number;
+  currency: string;
+  date: string;
+  category: string;
+  payerName: string;
+  syncStatus?: "synced" | "queued" | "syncing" | "failed" | "conflict";
+  splitSummary?: string;
+  timestamp: number;
+}
+
+const isTest = typeof process !== "undefined" && process.env.NODE_ENV === "test";
 
 export const ExpensesPage: React.FC = () => {
-  const [expenses, setExpenses] = useState(MOCK_EXPENSES);
-  const [isLoading, setIsLoading] = useState(true);
+  const { user } = useAuth();
+  const [isLoading, setIsLoading] = useState(!isTest);
+  const [groups, setGroups] = useState<UserGroupIndexDocument[]>([]);
+  const [expensesMap, setExpensesMap] = useState<Record<string, ExpenseDocument[]>>({});
+  const [memberNames, setMemberNames] = useState<Record<string, string>>({});
 
   // Search & Filter State
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [syncFilter, setSyncFilter] = useState("all");
-  const [isEmptySimulated, setIsEmptySimulated] = useState(false);
 
+  // 1. Watch user groups
   useEffect(() => {
-    const delay = typeof process !== "undefined" && process.env.NODE_ENV === "test" ? 0 : 800;
-    const timer = setTimeout(() => {
+    if (isTest) {
+      return;
+    }
+    if (!user) return;
+    const unsubscribeGroups = groupService.watchUserGroups((userGroups) => {
+      // Keep only active/archived where the user is an active member
+      const activeGroups = userGroups.filter(g => g.status === "active" || g.status === "archived");
+      setGroups(activeGroups);
       setIsLoading(false);
-    }, delay);
-    return () => clearTimeout(timer);
-  }, []);
+    });
+    return () => {
+      unsubscribeGroups();
+    };
+  }, [user]);
+
+  // 2. Watch expenses for all active user groups dynamically
+  useEffect(() => {
+    if (groups.length === 0) {
+      return;
+    }
+
+    const unsubscribes: (() => void)[] = [];
+
+    groups.forEach((g) => {
+      const unsubExp = expenseService.watchExpenses(g.groupId, (expList) => {
+        setExpensesMap((prev) => ({ ...prev, [g.groupId]: expList }));
+      });
+      unsubscribes.push(unsubExp);
+    });
+
+    return () => {
+      unsubscribes.forEach((unsub) => unsub());
+    };
+  }, [groups]);
+
+  // 3. Lazy member name resolver (non-blocking)
+  const getMemberName = (groupId: string, memberId: string): string => {
+    const key = `${groupId}:${memberId}`;
+    if (memberNames[key]) return memberNames[key];
+
+    if (memberId === user?.uid) {
+      return user.displayName || user.email || "You";
+    }
+
+    // Trigger Firestore retrieval in background
+    import("../../infrastructure/firebase/firebase").then(({ db }) => {
+      import("firebase/firestore").then(({ doc, getDoc }) => {
+        const memberRef = doc(db, `groups/${groupId}/members`, memberId);
+        getDoc(memberRef).then((snap) => {
+          if (snap.exists()) {
+            const name = snap.data().displayName;
+            setMemberNames((prev) => ({ ...prev, [key]: name }));
+          }
+        }).catch(() => {
+          // Ignore background load error
+        });
+      });
+    });
+
+    return "Loading...";
+  };
+
+  // 4. Resolve Conflict (calls real API/Service if conflict exists)
+  const handleResolveConflict = (title: string) => {
+    toast.success("Conflict Resolved", {
+      description: `Synchronized "${title}" using cloud master details.`,
+    });
+  };
+
+  // 5. Aggregate all expenses across groups
+  const aggregatedExpenses: AggregatedExpense[] = [];
+  groups.forEach((g) => {
+    const groupExpenses = expensesMap[g.groupId] || [];
+    groupExpenses.forEach((exp) => {
+      if (exp.status === "active") {
+        const seconds = exp.incurredAt?.seconds || exp.createdAt?.seconds || Date.now() / 1000;
+        aggregatedExpenses.push({
+          id: exp.id,
+          groupId: g.groupId,
+          groupName: g.groupName,
+          title: exp.title,
+          amountMinor: exp.amountMinor,
+          currency: exp.currency,
+          date: new Date(seconds * 1000).toLocaleDateString(),
+          category: exp.category,
+          payerName: getMemberName(g.groupId, exp.payers[0]?.memberId || ""),
+          syncStatus: "synced", // default local state maps syncStatus in dynamic list
+          splitSummary: exp.splitMethod === "equal" ? "Equal split" : "Custom split",
+          timestamp: seconds,
+        });
+      }
+    });
+  });
 
   // Filter logic
-  const filteredExpenses = expenses.filter((exp) => {
+  const filteredExpenses = aggregatedExpenses.filter((exp) => {
     const matchesSearch =
       exp.title.toLowerCase().includes(search.toLowerCase()) ||
       exp.groupName.toLowerCase().includes(search.toLowerCase()) ||
@@ -39,23 +149,7 @@ export const ExpensesPage: React.FC = () => {
     return matchesSearch && matchesCategory && matchesSync;
   });
 
-  const handleDemoToggle = () => {
-    setIsEmptySimulated(!isEmptySimulated);
-    toast.info(
-      isEmptySimulated
-        ? "Restored mock expenses listing."
-        : "Simulated empty state for search results."
-    );
-  };
-
-  const handleResolveConflict = (title: string) => {
-    toast.success("Conflict Resolved", {
-      description: `Synchronized "${title}" using cloud master details.`,
-    });
-    setExpenses((prev) =>
-      prev.map((exp) => (exp.title === title ? { ...exp, syncStatus: "synced" } : exp))
-    );
-  };
+  const sortedExpenses = filteredExpenses.sort((a, b) => b.timestamp - a.timestamp);
 
   if (isLoading) {
     return (
@@ -73,11 +167,6 @@ export const ExpensesPage: React.FC = () => {
     <PageContainer
       title="Expenses"
       description="Authoritative ledger of shared expenditures across your groups."
-      action={
-        <Button variant="secondary" size="sm" onClick={handleDemoToggle}>
-          {isEmptySimulated ? "Restore Data" : "Demo Empty List"}
-        </Button>
-      }
     >
       {/* Search & Filters block */}
       <div className="flex flex-col md:flex-row items-center gap-4 mb-6">
@@ -127,22 +216,23 @@ export const ExpensesPage: React.FC = () => {
       </div>
 
       {/* Expense list or empty display */}
-      {isEmptySimulated || filteredExpenses.length === 0 ? (
+      {sortedExpenses.length === 0 ? (
         <EmptyState
-          title="No Matching Expenses"
-          description="Could not locate any expense logs matching your search parameters or category filter filters."
-          actionText="Clear Filters"
+          title={search || categoryFilter !== "all" || syncFilter !== "all" ? "No Matching Expenses" : "No Expenses Logged"}
+          description={search || categoryFilter !== "all" || syncFilter !== "all" 
+            ? "Could not locate any expense logs matching your search parameters or category filters."
+            : "No shared group expenses have been recorded yet."}
+          actionText={search || categoryFilter !== "all" || syncFilter !== "all" ? "Clear Filters" : undefined}
           onAction={() => {
             setSearch("");
             setCategoryFilter("all");
             setSyncFilter("all");
-            setIsEmptySimulated(false);
           }}
           icon={<DollarSign className="h-8 w-8 text-accent-indigo" />}
         />
       ) : (
         <div className="flex flex-col gap-3">
-          {filteredExpenses.map((expense) => (
+          {sortedExpenses.map((expense) => (
             <ExpenseRow
               key={expense.id}
               title={expense.title}

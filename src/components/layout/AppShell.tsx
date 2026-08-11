@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { Toaster, toast } from "sonner";
 import { Sidebar } from "./Sidebar";
@@ -10,34 +10,44 @@ import { CommandPalette } from "../ui/CommandPalette";
 import { Dialog } from "../ui/Dialogs";
 import { Button } from "../ui/Button";
 import { useAppActions, useAppState } from "../../app/providers/AppActionProvider";
+import { groupService } from "../../infrastructure/firebase/groupService";
+import type { UserGroupIndexDocument } from "../../features/groups/userGroupIndexSchema";
 
 // Isolated dialog component to prevent AppShell and active routes from re-rendering when open state changes
 const AddExpenseDialog: React.FC = () => {
   const { isAddExpenseOpen } = useAppState();
   const { closeAddExpense } = useAppActions();
-  
-  // Local form inputs
-  const [expTitle, setExpTitle] = useState("");
-  const [expAmount, setExpAmount] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const navigate = useNavigate();
 
-  const handleMockAddExpense = (e: React.FormEvent) => {
+  // Local state
+  const [groups, setGroups] = useState<UserGroupIndexDocument[]>([]);
+  const [selectedGroupId, setSelectedGroupId] = useState("");
+  const [isLoadingGroups, setIsLoadingGroups] = useState(true);
+
+  useEffect(() => {
+    const unsubscribe = groupService.watchUserGroups((userGroups) => {
+      const activeGroups = userGroups.filter((g) => g.status === "active");
+      setGroups(activeGroups);
+      if (activeGroups.length > 0) {
+        setSelectedGroupId(activeGroups[0].groupId);
+      } else {
+        setSelectedGroupId("");
+      }
+      setIsLoadingGroups(false);
+    });
+    return () => {
+      unsubscribe();
+    };
+  }, []);
+
+  const handleNavigateToAddExpense = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!expTitle || !expAmount) {
-      toast.error("Please fill in all required fields.");
+    if (!selectedGroupId) {
+      toast.error("Please select a group first.");
       return;
     }
-
-    setIsSubmitting(true);
-    setTimeout(() => {
-      setIsSubmitting(false);
-      closeAddExpense();
-      setExpTitle("");
-      setExpAmount("");
-      toast.success(`Expense "${expTitle}" added successfully!`, {
-        description: "It has been queued for sync (simulated).",
-      });
-    }, 1200);
+    closeAddExpense();
+    navigate(`/groups/${selectedGroupId}/expenses/new`);
   };
 
   return (
@@ -45,7 +55,7 @@ const AddExpenseDialog: React.FC = () => {
       isOpen={isAddExpenseOpen}
       onOpenChange={(open) => { if (!open) closeAddExpense(); }}
       title="Add Shared Expense"
-      description="Record a new transaction to split with your group members."
+      description="Select one of your active groups to record a new transaction."
       footer={
         <div className="flex gap-2 w-full justify-end">
           <Button variant="ghost" onClick={closeAddExpense} size="sm">
@@ -53,61 +63,56 @@ const AddExpenseDialog: React.FC = () => {
           </Button>
           <Button
             variant="gradient"
-            onClick={handleMockAddExpense}
-            isLoading={isSubmitting}
-            loadingText="Saving..."
+            onClick={handleNavigateToAddExpense}
+            disabled={groups.length === 0 || isLoadingGroups}
             size="sm"
           >
-            Add Expense
+            Continue
           </Button>
         </div>
       }
     >
-      <form onSubmit={handleMockAddExpense} className="flex flex-col gap-4 mt-2">
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor="exp-title" className="text-xs font-semibold text-text-secondary">
-            Expense Title *
+      <form onSubmit={handleNavigateToAddExpense} className="flex flex-col gap-4 mt-2">
+        <div className="flex flex-col gap-1.5 font-sans">
+          <label htmlFor="exp-group" className="text-xs font-semibold text-text-secondary">
+            Select Splitting Group
           </label>
-          <input
-            id="exp-title"
-            type="text"
-            required
-            autoFocus
-            placeholder="e.g. Flight tickets, Groceries"
-            value={expTitle}
-            onChange={(e) => setExpTitle(e.target.value)}
-            className="px-3.5 py-2.5 bg-surface-primary border border-white/10 rounded-lg text-sm text-text-primary focus:outline-none focus:border-accent-cyan"
-          />
-        </div>
-        <div className="grid grid-cols-2 gap-4">
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="exp-amount" className="text-xs font-semibold text-text-secondary">
-              Amount (₹) *
-            </label>
-            <input
-              id="exp-amount"
-              type="number"
-              required
-              min="1"
-              placeholder="e.g. 1500"
-              value={expAmount}
-              onChange={(e) => setExpAmount(e.target.value)}
-              className="px-3.5 py-2.5 bg-surface-primary border border-white/10 rounded-lg text-sm text-text-primary focus:outline-none focus:border-accent-cyan financial-number"
-            />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="exp-group" className="text-xs font-semibold text-text-secondary">
-              Select Group
-            </label>
+          {isLoadingGroups ? (
+            <div className="px-3.5 py-2.5 bg-surface-primary border border-white/10 rounded-lg text-sm text-text-muted animate-pulse">
+              Loading groups...
+            </div>
+          ) : groups.length === 0 ? (
+            <div className="flex flex-col gap-2">
+              <div className="px-3.5 py-2.5 bg-surface-primary border border-danger/20 rounded-lg text-sm text-danger font-semibold">
+                Create a group first
+              </div>
+              <Button
+                variant="secondary"
+                size="sm"
+                autoFocus
+                onClick={() => {
+                  closeAddExpense();
+                  navigate("/groups/new");
+                }}
+              >
+                Create New Group
+              </Button>
+            </div>
+          ) : (
             <select
               id="exp-group"
-              className="px-3.5 py-2.5 bg-surface-primary border border-white/10 rounded-lg text-sm text-text-secondary focus:outline-none focus:border-accent-cyan cursor-pointer"
+              autoFocus
+              value={selectedGroupId}
+              onChange={(e) => setSelectedGroupId(e.target.value)}
+              className="px-3.5 py-2.5 bg-surface-primary border border-white/10 rounded-lg text-sm text-text-secondary focus:outline-none focus:border-accent-cyan cursor-pointer w-full font-sans"
             >
-              <option value="group-1">Himalayan Expedition 2026</option>
-              <option value="group-2">Apartment 4B Groceries & Rent</option>
-              <option value="group-3">Weekend Goa Trip</option>
+              {groups.map((g) => (
+                <option key={g.groupId} value={g.groupId}>
+                  {g.groupName}
+                </option>
+              ))}
             </select>
-          </div>
+          )}
         </div>
       </form>
     </Dialog>
@@ -118,6 +123,7 @@ export const AppShell: React.FC = () => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   
+  const { isAddExpenseOpen } = useAppState();
   const { openAddExpense } = useAppActions();
   
   const navigate = useNavigate();
@@ -184,7 +190,7 @@ export const AppShell: React.FC = () => {
       <MobileNavigation onAddClick={openAddExpense} />
 
       {/* Isolated Mock Add Expense Dialog */}
-      <AddExpenseDialog />
+      {isAddExpenseOpen && <AddExpenseDialog />}
     </div>
   );
 };

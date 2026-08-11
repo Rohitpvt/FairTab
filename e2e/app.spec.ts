@@ -195,8 +195,13 @@ test.describe("FairTab E2E Tests", () => {
       const dialogTitle = page.locator("h2:has-text('Add Shared Expense')");
       await expect(dialogTitle).toBeVisible();
 
-      const titleInput = page.locator("#exp-title");
-      await expect(titleInput).toBeFocused();
+      const groupSelect = page.locator("#exp-group");
+      const createGroupBtn = page.getByRole("button", { name: "Create New Group" });
+      if (await groupSelect.count() > 0) {
+        await expect(groupSelect).toBeFocused();
+      } else {
+        await expect(createGroupBtn).toBeFocused();
+      }
 
       // Press Tab multiple times to verify focus remains inside the dialog
       for (let i = 0; i < 6; i++) {

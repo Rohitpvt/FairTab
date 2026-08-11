@@ -135,7 +135,7 @@ describe("App Action Context Dialog", () => {
     await screen.findByText("Recent Transactions");
 
     // Dialog should not be in document initially
-    expect(screen.queryByText("Record a new transaction to split with your group members.")).not.toBeInTheDocument();
+    expect(screen.queryByText("Select one of your active groups to record a new transaction.")).not.toBeInTheDocument();
 
     // Click "New Expense" button which calls openAddExpense() from context hook
     const newExpenseBtn = screen.getByRole("button", { name: "New Expense" });
@@ -143,7 +143,7 @@ describe("App Action Context Dialog", () => {
 
     // Dialog title and description should mount
     expect(await screen.findByText("Add Shared Expense")).toBeInTheDocument();
-    expect(screen.getByText("Record a new transaction to split with your group members.")).toBeInTheDocument();
+    expect(screen.getByText("Select one of your active groups to record a new transaction.")).toBeInTheDocument();
 
     // Click cancel to close it
     const cancelBtn = screen.getByRole("button", { name: "Cancel" });
@@ -151,7 +151,7 @@ describe("App Action Context Dialog", () => {
 
     // Dialog should unmount or be hidden
     await waitFor(() => {
-      expect(screen.queryByText("Record a new transaction to split with your group members.")).not.toBeInTheDocument();
+      expect(screen.queryByText("Select one of your active groups to record a new transaction.")).not.toBeInTheDocument();
     });
   });
 });
