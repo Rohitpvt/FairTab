@@ -2,7 +2,7 @@ import React from "react";
 import { Search } from "lucide-react";
 import { SyncIndicator, ThemeToggle } from "../feedback/FeedbackStates";
 import { MemberAvatar } from "../ui/Avatar";
-import { MOCK_USER } from "../../mocks/mockData";
+import { useAuth } from "../../features/auth/AuthProvider";
 
 export interface TopHeaderProps {
   title: string;
@@ -10,6 +10,10 @@ export interface TopHeaderProps {
 }
 
 export const TopHeader: React.FC<TopHeaderProps> = ({ title, onSearchClick }) => {
+  const { user } = useAuth();
+  const name = user?.displayName || user?.email || "User";
+  const avatarUrl = user?.photoURL || "";
+
   return (
     <header className="sticky top-0 right-0 left-0 border-b border-white/5 glass-standard min-h-[72px] flex items-center justify-between px-4 md:px-8 z-20">
       {/* Page / Context title */}
@@ -46,9 +50,9 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ title, onSearchClick }) =>
 
         {/* User Profile Avatar */}
         <div className="flex items-center gap-2">
-          <MemberAvatar name={MOCK_USER.name} avatarUrl={MOCK_USER.avatarUrl} size="sm" />
+          <MemberAvatar name={name} avatarUrl={avatarUrl} size="sm" />
           <span className="text-xs font-semibold text-text-secondary hidden lg:inline max-w-[120px] truncate">
-            {MOCK_USER.name}
+            {name}
           </span>
         </div>
       </div>
