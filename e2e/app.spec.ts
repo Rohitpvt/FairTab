@@ -135,14 +135,16 @@ test.describe("FairTab E2E Tests", () => {
   test("should toggle dark and light modes", async ({ page }) => {
     const email = await ensureSignedIn(page);
     try {
+      await page.evaluate(() => localStorage.setItem("fairtab:theme", "dark"));
+      await page.reload();
       const html = page.locator("html");
       await expect(html).not.toHaveClass(/light/);
 
-      const themeBtn = page.getByLabel(/Switch to light theme/i);
+      const themeBtn = page.getByLabel(/Switch to light/i);
       await themeBtn.click();
       await expect(html).toHaveClass(/light/);
 
-      const themeBtnDark = page.getByLabel(/Switch to dark theme/i);
+      const themeBtnDark = page.getByLabel(/Switch to dark/i);
       await themeBtnDark.click();
       await expect(html).not.toHaveClass(/light/);
     } finally {

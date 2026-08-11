@@ -8,6 +8,7 @@
   --color-surface-secondary: hsl(var(--surface-secondary));
   --color-surface-elevated: hsl(var(--surface-elevated));
   --color-surface-hover: hsl(var(--surface-hover));
+  --color-border-color: hsl(var(--border-color));
 
   --color-text-primary: hsl(var(--text-primary));
   --color-text-secondary: hsl(var(--text-secondary));
@@ -50,16 +51,14 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
+  transition: background-color var(--duration-standard) var(--ease-standard), color var(--duration-standard) var(--ease-standard);
 }
 
 /* App Background Composition */
 .app-background {
   min-height: 100dvh;
-  background:
-    radial-gradient(circle at 15% 10%, rgba(124, 108, 255, 0.17), transparent 32%),
-    radial-gradient(circle at 86% 12%, rgba(34, 211, 238, 0.10), transparent 30%),
-    radial-gradient(circle at 52% 92%, rgba(168, 85, 247, 0.11), transparent 34%),
-    linear-gradient(145deg, #060810 0%, #090d18 52%, #070a12 100%);
+  background-color: hsl(var(--bg-base));
+  transition: background-color var(--duration-standard) var(--ease-standard);
 }
 
 /* Financial Numbers Tabular Styling */
@@ -67,40 +66,37 @@ body {
   font-variant-numeric: tabular-nums lining-nums;
 }
 
-/* Glassmorphism Styles */
+/* Restrained UI Premium Surfaces */
 .glass-subtle {
-  background: rgba(255, 255, 255, 0.035);
-  border: 1px solid rgba(255, 255, 255, 0.055);
-  backdrop-filter: blur(10px) saturate(120%);
-  -webkit-backdrop-filter: blur(10px) saturate(120%);
+  background-color: hsl(var(--surface-primary));
+  border: 1px solid hsl(var(--border-color));
+  transition: background-color var(--duration-standard) var(--ease-standard), border-color var(--duration-standard) var(--ease-standard);
 }
 
 .glass-standard {
-  background: rgba(15, 21, 35, 0.62);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow:
-    0 18px 50px rgba(0, 0, 0, 0.30),
-    inset 0 1px 0 rgba(255, 255, 255, 0.045);
-  backdrop-filter: blur(20px) saturate(135%);
-  -webkit-backdrop-filter: blur(20px) saturate(135%);
+  background-color: hsl(var(--surface-secondary));
+  border: 1px solid hsl(var(--border-color));
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  transition: background-color var(--duration-standard) var(--ease-standard), border-color var(--duration-standard) var(--ease-standard), box-shadow var(--duration-standard) var(--ease-standard);
 }
 
 .glass-elevated {
-  background: rgba(18, 25, 42, 0.80);
-  border: 1px solid rgba(255, 255, 255, 0.105);
-  box-shadow:
-    0 28px 80px rgba(0, 0, 0, 0.44),
-    inset 0 1px 0 rgba(255, 255, 255, 0.06);
-  backdrop-filter: blur(28px) saturate(150%);
-  -webkit-backdrop-filter: blur(28px) saturate(150%);
+  background-color: hsl(var(--surface-elevated));
+  border: 1px solid hsl(var(--border-color));
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  transition: background-color var(--duration-standard) var(--ease-standard), border-color var(--duration-standard) var(--ease-standard), box-shadow var(--duration-standard) var(--ease-standard);
 }
 
-/* Fallback Opaque Surfaces (backdrop-filter unsupported) */
+/* Fallback Opaque Surfaces */
 @supports not (backdrop-filter: blur(10px)) {
-  .glass-subtle,
-  .glass-standard,
+  .glass-subtle {
+    background-color: hsl(var(--surface-primary));
+  }
+  .glass-standard {
+    background-color: hsl(var(--surface-secondary));
+  }
   .glass-elevated {
-    background: rgba(14, 20, 34, 0.96);
+    background-color: hsl(var(--surface-elevated));
   }
 }
 

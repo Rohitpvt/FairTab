@@ -92,6 +92,7 @@ describe("App Shell and Layout", () => {
 describe("Theme Toggle and Persistence", () => {
   test("toggles theme and updates localStorage", () => {
     // Start fresh
+    localStorage.removeItem("fairtab:theme");
     localStorage.removeItem("theme");
 
     render(<ThemeToggle />);
@@ -99,17 +100,17 @@ describe("Theme Toggle and Persistence", () => {
     const toggleBtn = screen.getByRole("button", { name: /switch to/i });
     expect(toggleBtn).toBeInTheDocument();
 
-    // Default theme is dark
-    expect(localStorage.getItem("theme")).toBe("dark");
+    // Stored choice should be saved
+    expect(localStorage.getItem("fairtab:theme")).toBe("dark");
 
     // Click to toggle to light
     fireEvent.click(toggleBtn);
-    expect(localStorage.getItem("theme")).toBe("light");
+    expect(localStorage.getItem("fairtab:theme")).toBe("light");
     expect(document.documentElement.classList.contains("light")).toBe(true);
 
     // Toggle back to dark
     fireEvent.click(toggleBtn);
-    expect(localStorage.getItem("theme")).toBe("dark");
+    expect(localStorage.getItem("fairtab:theme")).toBe("dark");
     expect(document.documentElement.classList.contains("light")).toBe(false);
   });
 });

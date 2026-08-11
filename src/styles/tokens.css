@@ -1,11 +1,12 @@
 :root {
-  /* HSL bases for Tailwind integration */
+  /* Default Theme: Dark Mode values */
   --bg-base: 224 38% 5%;
   --bg-deep: 225 35% 7%;
   --surface-primary: 224 32% 10%;
   --surface-secondary: 222 29% 13%;
   --surface-elevated: 222 26% 16%;
   --surface-hover: 221 24% 19%;
+  --border-color: 222 20% 18%;
 
   --text-primary: 220 33% 97%;
   --text-secondary: 220 18% 72%;
@@ -22,11 +23,11 @@
   --info: 198 93% 60%;
 
   /* Radii */
-  --radius-sm: 0.625rem;
-  --radius-md: 0.875rem;
-  --radius-lg: 1.125rem;
-  --radius-xl: 1.5rem;
-  --radius-2xl: 2rem;
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.25rem;
+  --radius-2xl: 1.5rem;
   --radius-full: 9999px;
 
   /* Durations */
@@ -34,4 +35,29 @@
   --duration-standard: 180ms;
   --duration-slow: 260ms;
   --ease-standard: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* Light Theme overrides */
+.light {
+  --bg-base: 210 20% 98%;
+  --bg-deep: 210 15% 95%;
+  --surface-primary: 0 0% 100%;
+  --surface-secondary: 210 16% 96%;
+  --surface-elevated: 210 14% 93%;
+  --surface-hover: 210 10% 90%;
+  --border-color: 210 14% 88%;
+
+  --text-primary: 220 30% 12%;
+  --text-secondary: 220 14% 30%;
+  --text-muted: 220 10% 50%;
+  --text-disabled: 220 8% 70%;
+
+  --accent-indigo: 246 85% 58%;
+  --accent-violet: 271 80% 55%;
+  --accent-cyan: 188 85% 42%;
+
+  --success: 142 75% 35%;
+  --warning: 37 85% 40%;
+  --danger: 346 80% 48%;
+  --info: 198 85% 48%;
 }

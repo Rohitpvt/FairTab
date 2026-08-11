@@ -27,12 +27,12 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       "relative inline-flex items-center justify-center font-medium rounded-lg transition-all duration-150 ease-out focus-visible:outline-2 focus-visible:outline-accent-cyan focus-visible:outline-offset-2 active:scale-98 disabled:opacity-50 disabled:pointer-events-none disabled:active:scale-100";
 
     const variantStyles = {
-      primary: "bg-accent-indigo text-text-primary hover:bg-opacity-90 border border-transparent shadow-sm",
-      secondary: "glass-subtle text-text-primary hover:bg-surface-hover border border-white/10 shadow-sm",
-      danger: "bg-danger text-text-primary hover:bg-opacity-90 border border-transparent shadow-sm",
-      ghost: "text-text-secondary hover:bg-white/5 hover:text-text-primary border border-transparent",
+      primary: "bg-accent-indigo text-white hover:bg-opacity-90 border border-transparent shadow-sm",
+      secondary: "glass-subtle text-text-primary hover:bg-surface-hover border border-border-color shadow-sm",
+      danger: "bg-danger text-white hover:bg-opacity-90 border border-transparent shadow-sm",
+      ghost: "text-text-secondary hover:bg-surface-hover hover:text-text-primary border border-transparent",
       gradient:
-        "bg-gradient-to-r from-accent-indigo via-accent-violet to-accent-cyan text-text-primary shadow-lg border border-transparent hover:brightness-110",
+        "bg-accent-indigo text-white hover:bg-opacity-90 border border-transparent shadow-sm",
     };
 
     const sizeStyles = {

@@ -1,8 +1,9 @@
 import { describe, test, expect, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import { OverviewPage } from "../features/dashboard/OverviewPage";
 import { ExpensesPage } from "../features/expenses/ExpensesPage";
 import { NotificationsPage } from "../features/notifications/NotificationsPage";
+import { ThemeToggle } from "../components/feedback/FeedbackStates";
 
 // Mock providers and Auth
 vi.mock("../features/auth/AuthProvider", () => ({
@@ -78,5 +79,32 @@ describe("Production Dynamic Data Audit", () => {
     expect(screen.getByText("You have no notifications or activity log items at the moment.")).toBeInTheDocument();
     expect(screen.queryByText("Mark All Read")).not.toBeInTheDocument();
     expect(screen.queryByText("Clear")).not.toBeInTheDocument();
+  });
+
+  test("4. Theme toggles correctly and sets mutual-exclusivity classes on document root", () => {
+    // Clear localStorage values
+    localStorage.removeItem("fairtab:theme");
+    localStorage.removeItem("theme");
+
+    // Trigger matchMedia mock if needed
+    window.matchMedia = vi.fn().mockImplementation((query) => ({
+      matches: query.includes("dark"),
+      media: query,
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+    }));
+
+    render(<ThemeToggle />);
+    expect(localStorage.getItem("fairtab:theme")).toBe("dark");
+    expect(document.documentElement.classList.contains("dark")).toBe(true);
+    expect(document.documentElement.classList.contains("light")).toBe(false);
+
+    // Toggle once
+    const toggleBtn = screen.getByRole("button");
+    fireEvent.click(toggleBtn);
+    expect(localStorage.getItem("fairtab:theme")).toBe("light");
+    expect(document.documentElement.classList.contains("light")).toBe(true);
+    expect(document.documentElement.classList.contains("dark")).toBe(false);
   });
 });

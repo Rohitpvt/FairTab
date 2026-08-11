@@ -174,21 +174,35 @@ export const SyncIndicator: React.FC<SyncIndicatorProps> = ({
 
 export const ThemeToggle: React.FC = () => {
   const [theme, setTheme] = useState<"dark" | "light">(() => {
-    const savedTheme = localStorage.getItem("theme") as "dark" | "light" | null;
-    return savedTheme || "dark";
+    try {
+      const savedTheme = localStorage.getItem("fairtab:theme") || localStorage.getItem("theme");
+      if (savedTheme === "light" || savedTheme === "dark") {
+        return savedTheme;
+      }
+      // System default fallback
+      const systemDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+      return systemDark ? "dark" : "light";
+    } catch {
+      return "dark";
+    }
   });
 
   useEffect(() => {
-    document.documentElement.classList.toggle("light", theme === "light");
-    if (!localStorage.getItem("theme")) {
-      localStorage.setItem("theme", "dark");
+    const isDark = theme === "dark";
+    document.documentElement.classList.toggle("dark", isDark);
+    document.documentElement.classList.toggle("light", !isDark);
+    document.documentElement.style.colorScheme = isDark ? "dark" : "light";
+    try {
+      localStorage.setItem("fairtab:theme", theme);
+      // Deprecate legacy key
+      localStorage.removeItem("theme");
+    } catch {
+      // Ignore write errors
     }
   }, [theme]);
 
   const toggleTheme = () => {
-    const newTheme = theme === "dark" ? "light" : "dark";
-    setTheme(newTheme);
-    localStorage.setItem("theme", newTheme);
+    setTheme((prev) => (prev === "dark" ? "light" : "dark"));
   };
 
   return (

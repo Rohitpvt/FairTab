@@ -36,22 +36,22 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggleCollapse 
 
   return (
     <aside
-      className={`hidden md:flex flex-col h-screen sticky top-0 border-r border-white/5 glass-standard z-30 transition-all duration-180 ease-out ${
+      className={`hidden md:flex flex-col h-screen sticky top-0 border-r border-border-color glass-standard z-30 transition-all duration-180 ease-out ${
         isCollapsed ? "w-[80px]" : "w-[256px]"
       }`}
     >
       {/* Brand logo header */}
-      <div className="flex items-center justify-between p-5 border-b border-white/5 min-h-[72px]">
+      <div className="flex items-center justify-between p-5 border-b border-border-color min-h-[72px]">
         {!isCollapsed && (
           <div className="flex items-center gap-2">
-            <div className="h-7 w-7 rounded-lg bg-gradient-to-r from-accent-indigo via-accent-violet to-accent-cyan flex items-center justify-center font-black text-sm text-text-primary">
+            <div className="h-7 w-7 rounded-lg bg-accent-indigo flex items-center justify-center font-black text-sm text-white">
               FT
             </div>
             <span className="font-extrabold text-lg text-text-primary tracking-tight">FairTab</span>
           </div>
         )}
         {isCollapsed && (
-          <div className="mx-auto h-7 w-7 rounded-lg bg-gradient-to-r from-accent-indigo via-accent-violet to-accent-cyan flex items-center justify-center font-black text-sm text-text-primary">
+          <div className="mx-auto h-7 w-7 rounded-lg bg-accent-indigo flex items-center justify-center font-black text-sm text-white">
             FT
           </div>
         )}
@@ -68,8 +68,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggleCollapse 
               className={({ isActive }) =>
                 `flex items-center gap-3 px-3.5 py-3 rounded-lg text-sm font-medium transition-colors ${
                   isActive
-                    ? "bg-accent-indigo text-text-primary shadow-lg shadow-accent-indigo/10"
-                    : "text-text-secondary hover:bg-white/5 hover:text-text-primary"
+                    ? "bg-accent-indigo text-white shadow-sm"
+                    : "text-text-secondary hover:bg-surface-hover hover:text-text-primary"
                 } ${isCollapsed ? "justify-center" : ""}`
               }
               title={isCollapsed ? item.label : undefined}
@@ -82,10 +82,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggleCollapse 
       </nav>
 
       {/* Collapse button trigger */}
-      <div className="p-4 border-t border-white/5 flex items-center justify-center">
+      <div className="p-4 border-t border-border-color flex items-center justify-center">
         <button
           onClick={onToggleCollapse}
-          className="p-1.5 rounded-lg hover:bg-white/5 text-text-secondary hover:text-text-primary transition-colors cursor-pointer min-w-[36px] min-h-[36px] flex items-center justify-center"
+          className="p-1.5 rounded-lg hover:bg-surface-hover text-text-secondary hover:text-text-primary transition-colors cursor-pointer min-w-[36px] min-h-[36px] flex items-center justify-center"
           aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
         >
           {isCollapsed ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
