@@ -199,23 +199,76 @@ describe("Group Invitations & Notifications Backend Operations Tests", () => {
     expect(linkDoc.data()!.proposedRole).toBe("viewer");
     expect(linkDoc.data()!.status).toBe("active");
 
+    // Setup active Admin (Charlie) and active Member (David) and active Viewer (Eve) to verify notification recipients
+    const davidUid = "david-inv-test";
+    const eveUid = "eve-inv-test";
+
+    await db.doc(`groups/${groupId}/members/${charlieUid}`).set({
+      id: charlieUid,
+      groupId,
+      kind: "account",
+      userId: charlieUid,
+      displayName: "Charlie Admin",
+      role: "admin",
+      status: "active",
+    });
+
+    await db.doc(`groups/${groupId}/members/${davidUid}`).set({
+      id: davidUid,
+      groupId,
+      kind: "account",
+      userId: davidUid,
+      displayName: "David Member",
+      role: "member",
+      status: "active",
+    });
+
+    await db.doc(`groups/${groupId}/members/${eveUid}`).set({
+      id: eveUid,
+      groupId,
+      kind: "account",
+      userId: eveUid,
+      displayName: "Eve Viewer",
+      role: "viewer",
+      status: "active",
+    });
+
     // Bob requests to join via global link
     const contextBob = { auth: { uid: bobUid } } as any;
     const reqRes = await handleRequestJoinViaGlobalLink({ token: linkRes.token }, contextBob);
-    expect(reqRes.requestId).toBe(bobUid);
+    expect(reqRes.requestId).toBeDefined();
 
-    const joinReq = await db.doc(`groups/${groupId}/joinRequests/${bobUid}`).get();
-    expect(joinReq.exists).toBe(true);
-    expect(joinReq.data()!.status).toBe("pending");
-    expect(joinReq.data()!.requestedRole).toBe("viewer");
+    // Verify join request was created with random ID and pending status
+    const joinReqSnap = await db.doc(`groups/${groupId}/joinRequests/${reqRes.requestId}`).get();
+    expect(joinReqSnap.exists).toBe(true);
+    expect(joinReqSnap.data()!.status).toBe("pending");
+    expect(joinReqSnap.data()!.requestedRole).toBe("viewer");
+    expect(joinReqSnap.data()!.approverUids).toContain(aliceUid);
+    expect(joinReqSnap.data()!.approverUids).toContain(charlieUid);
+    expect(joinReqSnap.data()!.approverUids).not.toContain(davidUid);
+    expect(joinReqSnap.data()!.approverUids).not.toContain(eveUid);
 
-    // Admins get notifications
-    const adminNotification = await db.collection(`users/${aliceUid}/notifications`)
-      .where("type", "==", "join_request")
-      .where("applicantUid", "==", bobUid)
-      .get();
-    expect(adminNotification.empty).toBe(false);
-    expect(adminNotification.docs[0].data().status).toBe("pending");
+    // Verify notifications were created for Owner (Alice) and Admin (Charlie)
+    const aliceNotif = await db.doc(`users/${aliceUid}/notifications/${reqRes.requestId}_${aliceUid}`).get();
+    expect(aliceNotif.exists).toBe(true);
+    expect(aliceNotif.data()!.status).toBe("pending");
+
+    const charlieNotif = await db.doc(`users/${charlieUid}/notifications/${reqRes.requestId}_${charlieUid}`).get();
+    expect(charlieNotif.exists).toBe(true);
+    expect(charlieNotif.data()!.status).toBe("pending");
+
+    // Verify regular members, viewers, and applicant did not receive approval notifications
+    const davidNotif = await db.doc(`users/${davidUid}/notifications/${reqRes.requestId}_${davidUid}`).get();
+    expect(davidNotif.exists).toBe(false);
+
+    const eveNotif = await db.doc(`users/${eveUid}/notifications/${reqRes.requestId}_${eveUid}`).get();
+    expect(eveNotif.exists).toBe(false);
+
+    const bobNotif = await db.doc(`users/${bobUid}/notifications/${reqRes.requestId}_${bobUid}`).get();
+    expect(bobNotif.exists).toBe(false);
+
+    // Verify duplicate requests are rejected
+    await expect(handleRequestJoinViaGlobalLink({ token: linkRes.token }, contextBob)).rejects.toThrow();
 
     // Alice approves request
     const approveRes = await handleApproveJoinRequest({
@@ -224,20 +277,29 @@ describe("Group Invitations & Notifications Backend Operations Tests", () => {
     }, contextAlice);
     expect(approveRes.status).toBe("approved");
 
-    // Bob becomes member
+    // Verify Bob becomes member
     const bobMember = await db.doc(`groups/${groupId}/members/${bobUid}`).get();
     expect(bobMember.exists).toBe(true);
     expect(bobMember.data()!.role).toBe("viewer");
     expect(bobMember.data()!.status).toBe("active");
 
-    // Notification is approved
-    const updatedNotification = await db.doc(`users/${aliceUid}/notifications/${adminNotification.docs[0].id}`).get();
-    expect(updatedNotification.data()!.status).toBe("approved");
+    // Verify all admin/owner notifications are resolved to approved
+    const updatedAliceNotif = await db.doc(`users/${aliceUid}/notifications/${reqRes.requestId}_${aliceUid}`).get();
+    expect(updatedAliceNotif.data()!.status).toBe("approved");
 
-    // Applicant Bob gets notification approved
-    const bobNotification = await db.collection(`users/${bobUid}/notifications`)
+    const updatedCharlieNotif = await db.doc(`users/${charlieUid}/notifications/${reqRes.requestId}_${charlieUid}`).get();
+    expect(updatedCharlieNotif.data()!.status).toBe("approved");
+
+    // Verify applicant Bob received join_request_approved notification
+    const bobApprovedNotif = await db.collection(`users/${bobUid}/notifications`)
       .where("type", "==", "join_request_approved")
       .get();
-    expect(bobNotification.empty).toBe(false);
+    expect(bobApprovedNotif.empty).toBe(false);
+
+    // Verify concurrent approves remain safe/idempotent
+    await expect(handleApproveJoinRequest({
+      groupId,
+      applicantUid: bobUid
+    }, contextAlice)).rejects.toThrow();
   });
 });

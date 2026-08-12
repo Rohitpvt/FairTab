@@ -71,6 +71,12 @@ export const InviteMemberDialog: React.FC<InviteMemberDialogProps> = ({
       setGeneratedLinkId(res.linkId);
       toast.success("Global invite link created successfully!");
     } catch (error: any) {
+      console.error("Create global link error details:", {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        errorObject: error
+      });
       toast.error(error.message || "Failed to create global invite link.");
     } finally {
       setIsLoading(false);

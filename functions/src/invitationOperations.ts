@@ -479,10 +479,13 @@ export async function handleRequestJoinViaGlobalLink(
     throw new functions.https.HttpsError("already-exists", "You are already a member of this group.");
   }
 
-  // Check if duplicate pending join request exists
-  const reqRef = db.doc(`groups/${link.groupId}/joinRequests/${uid}`);
-  const reqSnap = await reqRef.get();
-  if (reqSnap.exists && reqSnap.data()!.status === "pending") {
+  // Check if duplicate pending join request exists by query
+  const duplicateRequests = await db.collection(`groups/${link.groupId}/joinRequests`)
+    .where("userId", "==", uid)
+    .where("status", "==", "pending")
+    .limit(1)
+    .get();
+  if (!duplicateRequests.empty) {
     throw new functions.https.HttpsError("already-exists", "You already have a pending join request for this group.");
   }
 
@@ -493,35 +496,44 @@ export async function handleRequestJoinViaGlobalLink(
   const userProfile = userSnap.data()!;
   const displayName = userProfile.displayName || "Someone";
 
+  const reqRef = db.collection(`groups/${link.groupId}/joinRequests`).doc();
+  const requestId = reqRef.id;
+
+  // Notify Owner/Admin users of this group (excluding applicant, inactive members, viewers, regular members, left members, or deleted users)
+  const membersSnap = await db.collection(`groups/${link.groupId}/members`).get();
+  const admins: string[] = [];
+  membersSnap.forEach((mDoc) => {
+    const m = mDoc.data();
+    if (
+      m.status === "active" &&
+      (m.role === "owner" || m.role === "admin") &&
+      mDoc.id !== uid
+    ) {
+      admins.push(mDoc.id);
+    }
+  });
+
   const requestDoc = {
-    id: uid,
+    id: requestId,
     groupId: link.groupId,
     groupName: link.groupName,
     userId: uid,
     displayName,
     requestedRole: link.proposedRole,
     status: "pending",
+    approverUids: admins,
     createdAt: FieldValue.serverTimestamp(),
     updatedAt: FieldValue.serverTimestamp(),
   };
 
   await reqRef.set(requestDoc);
 
-  // Notify Owner/Admin users of this group
-  const membersSnap = await db.collection(`groups/${link.groupId}/members`).get();
-  const admins: string[] = [];
-  membersSnap.forEach((mDoc) => {
-    const m = mDoc.data();
-    if (m.status === "active" && (m.role === "owner" || m.role === "admin")) {
-      admins.push(mDoc.id);
-    }
-  });
-
   const batch = db.batch();
   admins.forEach((adminUid) => {
-    const notifyRef = db.collection(`users/${adminUid}/notifications`).doc();
+    const notificationId = `${requestId}_${adminUid}`;
+    const notifyRef = db.doc(`users/${adminUid}/notifications/${notificationId}`);
     batch.set(notifyRef, {
-      id: notifyRef.id,
+      id: notificationId,
       type: "join_request",
       status: "pending",
       groupId: link.groupId,
@@ -530,13 +542,13 @@ export async function handleRequestJoinViaGlobalLink(
       applicantName: displayName,
       requestedRole: link.proposedRole,
       createdAt: FieldValue.serverTimestamp(),
-      joinRequestId: uid,
+      joinRequestId: requestId,
     });
   });
 
   await batch.commit();
 
-  return { requestId: uid };
+  return { requestId };
 }
 
 // ==========================================
@@ -571,12 +583,17 @@ export async function handleApproveJoinRequest(
     throw new functions.https.HttpsError("failed-precondition", "Group is not active.");
   }
 
-  const reqRef = db.doc(`groups/${groupId}/joinRequests/${applicantUid}`);
-  const reqSnap = await reqRef.get();
-  if (!reqSnap.exists || reqSnap.data()!.status !== "pending") {
+  const reqQuery = await db.collection(`groups/${groupId}/joinRequests`)
+    .where("userId", "==", applicantUid)
+    .where("status", "==", "pending")
+    .limit(1)
+    .get();
+  if (reqQuery.empty) {
     throw new functions.https.HttpsError("not-found", "Join request not found or already processed.");
   }
-  const joinRequest = reqSnap.data()!;
+  const reqDoc = reqQuery.docs[0];
+  const reqRef = reqDoc.ref;
+  const joinRequest = reqDoc.data()!;
 
   // Check if applicant is already a member
   const memberRef = db.doc(`groups/${groupId}/members/${applicantUid}`);
@@ -600,7 +617,7 @@ export async function handleApproveJoinRequest(
   await db.runTransaction(async (tx) => {
     // Transactional safety checks
     const reqTx = await tx.get(reqRef);
-    if (reqTx.data()!.status !== "pending") {
+    if (!reqTx.exists || reqTx.data()!.status !== "pending") {
       throw new functions.https.HttpsError("failed-precondition", "Join request already processed.");
     }
 
@@ -657,14 +674,23 @@ export async function handleApproveJoinRequest(
     });
   });
 
-  // Resolve notifications on all admins
+  const batch = db.batch();
+
+  // Resolve notifications deterministically on all eligible approvers recorded
+  const approverUids = joinRequest.approverUids || [];
+  approverUids.forEach((adminUid: string) => {
+    const notificationId = `${joinRequest.id}_${adminUid}`;
+    const notifyRef = db.doc(`users/${adminUid}/notifications/${notificationId}`);
+    batch.set(notifyRef, { status: "approved" }, { merge: true });
+  });
+
+  // Fallback resolve notifications on all admins
   const notifications = await db.collectionGroup("notifications")
     .where("groupId", "==", groupId)
     .where("applicantUid", "==", applicantUid)
     .where("type", "==", "join_request")
     .get();
 
-  const batch = db.batch();
   notifications.forEach((nDoc) => {
     batch.update(nDoc.ref, {
       status: "approved",
@@ -719,25 +745,40 @@ export async function handleDeclineJoinRequest(
     throw new functions.https.HttpsError("failed-precondition", "Group is not active.");
   }
 
-  const reqRef = db.doc(`groups/${groupId}/joinRequests/${applicantUid}`);
-  const reqSnap = await reqRef.get();
-  if (!reqSnap.exists || reqSnap.data()!.status !== "pending") {
+  const reqQuery = await db.collection(`groups/${groupId}/joinRequests`)
+    .where("userId", "==", applicantUid)
+    .where("status", "==", "pending")
+    .limit(1)
+    .get();
+  if (reqQuery.empty) {
     throw new functions.https.HttpsError("not-found", "Join request not found or already processed.");
   }
+  const reqDoc = reqQuery.docs[0];
+  const reqRef = reqDoc.ref;
+  const joinRequest = reqDoc.data()!;
 
   await reqRef.update({
     status: "declined",
     updatedAt: FieldValue.serverTimestamp(),
   });
 
-  // Resolve notifications on all admins
+  const batch = db.batch();
+
+  // Resolve notifications deterministically on all eligible approvers recorded
+  const approverUids = joinRequest.approverUids || [];
+  approverUids.forEach((adminUid: string) => {
+    const notificationId = `${joinRequest.id}_${adminUid}`;
+    const notifyRef = db.doc(`users/${adminUid}/notifications/${notificationId}`);
+    batch.set(notifyRef, { status: "declined" }, { merge: true });
+  });
+
+  // Fallback resolve notifications on all admins
   const notifications = await db.collectionGroup("notifications")
     .where("groupId", "==", groupId)
     .where("applicantUid", "==", applicantUid)
     .where("type", "==", "join_request")
     .get();
 
-  const batch = db.batch();
   notifications.forEach((nDoc) => {
     batch.update(nDoc.ref, {
       status: "declined",

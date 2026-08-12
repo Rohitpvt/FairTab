@@ -186,8 +186,8 @@ service cloud.firestore {
       allow delete: if false;
 
       // Join Requests rules
-      match /joinRequests/{userId} {
-        allow read: if isSignedIn() && (request.auth.uid == userId || isOwnerOrAdmin(groupId, request.auth.uid));
+      match /joinRequests/{requestId} {
+        allow read: if isSignedIn() && (request.auth.uid == resource.data.userId || isOwnerOrAdmin(groupId, request.auth.uid));
         allow write: if false;
       }
 

@@ -59,7 +59,7 @@ export const NotificationsPage: React.FC = () => {
 
   const handleApprove = async (notif: NotificationItem) => {
     if (!notif.applicantUid) return;
-    setProcessingId(notif.id);
+    setProcessingId(`${notif.id}_approve`);
     try {
       await fairtabApi.invitations.approveJoinRequest({
         groupId: notif.groupId,
@@ -75,7 +75,7 @@ export const NotificationsPage: React.FC = () => {
 
   const handleDecline = async (notif: NotificationItem) => {
     if (!notif.applicantUid) return;
-    setProcessingId(notif.id);
+    setProcessingId(`${notif.id}_decline`);
     try {
       await fairtabApi.invitations.declineJoinRequest({
         groupId: notif.groupId,
@@ -161,6 +161,7 @@ export const NotificationsPage: React.FC = () => {
                               onClick={() => handleDecline(notif)}
                               variant="ghost"
                               className="px-3 py-1.5 h-8 text-xs text-danger hover:bg-danger/5 border border-white/5"
+                              isLoading={processingId === `${notif.id}_decline`}
                               disabled={processingId !== null}
                             >
                               <X className="h-3.5 w-3.5 mr-1" /> Decline
@@ -169,8 +170,8 @@ export const NotificationsPage: React.FC = () => {
                               onClick={() => handleApprove(notif)}
                               variant="gradient"
                               className="px-3 py-1.5 h-8 text-xs"
-                              isLoading={processingId === notif.id}
-                              disabled={processingId !== null && processingId !== notif.id}
+                              isLoading={processingId === `${notif.id}_approve`}
+                              disabled={processingId !== null}
                             >
                               <Check className="h-3.5 w-3.5 mr-1" /> Approve
                             </Button>
