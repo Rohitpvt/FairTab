@@ -4,7 +4,7 @@ service cloud.firestore {
     
     // User Profile security rules
     match /users/{userId} {
-      function isOwner(userId) {
+      function isUserSelf(userId) {
         return request.auth != null && request.auth.uid == userId;
       }
       
@@ -17,9 +17,9 @@ service cloud.firestore {
         ];
       }
 
-      allow read: if isOwner(userId);
+      allow read: if isUserSelf(userId);
       
-      allow create: if isOwner(userId)
+      allow create: if isUserSelf(userId)
         && request.resource.data.uid == userId
         && request.resource.data.email == request.auth.token.email
         && request.resource.data.createdBy == userId
@@ -32,7 +32,7 @@ service cloud.firestore {
         && request.resource.data.onboardingCompleted == false
         && request.resource.data.keys().hasOnly(allowedFields());
         
-      allow update: if isOwner(userId)
+      allow update: if isUserSelf(userId)
         && request.resource.data.uid == resource.data.uid
         && request.resource.data.email == resource.data.email
         && request.resource.data.createdBy == resource.data.createdBy
@@ -47,7 +47,7 @@ service cloud.firestore {
       allow delete: if false;
 
       match /notifications/{notificationId} {
-        allow read: if isOwner(userId);
+        allow read: if isUserSelf(userId);
         allow write: if false;
       }
     }
