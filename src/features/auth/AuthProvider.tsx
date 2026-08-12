@@ -1,6 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from "react";
-import { onAuthStateChanged, setPersistence, browserLocalPersistence, browserSessionPersistence } from "firebase/auth";
+import { onAuthStateChanged } from "firebase/auth";
 import type { User } from "firebase/auth";
 import { auth } from "../../infrastructure/firebase/firebase";
 import { authService } from "../../infrastructure/firebase/authService";
@@ -91,16 +91,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } else {
         setUser(u);
         
-        // Fetch trusted status for active user
-        const isTrusted = localStorage.getItem(getTrustedKey(u.uid)) === "true";
-        setTrustedDevice(isTrusted);
-        
-        // Dynamically set Firebase Auth persistence based on device preference before retrieving
+        // Fetch trusted status for active user, resolving any pending choice first
+        let isTrusted: boolean;
         try {
-          await setPersistence(auth, isTrusted ? browserLocalPersistence : browserSessionPersistence);
-        } catch (e) {
-          console.warn("Failed to set auth persistence:", e);
+          const pending = sessionStorage.getItem("fairtab:pending-remember");
+          if (pending !== null) {
+            isTrusted = pending === "true";
+            if (isTrusted) {
+              localStorage.setItem(getTrustedKey(u.uid), "true");
+              localStorage.setItem("fairtab:active-trusted-device", "true");
+            } else {
+              localStorage.removeItem(getTrustedKey(u.uid));
+            }
+            sessionStorage.removeItem("fairtab:pending-remember");
+          } else {
+            isTrusted = localStorage.getItem(getTrustedKey(u.uid)) === "true";
+          }
+        } catch (err) {
+          console.warn("Failed to check sessionStorage pending remember:", err);
+          isTrusted = localStorage.getItem(getTrustedKey(u.uid)) === "true";
         }
+        setTrustedDevice(isTrusted);
 
         setAuthState("authenticated-profile-loading");
         try {
@@ -135,13 +146,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [bootstrapProfile, refreshProfile]);
 
   const setTrustedDevicePreference = useCallback(async (value: boolean, triggerReload = false) => {
-    if (!user) return;
+    if (!user) {
+      try {
+        sessionStorage.setItem("fairtab:pending-remember", value ? "true" : "false");
+      } catch (e) {
+        console.warn("sessionStorage is unavailable:", e);
+      }
+      setTrustedDevice(value);
+      return;
+    }
     
     const key = getTrustedKey(user.uid);
     if (value) {
       localStorage.setItem(key, "true");
       localStorage.setItem("fairtab:active-trusted-device", "true");
-      await setPersistence(auth, browserLocalPersistence);
     } else {
       localStorage.removeItem(key);
       // Scan for any other active trusted devices
@@ -151,7 +169,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (!anyOtherTrusted) {
         localStorage.removeItem("fairtab:active-trusted-device");
       }
-      await setPersistence(auth, browserSessionPersistence);
     }
     setTrustedDevice(value);
 

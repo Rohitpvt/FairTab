@@ -3,19 +3,29 @@ import { authService } from "../../infrastructure/firebase/authService";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 
+import { useAuth } from "./AuthProvider";
+
 interface GoogleSignInButtonProps {
   disabled?: boolean;
+  rememberDevice?: boolean;
 }
 
-export const GoogleSignInButton: React.FC<GoogleSignInButtonProps> = ({ disabled = false }) => {
+export const GoogleSignInButton: React.FC<GoogleSignInButtonProps> = ({ disabled = false, rememberDevice = false }) => {
   const [isLoading, setIsLoading] = useState(false);
+  const { setTrustedDevicePreference } = useAuth();
 
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
     try {
-      await authService.signInWithGoogle();
+      await setTrustedDevicePreference(rememberDevice);
+      await authService.signInWithGoogle(rememberDevice);
       toast.success("Successfully logged in with Google!");
     } catch (error: unknown) {
+      try {
+        sessionStorage.removeItem("fairtab:pending-remember");
+      } catch (e) {
+        console.warn("Failed to clean up pending remember preference:", e);
+      }
       const errorObj = error instanceof Error ? error : new Error(String(error));
       toast.error(errorObj.message || "Google authentication failed.");
     } finally {

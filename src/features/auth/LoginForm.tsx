@@ -22,6 +22,7 @@ export const LoginForm: React.FC = () => {
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors }
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -32,6 +33,9 @@ export const LoginForm: React.FC = () => {
     }
   });
 
+  // eslint-disable-next-line react-hooks/incompatible-library
+  const rememberDevice = watch("rememberDevice");
+
   const onSubmit = async (data: LoginFormData) => {
     setIsLoading(false);
     setIsLoading(true);
@@ -40,10 +44,15 @@ export const LoginForm: React.FC = () => {
       // Ensure persistence is set BEFORE the sign-in operation
       await setTrustedDevicePreference(data.rememberDevice);
 
-      await authService.loginEmail(data.email, data.password);
+      await authService.loginEmail(data.email, data.password, data.rememberDevice);
       toast.success("Successfully logged in!");
       navigate("/overview");
     } catch (err: unknown) {
+      try {
+        sessionStorage.removeItem("fairtab:pending-remember");
+      } catch (e) {
+        console.warn("sessionStorage cleanup error:", e);
+      }
       const errorObj = err instanceof Error ? err : new Error(String(err));
       const msg = errorObj.message || "Login failed.";
       setSubmitError(msg);
@@ -169,7 +178,7 @@ export const LoginForm: React.FC = () => {
       </div>
 
       {/* Google Provider Button */}
-      <GoogleSignInButton disabled={isLoading} />
+      <GoogleSignInButton disabled={isLoading} rememberDevice={rememberDevice} />
 
       {/* Bottom redirection Link */}
       <div className="text-center text-xs text-text-muted mt-2">

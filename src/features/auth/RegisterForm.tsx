@@ -44,7 +44,7 @@ export const RegisterForm: React.FC = () => {
       await setTrustedDevicePreference(data.rememberDevice);
 
       // 1. Create the Auth credentials
-      const credential = await authService.registerEmail(data.email, data.password);
+      const credential = await authService.registerEmail(data.email, data.password, data.rememberDevice);
 
       // 2. Create profile document idempotently
       await bootstrapProfile(credential.user, data.displayName);
@@ -57,6 +57,11 @@ export const RegisterForm: React.FC = () => {
       // 4. Redirect to verification screen
       navigate("/auth/verify-email");
     } catch (err: unknown) {
+      try {
+        sessionStorage.removeItem("fairtab:pending-remember");
+      } catch (e) {
+        console.warn("sessionStorage cleanup error:", e);
+      }
       const errorObj = err instanceof Error ? err : new Error(String(err));
       const msg = errorObj.message || "Registration failed.";
       setSubmitError(msg);

@@ -5,10 +5,19 @@ import {
   sendPasswordResetEmail,
   sendEmailVerification as firebaseSendEmailVerification,
   signInWithPopup,
-  GoogleAuthProvider
+  GoogleAuthProvider,
+  setPersistence,
+  browserLocalPersistence,
+  browserSessionPersistence
 } from "firebase/auth";
 import type { User, UserCredential } from "firebase/auth";
 import { auth } from "./firebase";
+
+async function applyPersistence(rememberDevice?: boolean) {
+  if (rememberDevice !== undefined) {
+    await setPersistence(auth, rememberDevice ? browserLocalPersistence : browserSessionPersistence);
+  }
+}
 
 /**
  * Translates Firebase authentication error codes to friendly display messages.
@@ -54,8 +63,9 @@ export const authService = {
   /**
    * Register a user with email and password
    */
-  async registerEmail(email: string, password: string): Promise<UserCredential> {
+  async registerEmail(email: string, password: string, rememberDevice?: boolean): Promise<UserCredential> {
     try {
+      await applyPersistence(rememberDevice);
       return await createUserWithEmailAndPassword(auth, email, password);
     } catch (error: unknown) {
       const code = isFirebaseError(error) ? error.code : "unknown";
@@ -66,8 +76,9 @@ export const authService = {
   /**
    * Sign in with email and password
    */
-  async loginEmail(email: string, password: string): Promise<UserCredential> {
+  async loginEmail(email: string, password: string, rememberDevice?: boolean): Promise<UserCredential> {
     try {
+      await applyPersistence(rememberDevice);
       return await signInWithEmailAndPassword(auth, email, password);
     } catch (error: unknown) {
       const code = isFirebaseError(error) ? error.code : "unknown";
@@ -78,8 +89,9 @@ export const authService = {
   /**
    * Google OAuth sign-in flow
    */
-  async signInWithGoogle(): Promise<UserCredential> {
+  async signInWithGoogle(rememberDevice?: boolean): Promise<UserCredential> {
     try {
+      await applyPersistence(rememberDevice);
       const provider = new GoogleAuthProvider();
       // Configure custom parameters if necessary
       provider.setCustomParameters({ prompt: "select_account" });

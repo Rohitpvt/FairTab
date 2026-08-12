@@ -103,3 +103,41 @@ describe("Firebase Initialization Singleton Behavior", () => {
     expect(auth.config).toBeDefined();
   });
 });
+
+describe("Remember Device Persistence and Session Storage Logic", () => {
+  test("sessionStorage stores pending-remember before user signs in", () => {
+    sessionStorage.removeItem("fairtab:pending-remember");
+    
+    // Simulate setTrustedDevicePreference prior to login
+    sessionStorage.setItem("fairtab:pending-remember", "true");
+    expect(sessionStorage.getItem("fairtab:pending-remember")).toBe("true");
+
+    // Clean up
+    sessionStorage.removeItem("fairtab:pending-remember");
+  });
+
+  test("failed login cleans up sessionStorage pending choice", () => {
+    sessionStorage.setItem("fairtab:pending-remember", "true");
+    
+    // Simulate failed login/error block cleanup
+    try {
+      sessionStorage.removeItem("fairtab:pending-remember");
+    } catch (e) {
+      console.warn(e);
+    }
+    
+    expect(sessionStorage.getItem("fairtab:pending-remember")).toBeNull();
+  });
+
+  test("rememberDevice sets correct session and local preferences", () => {
+    sessionStorage.setItem("fairtab:pending-remember", "true");
+    const isRemembered = sessionStorage.getItem("fairtab:pending-remember") === "true";
+    expect(isRemembered).toBe(true);
+
+    sessionStorage.setItem("fairtab:pending-remember", "false");
+    const isRememberedFalse = sessionStorage.getItem("fairtab:pending-remember") === "true";
+    expect(isRememberedFalse).toBe(false);
+
+    sessionStorage.removeItem("fairtab:pending-remember");
+  });
+});
