@@ -23,7 +23,7 @@ interface NotificationItem {
 
 export const NotificationsPage: React.FC = () => {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
-  const [isLoading, setIsLoading] = useState(() => !auth.currentUser);
+  const [isLoading, setIsLoading] = useState(() => !!auth.currentUser);
   const [processingId, setProcessingId] = useState<string | null>(null);
 
   const currentUser = auth.currentUser;
@@ -102,8 +102,8 @@ export const NotificationsPage: React.FC = () => {
           </div>
         ) : notifications.length === 0 ? (
           <EmptyState
-            title="All Caught Up"
-            description="You have no notifications or pending activities."
+            title="Clean Slate"
+            description="You have no notifications or activity log items at the moment."
             icon={<Bell className="h-8 w-8 text-text-muted" />}
           />
         ) : (
