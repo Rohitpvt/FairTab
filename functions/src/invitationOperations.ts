@@ -70,7 +70,7 @@ interface CreateEmailInvitationInput {
 export async function handleCreateEmailInvitation(
   data: CreateEmailInvitationInput,
   context: functions.https.CallableContext
-): Promise<{ invitationId: string; status: string }> {
+): Promise<{ invitationId: string; status: string; token: string }> {
   if (!context.auth) {
     throw new functions.https.HttpsError("unauthenticated", "Authentication required.");
   }
@@ -187,7 +187,7 @@ export async function handleCreateEmailInvitation(
     await db.doc(`invitations/${inviteId}`).update({
       deliveryStatus: "sent",
     });
-    return { invitationId: inviteId, status: "sent" };
+    return { invitationId: inviteId, status: "sent", token: rawToken };
   } catch (error: any) {
     await db.doc(`invitations/${inviteId}`).update({
       deliveryStatus: "failed",
