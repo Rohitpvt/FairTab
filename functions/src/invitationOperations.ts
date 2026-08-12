@@ -126,20 +126,18 @@ export async function handleCreateEmailInvitation(
     .where("status", "==", "pending")
     .get();
 
-  let inviteId = "";
-  let invitationDoc: any = null;
+  let inviteId: string;
 
   if (!existingInvites.empty) {
     const doc = existingInvites.docs[0];
     inviteId = doc.id;
-    invitationDoc = doc.data();
   } else {
     const inviteRef = db.collection("invitations").doc();
     inviteId = inviteRef.id;
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7);
 
-    invitationDoc = {
+    const invitationDoc = {
       id: inviteId,
       groupId,
       groupName: groupData.name,

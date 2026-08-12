@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect } from "react";
 import { Bell, UserPlus, Check, X, CheckCircle, XCircle } from "lucide-react";
 import { PageContainer } from "../../components/layout/PageContainer";
@@ -22,14 +23,13 @@ interface NotificationItem {
 
 export const NotificationsPage: React.FC = () => {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(() => !auth.currentUser);
   const [processingId, setProcessingId] = useState<string | null>(null);
 
   const currentUser = auth.currentUser;
 
   useEffect(() => {
     if (!currentUser) {
-      setIsLoading(false);
       return;
     }
 

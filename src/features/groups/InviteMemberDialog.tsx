@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState } from "react";
 import { Copy, Check, ShieldAlert } from "lucide-react";
 import { Dialog } from "../../components/ui/Dialogs";

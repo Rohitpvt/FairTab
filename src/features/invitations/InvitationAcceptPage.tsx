@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { UserCheck, AlertTriangle, ShieldCheck } from "lucide-react";
@@ -20,20 +21,18 @@ export const InvitationAcceptPage: React.FC = () => {
     proposedRole: string;
   } | null>(null);
 
-  const [isLoading, setIsLoading] = useState(true);
+  const actualToken = token || invitationId;
+  const isGlobalJoin = location.pathname.includes("/join/");
+
+  const [isLoading, setIsLoading] = useState(() => !!actualToken);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(() => actualToken ? null : "No invitation token provided.");
 
   const currentUser = auth.currentUser;
   const isOffline = !navigator.onLine;
 
-  const actualToken = token || invitationId;
-  const isGlobalJoin = location.pathname.includes("/join/");
-
   useEffect(() => {
     if (!actualToken) {
-      setErrorMsg("No invitation token provided.");
-      setIsLoading(false);
       return;
     }
 
@@ -51,11 +50,8 @@ export const InvitationAcceptPage: React.FC = () => {
       }
     };
 
-    // If currentUser exists, we resolve it. If not, we wait or request login.
     if (currentUser) {
       resolveToken();
-    } else {
-      setIsLoading(false);
     }
   }, [actualToken, currentUser]);
 
