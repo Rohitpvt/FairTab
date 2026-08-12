@@ -49,7 +49,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setProfile(p);
         
         // Google authentication uses Firebase verified-email state
-        const requireVerification = import.meta.env.VITE_REQUIRE_EMAIL_VERIFICATION !== "false";
+        const requireVerification = false;
         const isVerified = !requireVerification || auth.currentUser.emailVerified || auth.currentUser.providerData.some(p => p.providerId === "google.com");
         
         if (!isVerified) {
@@ -119,7 +119,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           if (p) {
             setProfile(p);
             
-            const requireVerification = import.meta.env.VITE_REQUIRE_EMAIL_VERIFICATION !== "false";
+            const requireVerification = false;
             const isVerified = !requireVerification || u.emailVerified || u.providerData.some(prov => prov.providerId === "google.com");
             
             if (!isVerified) {
