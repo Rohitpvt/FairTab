@@ -13,6 +13,16 @@ import {
   handleUpdateRecurringTemplate
 } from "../functions/src/recurringOperations.js";
 import { handleCreateSettlement, handleVoidSettlement } from "../functions/src/settlementOperations.js";
+import {
+  handleCreateEmailInvitation,
+  handleAcceptEmailInvitation,
+  handleCreateGlobalInviteLink,
+  handleRevokeGlobalInviteLink,
+  handleRequestJoinViaGlobalLink,
+  handleApproveJoinRequest,
+  handleDeclineJoinRequest,
+  handleResolveInviteToken
+} from "../functions/src/invitationOperations.js";
 import { getS3Client } from "./_lib/s3Client.js";
 import { createPresignedPost } from "@aws-sdk/s3-presigned-post";
 import { GetObjectCommand } from "@aws-sdk/client-s3";
@@ -98,6 +108,14 @@ const standardHandlers: Record<string, (data: any, context: any) => Promise<any>
   "/api/recurring/update-template": handleUpdateRecurringTemplate,
   "/api/settlements/create": handleCreateSettlement,
   "/api/settlements/void": handleVoidSettlement,
+  "/api/invitations/create-email": handleCreateEmailInvitation,
+  "/api/invitations/accept-email": handleAcceptEmailInvitation,
+  "/api/invitations/create-global": handleCreateGlobalInviteLink,
+  "/api/invitations/revoke-global": handleRevokeGlobalInviteLink,
+  "/api/invitations/request-join-global": handleRequestJoinViaGlobalLink,
+  "/api/invitations/approve-join-request": handleApproveJoinRequest,
+  "/api/invitations/decline-join-request": handleDeclineJoinRequest,
+  "/api/invitations/resolve-token": handleResolveInviteToken,
 };
 
 const authenticatedRouter = withAuth(async (req, res, context) => {

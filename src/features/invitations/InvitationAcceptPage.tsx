@@ -1,96 +1,137 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
-import { Calendar, UserCheck, AlertTriangle } from "lucide-react";
+import { UserCheck, AlertTriangle, ShieldCheck } from "lucide-react";
 import { PageContainer } from "../../components/layout/PageContainer";
-import { invitationService } from "../../infrastructure/firebase/invitationService";
-import type { InvitationDocument } from "./invitationSchema";
 import { Button } from "../../components/ui/Button";
 import { Skeleton } from "../../components/ui/Skeleton";
 import { auth } from "../../infrastructure/firebase/firebase";
+import { fairtabApi } from "../../infrastructure/api/fairtabApi";
 import { toast } from "sonner";
 
 export const InvitationAcceptPage: React.FC = () => {
-  const { invitationId } = useParams<{ invitationId: string }>();
+  const { invitationId, token } = useParams<{ invitationId?: string; token?: string }>();
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [invitation, setInvitation] = useState<InvitationDocument | null>(null);
+  const [resolvedDetails, setResolvedDetails] = useState<{
+    type: "email" | "global";
+    groupName: string;
+    inviterName?: string;
+    proposedRole: string;
+  } | null>(null);
+
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const currentUser = auth.currentUser;
   const isOffline = !navigator.onLine;
-  const [now] = useState(() => Date.now());
+
+  const actualToken = token || invitationId;
+  const isGlobalJoin = location.pathname.includes("/join/");
 
   useEffect(() => {
-    if (!invitationId) return;
+    if (!actualToken) {
+      setErrorMsg("No invitation token provided.");
+      setIsLoading(false);
+      return;
+    }
 
-    const fetchInvite = async () => {
+    const resolveToken = async () => {
       setIsLoading(true);
       setErrorMsg(null);
       try {
-        const invite = await invitationService.getInvitation(invitationId);
-        setInvitation(invite);
-      } catch (err: unknown) {
-        const e = err instanceof Error ? err : new Error(String(err));
-        setErrorMsg(e.message || "Failed to fetch invitation details.");
+        // We call resolveInviteToken backend helper to get the details secure server-side
+        const res: any = await fairtabApi.invitations.resolveInviteToken({ token: actualToken });
+        setResolvedDetails(res);
+      } catch (err: any) {
+        setErrorMsg(err.message || "Failed to resolve invitation token.");
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchInvite();
-  }, [invitationId]);
+    // If currentUser exists, we resolve it. If not, we wait or request login.
+    if (currentUser) {
+      resolveToken();
+    } else {
+      setIsLoading(false);
+    }
+  }, [actualToken, currentUser]);
 
-  const handleAccept = async () => {
+  const handleAcceptEmailInvite = async () => {
     if (isOffline) {
-      toast.error("A connection is required for this membership change.");
+      toast.error("Internet connection required.");
       return;
     }
-    if (!invitationId || !invitation) return;
+    if (!actualToken) return;
 
     setIsProcessing(true);
     try {
-      // Force-refresh the ID token to ensure email_verified claim is current
+      // Force refresh auth token for email_verified claim update
       if (auth.currentUser) {
         await auth.currentUser.getIdToken(true);
       }
-      await invitationService.acceptInvitation(invitationId);
-      toast.success(`Joined group "${invitation.groupName}"!`);
-      navigate(`/groups/${invitation.groupId}`);
-    } catch (err: unknown) {
-      const e = err instanceof Error ? err : new Error(String(err));
-      toast.error(e.message || "Failed to accept invitation.");
+      const res: any = await fairtabApi.invitations.acceptEmail({ token: actualToken });
+      toast.success("Joined group successfully!");
+      navigate(`/groups/${res.groupId}`);
+    } catch (err: any) {
+      toast.error(err.message || "Failed to accept invitation.");
     } finally {
       setIsProcessing(false);
     }
   };
 
-  const handleDecline = async () => {
+  const handleRequestJoin = async () => {
     if (isOffline) {
-      toast.error("A connection is required for this membership change.");
+      toast.error("Internet connection required.");
       return;
     }
-    if (!invitationId) return;
+    if (!actualToken) return;
 
     setIsProcessing(true);
     try {
-      await invitationService.declineInvitation(invitationId);
-      toast.success("Invitation declined.");
+      await fairtabApi.invitations.requestJoinGlobal({ token: actualToken });
+      toast.success("Join request submitted successfully!");
       navigate("/groups");
-    } catch (err: unknown) {
-      const e = err instanceof Error ? err : new Error(String(err));
-      toast.error(e.message || "Failed to decline invitation.");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to submit join request.");
     } finally {
       setIsProcessing(false);
     }
   };
 
+  if (!currentUser) {
+    // Store token in sessionStorage for redirection bridge
+    if (actualToken) {
+      sessionStorage.setItem("fairtab:pending-invite-token", actualToken);
+      sessionStorage.setItem("fairtab:pending-invite-type", isGlobalJoin ? "global" : "email");
+    }
+
+    const loginRedirectUrl = `/auth/login?redirect=${encodeURIComponent(location.pathname)}`;
+    return (
+      <PageContainer title="Sign In Required" description="Join shared ledger groups on FairTab.">
+        <div className="max-w-md mx-auto text-left mt-8 glass-elevated border border-white/10 rounded-2xl p-6 flex flex-col gap-4">
+          <p className="text-sm text-text-secondary leading-relaxed">
+            You opened an invitation link. Please sign in or register to join the group or submit a join request.
+          </p>
+          <div className="flex gap-3">
+            <Button onClick={() => navigate(`/auth/register?redirect=${encodeURIComponent(location.pathname)}`)} variant="secondary" className="flex-1">
+              Register
+            </Button>
+            <Button onClick={() => navigate(loginRedirectUrl)} variant="gradient" className="flex-1">
+              Sign In
+            </Button>
+          </div>
+        </div>
+      </PageContainer>
+    );
+  }
+
   if (isLoading) {
     return (
-      <PageContainer title="Accept Invitation" description="Retrieving group invitation settings...">
-        <div className="flex flex-col gap-4">
+      <PageContainer title="Resolving Invitation" description="Fetching secure invitation details...">
+        <div className="max-w-md mx-auto flex flex-col gap-4 mt-8">
           <Skeleton className="h-12 w-full" />
           <Skeleton className="h-12 w-full" />
           <Skeleton className="h-12 w-full" />
@@ -99,7 +140,7 @@ export const InvitationAcceptPage: React.FC = () => {
     );
   }
 
-  if (errorMsg || !invitation) {
+  if (errorMsg || !resolvedDetails) {
     return (
       <PageContainer title="Invalid Invitation" description={errorMsg || "The invitation could not be resolved."}>
         <div className="max-w-md mx-auto text-center mt-12">
@@ -111,134 +152,89 @@ export const InvitationAcceptPage: React.FC = () => {
     );
   }
 
-  // Verification checks
-  const expiresAtTs = invitation.expiresAt as { toDate?: () => Date; seconds?: number } | null | undefined;
-  const expiresDate = expiresAtTs?.toDate
-    ? expiresAtTs.toDate()
-    : expiresAtTs?.seconds
-    ? new Date(expiresAtTs.seconds * 1000)
-    : new Date();
-  const isExpired = expiresDate.getTime() < now;
-
-  if (!currentUser) {
-    // Redirect to login page
-    const loginRedirectUrl = `/auth/login?redirect=${encodeURIComponent(location.pathname)}`;
-    return (
-      <PageContainer title="Sign In Required" description="You must be logged in to accept group invitations.">
-        <div className="max-w-md mx-auto text-left mt-8 glass-elevated border border-white/10 rounded-2xl p-6 flex flex-col gap-4">
-          <p className="text-sm text-text-secondary">
-            You received an invitation to join <span className="font-semibold text-text-primary">"{invitation.groupName}"</span>.
-          </p>
-          <Button onClick={() => navigate(loginRedirectUrl)} variant="gradient" className="w-full">
-            Sign In to Accept
-          </Button>
-        </div>
-      </PageContainer>
-    );
-  }
-
-  const isMatchingEmail = invitation.invitedEmailLower && currentUser.email?.toLowerCase() === invitation.invitedEmailLower;
-  const isMatchingUid = invitation.invitedUserId && currentUser.uid === invitation.invitedUserId;
-
-  const isTargeted = invitation.invitedEmailLower || invitation.invitedUserId;
-  const isOwnerMatching = isMatchingEmail || isMatchingUid;
-
-  if (isTargeted && !isOwnerMatching) {
-    return (
-      <PageContainer title="Access Denied" description="This invitation was targeted to a different email address or user account.">
-        <div className="max-w-md mx-auto text-left mt-8 glass-elevated border border-white/10 rounded-2xl p-6 flex flex-col gap-4">
-          <div className="flex gap-2.5 items-start text-xs text-danger leading-relaxed bg-danger/5 p-3 rounded-xl border border-danger/25">
-            <AlertTriangle className="h-5 w-5 shrink-0" />
-            <span>
-              You are signed in as <span className="font-semibold text-text-primary">{currentUser.email}</span>, but the invitation is registered to <span className="font-semibold text-text-primary">{invitation.invitedEmailLower || "a different user ID"}</span>.
-            </span>
+  // If email invite, check verified email
+  if (resolvedDetails.type === "email") {
+    if (!currentUser.emailVerified) {
+      return (
+        <PageContainer title="Verify Email" description="Account verification required.">
+          <div className="max-w-md mx-auto text-left mt-8 glass-elevated border border-white/10 rounded-2xl p-6 flex flex-col gap-4">
+            <div className="flex gap-2.5 items-start text-xs text-warning leading-relaxed bg-warning/5 p-3 rounded-xl border border-warning/25">
+              <AlertTriangle className="h-5 w-5 shrink-0" />
+              <span>
+                To accept this email-targeted invitation, please verify your email address to validate ownership.
+              </span>
+            </div>
+            <Button onClick={() => navigate("/auth/verify-email")} variant="gradient" className="w-full">
+              Verify Email Now
+            </Button>
           </div>
-          <Button onClick={() => navigate("/groups")} variant="ghost" className="w-full">
-            Back to Groups
-          </Button>
-        </div>
-      </PageContainer>
-    );
-  }
-
-  if (invitation.invitedEmailLower && !currentUser.emailVerified) {
-    return (
-      <PageContainer title="Verify Email" description="You must verify your email address before accepting.">
-        <div className="max-w-md mx-auto text-left mt-8 glass-elevated border border-white/10 rounded-2xl p-6 flex flex-col gap-4">
-          <div className="flex gap-2.5 items-start text-xs text-warning leading-relaxed bg-warning/5 p-3 rounded-xl border border-warning/25">
-            <AlertTriangle className="h-5 w-5 shrink-0" />
-            <span>
-              The invitation targeting your email requires account email verification to validate ownership.
-            </span>
-          </div>
-          <Button onClick={() => navigate("/auth/verify-email")} variant="gradient" className="w-full">
-            Verify Email Now
-          </Button>
-        </div>
-      </PageContainer>
-    );
-  }
-
-  if (invitation.status !== "pending") {
-    return (
-      <PageContainer title="Inactive Invitation" description={`This invitation is no longer active (status: ${invitation.status}).`}>
-        <div className="max-w-md mx-auto text-center mt-12">
-          <Button onClick={() => navigate("/groups")} variant="gradient" className="w-full">
-            Back to Groups
-          </Button>
-        </div>
-      </PageContainer>
-    );
-  }
-
-  if (isExpired) {
-    return (
-      <PageContainer title="Expired Invitation" description="This invitation link has expired.">
-        <div className="max-w-md mx-auto text-center mt-12">
-          <Button onClick={() => navigate("/groups")} variant="gradient" className="w-full">
-            Back to Groups
-          </Button>
-        </div>
-      </PageContainer>
-    );
+        </PageContainer>
+      );
+    }
   }
 
   return (
     <PageContainer
-      title="Accept Invitation"
-      description={`Join the shared split ledger group "${invitation.groupName}".`}
+      title={resolvedDetails.type === "email" ? "Accept Invitation" : "Join Group"}
+      description={resolvedDetails.type === "email" ? "You've been invited to join a split ledger group." : "Request to join a shared split ledger group."}
     >
-      <div className="max-w-md mx-auto">
+      <div className="max-w-md mx-auto mt-6">
         <div className="glass-elevated border border-white/10 rounded-2xl p-6 md:p-8 flex flex-col gap-6 text-left">
-          <div className="flex flex-col gap-1">
-            <h3 className="text-lg font-bold text-text-primary">{invitation.groupName}</h3>
-            <div className="flex items-center gap-1.5 text-xs text-text-muted mt-1">
-              <UserCheck className="h-4 w-4 text-accent-cyan" />
-              <span>Proposed role: <span className="capitalize font-semibold text-accent-cyan">{invitation.proposedRole}</span></span>
+          <div>
+            <span className="text-[10px] uppercase font-bold tracking-wider text-accent-cyan px-2 py-1 bg-accent-cyan/10 rounded-full">
+              {resolvedDetails.type === "email" ? "Targeted Invite" : "Global Link"}
+            </span>
+            <h3 className="text-xl font-extrabold text-text-primary mt-3">{resolvedDetails.groupName}</h3>
+            {resolvedDetails.inviterName && (
+              <p className="text-xs text-text-secondary mt-1">
+                Invited by: <span className="font-semibold text-text-primary">{resolvedDetails.inviterName}</span>
+              </p>
+            )}
+          </div>
+
+          <div className="flex flex-col gap-3.5 border-y border-white/5 py-4">
+            <div className="flex items-center gap-2.5 text-sm text-text-secondary">
+              <UserCheck className="h-4 w-4 text-accent-cyan shrink-0" />
+              <span>Proposed role: <span className="capitalize font-semibold text-text-primary">{resolvedDetails.proposedRole}</span></span>
             </div>
-            <div className="flex items-center gap-1.5 text-xs text-text-muted mt-1">
-              <Calendar className="h-4 w-4 text-accent-indigo" />
-              <span>Expires: {expiresDate.toLocaleDateString()}</span>
+            <div className="flex items-center gap-2.5 text-sm text-text-secondary">
+              <ShieldCheck className="h-4 w-4 text-accent-indigo shrink-0" />
+              <span>
+                {resolvedDetails.type === "email"
+                  ? "Direct Join (No approval required)"
+                  : "Approval Required (Group Admin will review)"}
+              </span>
             </div>
           </div>
 
-          <div className="flex gap-4 mt-2">
+          <div className="flex gap-4">
             <Button
-              onClick={handleDecline}
+              onClick={() => navigate("/groups")}
               variant="ghost"
-              className="flex-1 text-danger hover:bg-danger/5 border border-white/10"
+              className="flex-1 border border-white/10"
               disabled={isProcessing}
             >
-              Decline
+              Cancel
             </Button>
-            <Button
-              onClick={handleAccept}
-              variant="gradient"
-              className="flex-1"
-              isLoading={isProcessing}
-            >
-              Accept & Join
-            </Button>
+            {resolvedDetails.type === "email" ? (
+              <Button
+                onClick={handleAcceptEmailInvite}
+                variant="gradient"
+                className="flex-1"
+                isLoading={isProcessing}
+              >
+                Accept & Join
+              </Button>
+            ) : (
+              <Button
+                onClick={handleRequestJoin}
+                variant="gradient"
+                className="flex-1"
+                isLoading={isProcessing}
+              >
+                Request to Join
+              </Button>
+            )}
           </div>
         </div>
       </div>

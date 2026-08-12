@@ -45,6 +45,11 @@ service cloud.firestore {
         && request.resource.data.keys().hasOnly(allowedFields());
         
       allow delete: if false;
+
+      match /notifications/{notificationId} {
+        allow read: if isOwner(userId);
+        allow write: if false;
+      }
     }
 
     // Helper functions for Group access check bounds
@@ -179,6 +184,12 @@ service cloud.firestore {
         );
 
       allow delete: if false;
+
+      // Join Requests rules
+      match /joinRequests/{userId} {
+        allow read: if isSignedIn() && (request.auth.uid == userId || isOwnerOrAdmin(groupId, request.auth.uid));
+        allow write: if false;
+      }
 
       // Group Membership rules
       match /members/{memberId} {
@@ -408,6 +419,12 @@ service cloud.firestore {
       match /budgetOperations/{clientOperationId} {
         allow read, write: if false;
       }
+    }
+
+    // Global Invite Links Rules
+    match /globalInviteLinks/{linkId} {
+      allow read: if isSignedIn();
+      allow write: if false;
     }
 
     // Invitations Document Rules

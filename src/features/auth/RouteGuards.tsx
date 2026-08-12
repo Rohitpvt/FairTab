@@ -99,6 +99,14 @@ export const PublicOnlyRoute: React.FC<{ children?: React.ReactNode }> = ({ chil
   }
 
   if (authState === "ready") {
+    const pendingToken = sessionStorage.getItem("fairtab:pending-invite-token");
+    const pendingType = sessionStorage.getItem("fairtab:pending-invite-type") || "email";
+    if (pendingToken) {
+      sessionStorage.removeItem("fairtab:pending-invite-token");
+      sessionStorage.removeItem("fairtab:pending-invite-type");
+      const path = pendingType === "global" ? `/join/${pendingToken}` : `/invite/${pendingToken}`;
+      return <Navigate to={path} replace />;
+    }
     return <Navigate to="/overview" replace />;
   }
 
@@ -128,6 +136,14 @@ export const VerifyEmailRoute: React.FC<{ children?: React.ReactNode }> = ({ chi
   }
 
   if (authState === "ready") {
+    const pendingToken = sessionStorage.getItem("fairtab:pending-invite-token");
+    const pendingType = sessionStorage.getItem("fairtab:pending-invite-type") || "email";
+    if (pendingToken) {
+      sessionStorage.removeItem("fairtab:pending-invite-token");
+      sessionStorage.removeItem("fairtab:pending-invite-type");
+      const path = pendingType === "global" ? `/join/${pendingToken}` : `/invite/${pendingToken}`;
+      return <Navigate to={path} replace />;
+    }
     return <Navigate to="/overview" replace />;
   }
 

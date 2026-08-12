@@ -99,6 +99,22 @@ export function App() {
                 </Suspense>
               }
             />
+            <Route
+              path="invite/:token"
+              element={
+                <Suspense fallback={<RoutePending />}>
+                  <InvitationAcceptPage />
+                </Suspense>
+              }
+            />
+            <Route
+              path="join/:token"
+              element={
+                <Suspense fallback={<RoutePending />}>
+                  <InvitationAcceptPage />
+                </Suspense>
+              }
+            />
 
             {/* Onboarding route */}
             <Route element={<OnboardingRoute />}>

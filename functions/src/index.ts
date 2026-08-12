@@ -38,6 +38,16 @@ import {
 
 import { handleDeleteGroup } from "./groupOperations.js";
 import { handleDeleteAccount } from "./accountOperations.js";
+import {
+  handleCreateEmailInvitation,
+  handleAcceptEmailInvitation,
+  handleCreateGlobalInviteLink,
+  handleRevokeGlobalInviteLink,
+  handleRequestJoinViaGlobalLink,
+  handleApproveJoinRequest,
+  handleDeclineJoinRequest,
+  handleResolveInviteToken
+} from "./invitationOperations.js";
 
 export const createExpense = functions.https.onCall(handleCreateExpense);
 export const updateExpense = functions.https.onCall(handleUpdateExpense);
@@ -61,6 +71,15 @@ export const deleteBudget = functions.https.onCall(handleDeleteBudget);
 
 export const deleteGroup = functions.https.onCall(handleDeleteGroup);
 export const deleteAccount = functions.https.onCall(handleDeleteAccount);
+
+export const createEmailInvitation = functions.https.onCall(handleCreateEmailInvitation);
+export const acceptEmailInvitation = functions.https.onCall(handleAcceptEmailInvitation);
+export const createGlobalInviteLink = functions.https.onCall(handleCreateGlobalInviteLink);
+export const revokeGlobalInviteLink = functions.https.onCall(handleRevokeGlobalInviteLink);
+export const requestJoinViaGlobalLink = functions.https.onCall(handleRequestJoinViaGlobalLink);
+export const approveJoinRequest = functions.https.onCall(handleApproveJoinRequest);
+export const declineJoinRequest = functions.https.onCall(handleDeclineJoinRequest);
+export const resolveInviteToken = functions.https.onCall(handleResolveInviteToken);
 
 // Scheduled draft generation
 // NOTE: Scheduled functions use Cloud Scheduler and require standard/blaze billing configuration in Google Cloud.

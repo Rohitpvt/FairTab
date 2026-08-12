@@ -48,6 +48,15 @@ const mapPathToFunction = (path: string): string => {
     }
     if (category === "groups" && action === "delete") return "deleteGroup";
     if (category === "accounts" && action === "delete") return "deleteAccount";
+    if (category === "invitations") {
+      if (action === "create-email") return "createEmailInvitation";
+      if (action === "accept-email") return "acceptEmailInvitation";
+      if (action === "create-global") return "createGlobalInviteLink";
+      if (action === "revoke-global") return "revokeGlobalInviteLink";
+      if (action === "request-join-global") return "requestJoinViaGlobalLink";
+      if (action === "approve-join-request") return "approveJoinRequest";
+      if (action === "decline-join-request") return "declineJoinRequest";
+    }
   }
   return "";
 };
@@ -181,5 +190,15 @@ export const fairtabApi = {
   },
   accounts: {
     delete: (data: unknown) => postRequest<unknown, unknown>("/api/accounts/delete", data),
+  },
+  invitations: {
+    createEmail: (data: unknown) => postRequest<unknown, unknown>("/api/invitations/create-email", data),
+    acceptEmail: (data: unknown) => postRequest<unknown, unknown>("/api/invitations/accept-email", data),
+    createGlobal: (data: unknown) => postRequest<unknown, unknown>("/api/invitations/create-global", data),
+    revokeGlobal: (data: unknown) => postRequest<unknown, unknown>("/api/invitations/revoke-global", data),
+    requestJoinGlobal: (data: unknown) => postRequest<unknown, unknown>("/api/invitations/request-join-global", data),
+    approveJoinRequest: (data: unknown) => postRequest<unknown, unknown>("/api/invitations/approve-join-request", data),
+    declineJoinRequest: (data: unknown) => postRequest<unknown, unknown>("/api/invitations/decline-join-request", data),
+    resolveInviteToken: (data: unknown) => postRequest<unknown, unknown>("/api/invitations/resolve-token", data),
   },
 };
