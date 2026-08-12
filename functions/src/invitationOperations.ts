@@ -709,19 +709,6 @@ export async function handleApproveJoinRequest(
     batch.set(notifyRef, { status: "approved" }, { merge: true });
   });
 
-  // Fallback resolve notifications on all admins
-  const notifications = await db.collectionGroup("notifications")
-    .where("groupId", "==", groupId)
-    .where("applicantUid", "==", applicantUid)
-    .where("type", "==", "join_request")
-    .get();
-
-  notifications.forEach((nDoc) => {
-    batch.update(nDoc.ref, {
-      status: "approved",
-    });
-  });
-
   // Send notification to applicant that request was accepted
   const applicantNotificationRef = db.collection(`users/${applicantUid}/notifications`).doc();
   batch.set(applicantNotificationRef, {
@@ -795,19 +782,6 @@ export async function handleDeclineJoinRequest(
     const notificationId = `${joinRequest.id}_${adminUid}`;
     const notifyRef = db.doc(`users/${adminUid}/notifications/${notificationId}`);
     batch.set(notifyRef, { status: "declined" }, { merge: true });
-  });
-
-  // Fallback resolve notifications on all admins
-  const notifications = await db.collectionGroup("notifications")
-    .where("groupId", "==", groupId)
-    .where("applicantUid", "==", applicantUid)
-    .where("type", "==", "join_request")
-    .get();
-
-  notifications.forEach((nDoc) => {
-    batch.update(nDoc.ref, {
-      status: "declined",
-    });
   });
 
   // Send notification to applicant that request was declined
