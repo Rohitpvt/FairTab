@@ -1,0 +1,1 @@
+var e=(e,t=`INR`)=>{let n=e/100;return new Intl.NumberFormat(`en-IN`,{style:`currency`,currency:t,minimumFractionDigits:2}).format(n)};export{e as t};
