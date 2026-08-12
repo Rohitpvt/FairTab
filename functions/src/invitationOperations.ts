@@ -487,44 +487,21 @@ export async function handleRequestJoinViaGlobalLink(
     .get();
 
   if (!duplicateRequests.empty) {
-    // A pending request exists — check if it has associated notifications.
-    // If not (stale request from a prior code version), delete it and re-create.
     const staleReq = duplicateRequests.docs[0];
     const staleData = staleReq.data();
     const staleApprovers: string[] = staleData.approverUids || [];
-    console.log(`[requestJoin] Found existing pending request ${staleReq.id} for user ${uid} in group ${link.groupId}. approverUids: [${staleApprovers.join(",")}]`);
+    console.log(`[requestJoin] Found existing pending request ${staleReq.id} for user ${uid} in group ${link.groupId}. Deleting it to re-create with fresh notifications.`);
 
-    let hasAnyNotification = false;
-    for (const approverUid of staleApprovers) {
+    const deleteBatch = db.batch();
+    // Delete deterministic notifications if approvers were stored
+    staleApprovers.forEach((approverUid) => {
       const notifId = `${staleReq.id}_${approverUid}`;
-      const notifSnap = await db.doc(`users/${approverUid}/notifications/${notifId}`).get();
-      if (notifSnap.exists) {
-        hasAnyNotification = true;
-        break;
-      }
-    }
-
-    // Also check by the old pattern where the doc ID might have been the UID itself
-    if (!hasAnyNotification && staleApprovers.length === 0) {
-      // Old code may not have stored approverUids at all — check via collectionGroup
-      const legacyNotifs = await db.collectionGroup("notifications")
-        .where("type", "==", "join_request")
-        .where("groupId", "==", link.groupId)
-        .where("applicantUid", "==", uid)
-        .where("status", "==", "pending")
-        .limit(1)
-        .get();
-      hasAnyNotification = !legacyNotifs.empty;
-    }
-
-    if (hasAnyNotification) {
-      console.log(`[requestJoin] Notifications exist for request ${staleReq.id}. Blocking duplicate.`);
-      throw new functions.https.HttpsError("already-exists", "You already have a pending join request for this group.");
-    }
-
-    // Stale request with no notifications — delete it so we can re-create properly
-    console.log(`[requestJoin] Stale request ${staleReq.id} has no notifications. Deleting and re-creating.`);
-    await staleReq.ref.delete();
+      deleteBatch.delete(db.doc(`users/${approverUid}/notifications/${notifId}`));
+    });
+    // Delete the request itself
+    deleteBatch.delete(staleReq.ref);
+    await deleteBatch.commit();
+    console.log(`[requestJoin] Deleted stale request ${staleReq.id} and its notifications.`);
   }
 
   const userSnap = await db.doc(`users/${uid}`).get();
