@@ -614,7 +614,19 @@ export async function handleApproveJoinRequest(
     .limit(1)
     .get();
   if (reqQuery.empty) {
-    throw new functions.https.HttpsError("not-found", "Join request not found or already processed.");
+    const staleNotifs = await db.collection(`users/${uid}/notifications`)
+      .where("groupId", "==", groupId)
+      .where("applicantUid", "==", applicantUid)
+      .where("type", "==", "join_request")
+      .get();
+    if (!staleNotifs.empty) {
+      const deleteBatch = db.batch();
+      staleNotifs.forEach((doc) => {
+        deleteBatch.delete(doc.ref);
+      });
+      await deleteBatch.commit();
+    }
+    return { status: "cleared" };
   }
   const reqDoc = reqQuery.docs[0];
   const reqRef = reqDoc.ref;
@@ -763,7 +775,19 @@ export async function handleDeclineJoinRequest(
     .limit(1)
     .get();
   if (reqQuery.empty) {
-    throw new functions.https.HttpsError("not-found", "Join request not found or already processed.");
+    const staleNotifs = await db.collection(`users/${uid}/notifications`)
+      .where("groupId", "==", groupId)
+      .where("applicantUid", "==", applicantUid)
+      .where("type", "==", "join_request")
+      .get();
+    if (!staleNotifs.empty) {
+      const deleteBatch = db.batch();
+      staleNotifs.forEach((doc) => {
+        deleteBatch.delete(doc.ref);
+      });
+      await deleteBatch.commit();
+    }
+    return { status: "cleared" };
   }
   const reqDoc = reqQuery.docs[0];
   const reqRef = reqDoc.ref;
