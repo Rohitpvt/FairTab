@@ -61,11 +61,15 @@ export const NotificationsPage: React.FC = () => {
     if (!notif.applicantUid) return;
     setProcessingId(`${notif.id}_approve`);
     try {
-      await fairtabApi.invitations.approveJoinRequest({
+      const res: any = await fairtabApi.invitations.approveJoinRequest({
         groupId: notif.groupId,
         applicantUid: notif.applicantUid,
       });
-      toast.success(`Approved ${notif.applicantName || "join request"}!`);
+      if (res && res.status === "cleared") {
+        toast.info("Stale join request was already resolved and cleaned up.");
+      } else {
+        toast.success(`Approved ${notif.applicantName || "join request"}!`);
+      }
     } catch (err: any) {
       toast.error(err.message || "Failed to approve join request.");
     } finally {
@@ -77,11 +81,15 @@ export const NotificationsPage: React.FC = () => {
     if (!notif.applicantUid) return;
     setProcessingId(`${notif.id}_decline`);
     try {
-      await fairtabApi.invitations.declineJoinRequest({
+      const res: any = await fairtabApi.invitations.declineJoinRequest({
         groupId: notif.groupId,
         applicantUid: notif.applicantUid,
       });
-      toast.success(`Declined ${notif.applicantName || "join request"}.`);
+      if (res && res.status === "cleared") {
+        toast.info("Stale join request was already resolved and cleaned up.");
+      } else {
+        toast.success(`Declined ${notif.applicantName || "join request"}.`);
+      }
     } catch (err: any) {
       toast.error(err.message || "Failed to decline join request.");
     } finally {
