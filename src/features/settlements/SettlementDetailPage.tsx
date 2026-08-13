@@ -14,6 +14,7 @@ import { formatCurrency } from "../../utils/format";
 import type { GroupDocument } from "../groups/groupSchema";
 import type { GroupMemberDocument } from "../groups/memberSchema";
 import type { SettlementDocument, SettlementRevision } from "@fairtab/domain";
+import { useMemberNameResolver } from "../../hooks/useMemberNameResolver";
 
 export const SettlementDetailPage: React.FC = () => {
   const { groupId, settlementId } = useParams<{ groupId: string; settlementId: string }>();
@@ -31,6 +32,7 @@ export const SettlementDetailPage: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const isOffline = !navigator.onLine;
+  const { resolveName } = useMemberNameResolver(members);
 
   useEffect(() => {
     if (!groupId || !settlementId) return;
@@ -78,10 +80,12 @@ export const SettlementDetailPage: React.FC = () => {
     );
   }
 
+
+
   const getMemberName = (id: string) => {
     const m = members.find((member) => member.id === id);
     if (!m) return id;
-    return m.displayName + (m.kind === "placeholder" ? " (Placeholder)" : "");
+    return resolveName(m) + (m.kind === "placeholder" ? " (Placeholder)" : "");
   };
 
   const activeMembers = members.filter((m) => m.status === "active");

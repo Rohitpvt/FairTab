@@ -17,6 +17,7 @@ import {
 import type { ExpenseDocument, SettlementDocument } from "@fairtab/domain";
 import type { GroupDocument } from "../groups/groupSchema";
 import type { GroupMemberDocument } from "../groups/memberSchema";
+import { useMemberNameResolver } from "../../hooks/useMemberNameResolver";
 
 function generateRandomId(prefix: string): string {
   if (typeof crypto !== "undefined" && crypto.randomUUID) {
@@ -32,6 +33,7 @@ export const RecordSettlementFlow: React.FC = () => {
 
   const [group, setGroup] = useState<GroupDocument | null>(null);
   const [members, setMembers] = useState<GroupMemberDocument[]>([]);
+  const { resolveName } = useMemberNameResolver(members);
   const [expenses, setExpenses] = useState<ExpenseDocument[]>([]);
   const [settlements, setSettlements] = useState<SettlementDocument[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -255,7 +257,7 @@ export const RecordSettlementFlow: React.FC = () => {
                 >
                   {activeMembers.map((m) => (
                     <option key={m.id} value={m.id}>
-                      {m.displayName} {m.kind === "placeholder" ? "(Placeholder)" : ""}
+                      {resolveName(m)} {m.kind === "placeholder" ? "(Placeholder)" : ""}
                     </option>
                   ))}
                 </select>
@@ -274,7 +276,7 @@ export const RecordSettlementFlow: React.FC = () => {
                 >
                   {activeMembers.map((m) => (
                     <option key={m.id} value={m.id}>
-                      {m.displayName} {m.kind === "placeholder" ? "(Placeholder)" : ""}
+                      {resolveName(m)} {m.kind === "placeholder" ? "(Placeholder)" : ""}
                     </option>
                   ))}
                 </select>
@@ -323,7 +325,7 @@ export const RecordSettlementFlow: React.FC = () => {
             {/* Suggested Obligation Info */}
             {payerId && receiverId && payerId !== receiverId && (
               <div className="p-3 bg-white/5 border border-white/5 rounded-lg text-[11px] text-text-secondary">
-                Suggested Debt from {payerMember?.displayName} to {receiverMember?.displayName}:{" "}
+                Suggested Debt from {payerMember ? resolveName(payerMember) : ""} to {receiverMember ? resolveName(receiverMember) : ""}:{" "}
                 <span className="font-bold text-text-primary">
                   {formatCurrency(suggestedDebtMinor, group.baseCurrency)}
                 </span>
@@ -340,7 +342,7 @@ export const RecordSettlementFlow: React.FC = () => {
                     <p className="text-text-muted mt-1 leading-relaxed text-[11px]">
                       The settlement amount of {formatCurrency(amountMinor, group.baseCurrency)} exceeds the current
                       direct debt of {formatCurrency(suggestedDebtMinor, group.baseCurrency)} between these members.
-                      Saving this will cause {receiverMember?.displayName} to owe {payerMember?.displayName} the surplus
+                      Saving this will cause {receiverMember ? resolveName(receiverMember) : ""} to owe {payerMember ? resolveName(payerMember) : ""} the surplus
                       of {formatCurrency(amountMinor - suggestedDebtMinor, group.baseCurrency)}.
                     </p>
                   </div>

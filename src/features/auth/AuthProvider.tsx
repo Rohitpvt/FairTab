@@ -147,6 +147,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 setAuthState("onboarding-required");
               } else {
                 setAuthState("ready");
+                // Trigger backend profile repair silently in the background
+                profileService.repairUserProfile().catch((err) => {
+                  console.warn("Failed to trigger background profile repair:", err);
+                });
               }
             } else {
               // Document doesn't exist yet, trigger idempotent bootstrap

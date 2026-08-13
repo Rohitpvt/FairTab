@@ -20,6 +20,7 @@ import type {
   ExpenseSplit,
 } from "@fairtab/domain";
 import type { GroupMemberDocument } from "../groups/memberSchema";
+import { useMemberNameResolver } from "../../hooks/useMemberNameResolver";
 
 const CATEGORIES: { value: ExpenseCategory; label: string }[] = [
   { value: "food", label: "Food & Drinks" },
@@ -77,6 +78,7 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({
   const formId = useId();
 
   const activeMembers = members.filter((m) => m.status === "active");
+  const { resolveName } = useMemberNameResolver(members);
 
   // Form state
   const [title, setTitle] = useState(initialData?.title || "");
@@ -410,7 +412,7 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({
         >
           {activeMembers.map((m) => (
             <option key={m.id} value={m.id}>
-              {m.displayName}
+              {resolveName(m)}
             </option>
           ))}
         </select>
@@ -457,7 +459,7 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({
                     : "bg-white/[0.02] border-white/10 text-text-muted hover:bg-white/[0.04] line-through opacity-50"
                 }`}
               >
-                {m.displayName}
+                {resolveName(m)}
               </button>
             );
           })}
@@ -476,7 +478,7 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({
           {participantMembers.map((m) => (
             <div key={m.id} className="flex items-center justify-between gap-3">
               <span className="text-sm text-text-primary font-medium min-w-[100px]">
-                {m.displayName}
+                {resolveName(m)}
               </span>
               {splitMethod === "exact" && (
                 <input

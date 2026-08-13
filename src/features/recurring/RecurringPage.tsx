@@ -18,6 +18,7 @@ import {
 import { PageContainer } from "../../components/layout/PageContainer";
 import { GlassPanel } from "../../components/ui/GlassPanel";
 import { Button } from "../../components/ui/Button";
+import { useMemberNameResolver } from "../../hooks/useMemberNameResolver";
 import { groupService } from "../../infrastructure/firebase/groupService";
 import { recurringService } from "../../infrastructure/firebase/recurringService";
 import { syncManager } from "../../infrastructure/offline/syncManager";
@@ -54,6 +55,7 @@ export const RecurringPage: React.FC = () => {
   const [occurrences, setOccurrences] = useState<RecurringOccurrenceDocument[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isScanning, setIsScanning] = useState(false);
+
 
   // Form modals state
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -551,6 +553,7 @@ const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
   onClose,
   onSubmit,
 }) => {
+  const { resolveName } = useMemberNameResolver(members);
   const [title, setTitle] = useState("");
   const [notes, setNotes] = useState("");
   const [category, setCategory] = useState<ExpenseCategory>("utilities");
@@ -755,7 +758,7 @@ const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
             />
           </div>
 
-          {/* Payer Configuration */}
+          {/* Paid By Selection */}
           <div>
             <label className="block text-xs font-semibold text-text-secondary mb-1">Paid By</label>
             <select
@@ -764,7 +767,7 @@ const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
               className="w-full px-3 py-2 bg-surface-primary border border-white/10 rounded-lg text-sm text-text-primary focus:outline-none"
             >
               {members.map((m) => (
-                <option key={m.id} value={m.id}>{m.displayName}</option>
+                <option key={m.id} value={m.id}>{resolveName(m)}</option>
               ))}
             </select>
           </div>
@@ -778,7 +781,7 @@ const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
                   const m = members.find((x) => x.id === s.memberId);
                   return (
                     <div key={s.memberId} className="flex items-center justify-between gap-3 text-xs">
-                      <span>{m?.displayName || "Participant"}</span>
+                      <span>{m ? resolveName(m) : "Participant"}</span>
                       <input
                         type="number"
                         placeholder="0.00"
@@ -826,6 +829,7 @@ const EditSplitsModal: React.FC<EditSplitsModalProps> = ({
   onClose,
   onSubmit,
 }) => {
+  const { resolveName } = useMemberNameResolver(members);
   const [splits, setSplits] = useState<{ memberId: string; amountMinor: number }[]>([]);
 
   useEffect(() => {
@@ -870,7 +874,7 @@ const EditSplitsModal: React.FC<EditSplitsModalProps> = ({
               const m = members.find((x) => x.id === s.memberId);
               return (
                 <div key={s.memberId} className="flex items-center justify-between gap-3 text-xs">
-                  <span>{m?.displayName || "Participant"}</span>
+                  <span>{m ? resolveName(m) : "Participant"}</span>
                   <div className="flex items-center gap-1.5">
                     <input
                       type="number"

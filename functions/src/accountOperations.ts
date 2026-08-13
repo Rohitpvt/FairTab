@@ -142,6 +142,35 @@ export async function handleDeleteAccount(
   return { success: true };
 }
 
+export async function propagateProfileChange(
+  db: admin.firestore.Firestore,
+  uid: string,
+  displayName: string
+): Promise<number> {
+  const cleanName = displayName.trim();
+  const indexColl = db.collection(`userGroupIndex/${uid}/groups`);
+  const indexSnap = await indexColl.get();
+  let count = 0;
+
+  if (!indexSnap.empty) {
+    const batch = db.batch();
+    indexSnap.forEach((doc) => {
+      const groupId = doc.id;
+      const memberRef = db.doc(`groups/${groupId}/members/${uid}`);
+      batch.update(memberRef, {
+        displayName: cleanName,
+        displayNameLower: cleanName.toLowerCase(),
+        updatedAt: FieldValue.serverTimestamp(),
+        updatedBy: uid,
+        version: FieldValue.increment(1),
+      });
+      count++;
+    });
+    await batch.commit();
+  }
+  return count;
+}
+
 export async function handleUpdateProfile(
   data: any,
   context: functions.https.CallableContext
@@ -199,26 +228,9 @@ export async function handleUpdateProfile(
       console.error(`Failed to update Firebase Auth displayName for ${uid}:`, err);
     }
 
-    // 3. Update required denormalized membership fields (outside transaction to avoid unbounded lockups)
+    // 3. Update required denormalized membership fields
     try {
-      const indexColl = db.collection(`userGroupIndex/${uid}/groups`);
-      const indexSnap = await indexColl.get();
-      
-      if (!indexSnap.empty) {
-        const batch = db.batch();
-        indexSnap.forEach((doc) => {
-          const groupId = doc.id;
-          const memberRef = db.doc(`groups/${groupId}/members/${uid}`);
-          batch.update(memberRef, {
-            displayName: cleanName,
-            displayNameLower: cleanName.toLowerCase(),
-            updatedAt: FieldValue.serverTimestamp(),
-            updatedBy: uid,
-            version: FieldValue.increment(1),
-          });
-        });
-        await batch.commit();
-      }
+      await propagateProfileChange(db, uid, cleanName);
     } catch (err: any) {
       console.error(`Failed to propagate displayName to group memberships for ${uid}:`, err);
     }
@@ -226,4 +238,32 @@ export async function handleUpdateProfile(
 
   return { success: true };
 }
+
+export async function handleRepairProfile(
+  data: any,
+  context: functions.https.CallableContext
+): Promise<{ success: boolean; repairedCount: number }> {
+  void data;
+  if (!context.auth) {
+    throw new functions.https.HttpsError("unauthenticated", "Authentication required.");
+  }
+  const uid = context.auth.uid;
+  const db = admin.firestore();
+  
+  const userRef = db.doc(`users/${uid}`);
+  const userSnap = await userRef.get();
+  if (!userSnap.exists) {
+    throw new functions.https.HttpsError("not-found", "User profile document not found.");
+  }
+  
+  const userData = userSnap.data();
+  const displayName = userData?.displayName;
+  if (!displayName) {
+    throw new functions.https.HttpsError("failed-precondition", "User profile does not contain a display name.");
+  }
+  
+  const repairedCount = await propagateProfileChange(db, uid, displayName);
+  return { success: true, repairedCount };
+}
+
 

@@ -1,5 +1,6 @@
 import React from "react";
 import type { GroupMemberDocument } from "../groups/memberSchema";
+import { useMemberNameResolver } from "../../hooks/useMemberNameResolver";
 import { ReceiptConfidenceBadge } from "./ReceiptConfidenceBadge";
 import { Plus, Trash2, UserCheck } from "lucide-react";
 
@@ -21,6 +22,7 @@ export const ItemizedSplitEditor: React.FC<ItemizedSplitEditorProps> = ({
   members,
   onItemsChange,
 }) => {
+  const { resolveName } = useMemberNameResolver(members);
   const handleItemFieldChange = (index: number, field: keyof ItemizedLine, value: ItemizedLine[keyof ItemizedLine]) => {
     const updated = [...items];
     updated[index] = {
@@ -176,7 +178,7 @@ export const ItemizedSplitEditor: React.FC<ItemizedSplitEditorProps> = ({
                         }`}
                       >
                         {isSelected && <UserCheck className="w-3 h-3" />}
-                        {member.displayName}
+                        {resolveName(member)}
                       </button>
                     );
                   })}

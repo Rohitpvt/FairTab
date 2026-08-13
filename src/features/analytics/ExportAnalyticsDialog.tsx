@@ -4,6 +4,7 @@ import { Button } from "../../components/ui/Button";
 import { Download, FileSpreadsheet, FileJson } from "lucide-react";
 import type { ExpenseDocument, SettlementDocument } from "@fairtab/domain";
 import type { GroupMemberDocument } from "../groups/memberSchema";
+import { useMemberNameResolver } from "../../hooks/useMemberNameResolver";
 
 interface ExportAnalyticsDialogProps {
   isOpen: boolean;
@@ -23,9 +24,11 @@ export const ExportAnalyticsDialog: React.FC<ExportAnalyticsDialogProps> = ({
   const [exportType, setExportType] = useState<"expenses" | "settlements">("expenses");
   const [format, setFormat] = useState<"csv" | "json">("csv");
 
+  const { resolveName } = useMemberNameResolver(members);
+
   const getMemberName = (memberId: string) => {
     const found = members.find((m) => m.id === memberId);
-    return found ? found.displayName : memberId;
+    return found ? resolveName(found) : memberId;
   };
 
   const getFormattedDate = (ts: { seconds?: number; _seconds?: number } | number | null | undefined) => {

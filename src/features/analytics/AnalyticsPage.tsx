@@ -23,6 +23,7 @@ import { MonthlyComparisonCard } from "./MonthlyComparisonCard";
 import { ExportAnalyticsDialog } from "./ExportAnalyticsDialog";
 import { Button } from "../../components/ui/Button";
 import { Download, AlertCircle } from "lucide-react";
+import { useMemberNameResolver } from "../../hooks/useMemberNameResolver";
 
 export const AnalyticsPage: React.FC = () => {
   const [activeGroups, setActiveGroups] = useState<any[]>([]);
@@ -37,6 +38,7 @@ export const AnalyticsPage: React.FC = () => {
   const [isOfflineCached, setIsOfflineCached] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isExportOpen, setIsExportOpen] = useState(false);
+  const { resolveName } = useMemberNameResolver(members);
 
   // 1. Fetch active groups
   useEffect(() => {
@@ -115,10 +117,10 @@ export const AnalyticsPage: React.FC = () => {
   const memberContributions = useMemo(() => {
     const memberItems = activeMembers.map((m) => ({
       memberId: m.id,
-      displayName: m.displayName,
+      displayName: resolveName(m),
     }));
     return computeMemberContributions(expenses, memberItems);
-  }, [expenses, activeMembers]);
+  }, [expenses, activeMembers, resolveName]);
 
   const monthlyComparison = useMemo(() => {
     return computeMonthlyComparison(expenses, 6);

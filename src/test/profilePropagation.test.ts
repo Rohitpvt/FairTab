@@ -196,4 +196,52 @@ describe("Username Propagation & Profile Update Tests", () => {
       expect(memberSnap.data()?.displayNameLower).toBe("new name");
     });
   });
+
+  test("handleRepairProfile updates stale membership cache using live profile", async () => {
+    // Set user profile to 'Rohit' and leave membership stale as 'Old Name'
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      const db = context.firestore();
+      await setDoc(doc(db, "users", testUid), {
+        uid: testUid,
+        displayName: "Rohit",
+        displayNameLower: "rohit",
+        email: testEmail,
+        photoURL: "",
+        defaultCurrency: "INR",
+        locale: "en-IN",
+        timeZone: "Asia/Kolkata",
+        onboardingCompleted: true,
+        accountStatus: "active",
+        createdAt: new Date(),
+        createdBy: testUid,
+        updatedAt: new Date(),
+        updatedBy: testUid,
+        version: 1,
+        schemaVersion: 1,
+      }, { merge: true });
+    });
+
+    const handler = (await import("../../api/index.js")).default;
+    const token = await auth.currentUser?.getIdToken();
+
+    // Call repair profile backend Vercel route
+    const res = await executeVercelHandler(handler, {
+      method: "POST",
+      url: "/api/accounts/repair-profile",
+      headers: { authorization: `Bearer ${token}` },
+      body: {}
+    });
+
+    expect(res.success).toBe(true);
+    expect(res.repairedCount).toBe(1);
+
+    // Verify membership displayName has been repaired to 'Rohit'
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      const db = context.firestore();
+      const memberSnap = await getDoc(doc(db, `groups/${groupId}/members`, testUid));
+      expect(memberSnap.exists()).toBe(true);
+      expect(memberSnap.data()?.displayName).toBe("Rohit");
+      expect(memberSnap.data()?.displayNameLower).toBe("rohit");
+    });
+  });
 });

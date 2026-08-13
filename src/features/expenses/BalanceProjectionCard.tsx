@@ -3,6 +3,7 @@ import { calculateBalances } from "@fairtab/domain";
 import type { ExpenseDocument, SettlementDocument } from "@fairtab/domain";
 import type { GroupMemberDocument } from "../groups/memberSchema";
 import { Scale } from "lucide-react";
+import { useMemberNameResolver } from "../../hooks/useMemberNameResolver";
 
 interface BalanceProjectionCardProps {
   expenses: ExpenseDocument[];
@@ -17,6 +18,7 @@ export const BalanceProjectionCard: React.FC<BalanceProjectionCardProps> = ({
   members,
   baseCurrency,
 }) => {
+  const { resolveName } = useMemberNameResolver(members);
   const activeExpenses = expenses.filter((e) => e.status !== "voided");
   const memberIds = members.map((m) => m.id);
   const calculatedBalances = calculateBalances(activeExpenses, settlements, memberIds);
@@ -54,7 +56,7 @@ export const BalanceProjectionCard: React.FC<BalanceProjectionCardProps> = ({
             >
               <div className="flex flex-col">
                 <span className="text-sm font-semibold text-text-primary">
-                  {member.displayName}
+                  {resolveName(member)}
                 </span>
                 <span className="text-[10px] text-text-muted capitalize">
                   {member.kind === "placeholder" ? "Offline Placeholder" : member.role}
@@ -83,3 +85,4 @@ export const BalanceProjectionCard: React.FC<BalanceProjectionCardProps> = ({
   );
 };
 export default BalanceProjectionCard;
+

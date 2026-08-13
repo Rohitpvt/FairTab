@@ -87,5 +87,10 @@ export const profileService = {
   async updateUserProfile(_uid: string, updates: Partial<Pick<UserProfile, "displayName" | "photoURL" | "defaultCurrency" | "locale" | "timeZone" | "onboardingCompleted">>): Promise<void> {
     const { fairtabApi } = await import("../api/fairtabApi");
     await fairtabApi.accounts.updateProfile(updates);
+  },
+
+  async repairUserProfile(): Promise<{ success: boolean; repairedCount: number }> {
+    const { fairtabApi } = await import("../api/fairtabApi");
+    return (await fairtabApi.accounts.repairProfile()) as { success: boolean; repairedCount: number };
   }
 };

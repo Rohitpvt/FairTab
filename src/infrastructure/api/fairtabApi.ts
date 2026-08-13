@@ -50,6 +50,7 @@ const mapPathToFunction = (path: string): string => {
     if (category === "accounts") {
       if (action === "delete") return "deleteAccount";
       if (action === "update-profile") return "updateProfile";
+      if (action === "repair-profile") return "repairProfile";
     }
     if (category === "invitations") {
       if (action === "create-email") return "createEmailInvitation";
@@ -194,6 +195,7 @@ export const fairtabApi = {
   accounts: {
     delete: (data: unknown) => postRequest<unknown, unknown>("/api/accounts/delete", data),
     updateProfile: (data: unknown) => postRequest<unknown, unknown>("/api/accounts/update-profile", data),
+    repairProfile: (data?: unknown) => postRequest<unknown, unknown>("/api/accounts/repair-profile", data || {}),
   },
   invitations: {
     createEmail: (data: unknown) => postRequest<unknown, unknown>("/api/invitations/create-email", data),

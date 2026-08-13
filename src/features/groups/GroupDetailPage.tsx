@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect } from "react";
+import { useMemberNameResolver } from "../../hooks/useMemberNameResolver";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import {
   Settings,
@@ -72,6 +73,7 @@ export const GroupDetailPage: React.FC = () => {
   } | null>(null);
 
   const isOffline = !navigator.onLine;
+  const { resolveName, memberNameMap } = useMemberNameResolver(members);
 
   useEffect(() => {
     if (!groupId) return;
@@ -211,8 +213,8 @@ export const GroupDetailPage: React.FC = () => {
     }
 
     try {
-      await groupService.updateMemberRole(group.id, member.id, member.displayName, newRole);
-      toast.success(`Updated role for ${member.displayName} to ${newRole}.`);
+      await groupService.updateMemberRole(group.id, member.id, resolveName(member), newRole);
+      toast.success(`Updated role for ${resolveName(member)} to ${newRole}.`);
     } catch (e: unknown) {
       const err = e instanceof Error ? e : new Error(String(e));
       toast.error(err.message || "Failed to update role.");
@@ -370,7 +372,7 @@ export const GroupDetailPage: React.FC = () => {
                   {/* Name & Badge */}
                   <div className="flex flex-col gap-0.5 text-left">
                     <span className="text-sm font-semibold text-text-primary flex items-center gap-1.5">
-                      {member.displayName}
+                      {resolveName(member)}
                       {isSelf && (
                         <span className="text-[9px] font-semibold bg-accent-cyan/10 border border-accent-cyan/20 px-1 rounded text-accent-cyan">
                           You
@@ -404,7 +406,7 @@ export const GroupDetailPage: React.FC = () => {
                           onClick={() =>
                             setSelectedRemoveMember({
                               id: member.id,
-                              displayName: member.displayName,
+                              displayName: resolveName(member),
                               kind: member.kind
                             })
                           }
@@ -468,10 +470,7 @@ export const GroupDetailPage: React.FC = () => {
           onClose={() => setConflictOp(null)}
           localData={conflictOp.payload}
           serverData={conflictOp.errorDetails.serverDocument}
-          memberNames={members.reduce((acc, m) => {
-            acc[m.id] = m.displayName;
-            return acc;
-          }, {} as Record<string, string>)}
+          memberNames={memberNameMap}
           onResolve={handleResolveConflict}
         />
       )}

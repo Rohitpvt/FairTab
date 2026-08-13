@@ -14,6 +14,7 @@ import { DebtSimplificationPanel } from "./components/DebtSimplificationPanel";
 import type { GroupDocument } from "../groups/groupSchema";
 import type { GroupMemberDocument } from "../groups/memberSchema";
 import type { ExpenseDocument, SettlementDocument } from "@fairtab/domain";
+import { useMemberNameResolver } from "../../hooks/useMemberNameResolver";
 
 export const SettlementsPage: React.FC = () => {
   const { groupId } = useParams<{ groupId: string }>();
@@ -30,6 +31,7 @@ export const SettlementsPage: React.FC = () => {
     pendingCount: 0,
     failedCount: 0,
   });
+  const { resolveName } = useMemberNameResolver(members);
 
   useEffect(() => {
     if (!groupId) return;
@@ -85,10 +87,12 @@ export const SettlementsPage: React.FC = () => {
     );
   }
 
+
+
   const getMemberName = (id: string) => {
     const m = members.find((member) => member.id === id);
     if (!m) return id;
-    return m.displayName + (m.kind === "placeholder" ? " (Placeholder)" : "");
+    return resolveName(m) + (m.kind === "placeholder" ? " (Placeholder)" : "");
   };
 
 

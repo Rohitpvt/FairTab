@@ -5,6 +5,7 @@ import { PageContainer } from "../../components/layout/PageContainer";
 import { groupService } from "../../infrastructure/firebase/groupService";
 import type { GroupDocument } from "../groups/groupSchema";
 import type { GroupMemberDocument } from "../groups/memberSchema";
+import { useMemberNameResolver } from "../../hooks/useMemberNameResolver";
 import { expenseService } from "../../infrastructure/firebase/expenseService";
 import type { ExpenseDocument, ExpenseRevision } from "@fairtab/domain";
 import { formatMinorUnit } from "@fairtab/domain";
@@ -36,6 +37,7 @@ export const ExpenseDetailPage: React.FC = () => {
   const [isVoiding, setIsVoiding] = useState(false);
   const [voidReason, setVoidReason] = useState("");
   const [showVoidPrompt, setShowVoidPrompt] = useState(false);
+  const { memberNameMap } = useMemberNameResolver(members);
 
   useEffect(() => {
     if (!groupId || !expenseId) return;
@@ -113,12 +115,7 @@ export const ExpenseDetailPage: React.FC = () => {
     );
   }
 
-  const memberNames = members.reduce((acc, m) => {
-    acc[m.id] = m.displayName;
-    return acc;
-  }, {} as Record<string, string>);
-
-  const getMemberName = (id: string) => memberNames[id] || id;
+  const getMemberName = (id: string) => memberNameMap[id] || id;
 
   const isVoided = expense.status === "voided";
   const formattedIncurred = expense.incurredAt?.seconds

@@ -11,6 +11,7 @@ import {
 } from "@fairtab/domain";
 import type { ExpenseDocument, SettlementDocument } from "@fairtab/domain";
 import type { GroupMemberDocument } from "../../groups/memberSchema";
+import { useMemberNameResolver } from "../../../hooks/useMemberNameResolver";
 
 interface DebtSimplificationPanelProps {
   groupId: string;
@@ -28,6 +29,7 @@ export const DebtSimplificationPanel: React.FC<DebtSimplificationPanelProps> = (
   baseCurrency,
 }) => {
   const navigate = useNavigate();
+  const { resolveName } = useMemberNameResolver(members);
   const [strategy, setStrategy] = useState<"min_tx" | "preserve_rel">("min_tx");
   const [showExplanation, setShowExplanation] = useState(false);
 
@@ -46,7 +48,7 @@ export const DebtSimplificationPanel: React.FC<DebtSimplificationPanelProps> = (
   const getMemberName = (id: string) => {
     const m = activeMembers.find((member) => member.id === id);
     if (!m) return id;
-    return m.displayName + (m.kind === "placeholder" ? " (Placeholder)" : "");
+    return resolveName(m) + (m.kind === "placeholder" ? " (Placeholder)" : "");
   };
 
   const getMemberInitials = (id: string) => {

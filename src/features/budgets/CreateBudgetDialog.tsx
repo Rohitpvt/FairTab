@@ -3,6 +3,7 @@ import { Dialog } from "../../components/ui/Dialogs";
 import { Button } from "../../components/ui/Button";
 import type { ExpenseCategory } from "@fairtab/domain";
 import type { GroupMemberDocument } from "../groups/memberSchema";
+import { useMemberNameResolver } from "../../hooks/useMemberNameResolver";
 
 interface CreateBudgetDialogProps {
   isOpen: boolean;
@@ -34,6 +35,7 @@ export const CreateBudgetDialog: React.FC<CreateBudgetDialogProps> = ({
   onSubmit,
   currency,
 }) => {
+  const { resolveName } = useMemberNameResolver(members);
   const [name, setName] = useState("");
   const [scope, setScope] = useState<"overall" | "category" | "member">("overall");
   const [category, setCategory] = useState<ExpenseCategory>("food");
@@ -158,7 +160,7 @@ export const CreateBudgetDialog: React.FC<CreateBudgetDialogProps> = ({
             >
               {activeMembers.map((m) => (
                 <option key={m.id} value={m.id}>
-                  {m.displayName}
+                  {resolveName(m)}
                 </option>
               ))}
             </select>

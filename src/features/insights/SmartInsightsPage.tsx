@@ -23,6 +23,7 @@ import type { GroupMemberDocument } from "../groups/memberSchema";
 import { offlineDb } from "../../infrastructure/offline/db";
 import type { OfflineInsight } from "../../infrastructure/offline/db";
 import { InsightCard } from "./InsightCard";
+import { useMemberNameResolver } from "../../hooks/useMemberNameResolver";
 import { InsightExplanationDialog } from "./InsightDetailDialogs";
 
 export const SmartInsightsPage: React.FC = () => {
@@ -42,6 +43,7 @@ export const SmartInsightsPage: React.FC = () => {
 
   const [selectedInsight, setSelectedInsight] = useState<SmartInsight | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const { resolveName } = useMemberNameResolver(members);
 
   // 1. Fetch Active Groups
   useEffect(() => {
@@ -170,7 +172,7 @@ export const SmartInsightsPage: React.FC = () => {
     // Convert members array to expected format { id, displayName }
     const engineMembers = members.map((m) => ({
       id: m.id,
-      displayName: m.displayName,
+      displayName: resolveName(m),
     }));
 
     return generateSmartInsights({
@@ -183,7 +185,7 @@ export const SmartInsightsPage: React.FC = () => {
       approvedOccurrences,
       groupBaseCurrency: group.baseCurrency,
     });
-  }, [selectedGroupId, group, expenses, settlements, members, budgets, templates, approvedOccurrences]);
+  }, [selectedGroupId, group, expenses, settlements, members, budgets, templates, approvedOccurrences, resolveName]);
 
   // 6. Persist insights changes in an Effect to avoid render side-effects
   useEffect(() => {

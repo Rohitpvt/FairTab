@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { Skeleton } from "../../components/ui/Skeleton";
 import type { GroupMemberDocument } from "../groups/memberSchema";
+import { useMemberNameResolver } from "../../hooks/useMemberNameResolver";
 
 interface ExpenseListPageProps {
   groupId: string;
@@ -61,12 +62,9 @@ export const ExpenseListPage: React.FC<ExpenseListPageProps> = ({
     };
   }, [groupId]);
 
-  const memberNames = members.reduce((acc, m) => {
-    acc[m.id] = m.displayName;
-    return acc;
-  }, {} as Record<string, string>);
+  const { memberNameMap } = useMemberNameResolver(members);
 
-  const getMemberName = (id: string) => memberNames[id] || id;
+  const getMemberName = (id: string) => memberNameMap[id] || id;
 
   // Filtered list
   const filtered = expenses.filter((e) => {

@@ -1,6 +1,6 @@
 import { withAuth, createHandlerContext } from "./_lib/middleware.js";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { handleDeleteAccount, handleUpdateProfile } from "../functions/src/accountOperations.js";
+import { handleDeleteAccount, handleUpdateProfile, handleRepairProfile } from "../functions/src/accountOperations.js";
 import { handleCreateBudget, handleUpdateBudget, handleDeleteBudget } from "../functions/src/budgetOperations.js";
 import { handleCreateExpense, handleUpdateExpense, handleVoidExpense } from "../functions/src/expenseOperations.js";
 import { handleDeleteGroup } from "../functions/src/groupOperations.js";
@@ -93,6 +93,7 @@ async function verifyGroupMembership(groupId: string, userId: string): Promise<v
 const standardHandlers: Record<string, (data: any, context: any) => Promise<any>> = {
   "/api/accounts/delete": handleDeleteAccount,
   "/api/accounts/update-profile": handleUpdateProfile,
+  "/api/accounts/repair-profile": handleRepairProfile,
   "/api/budgets/create": handleCreateBudget,
   "/api/budgets/delete": handleDeleteBudget,
   "/api/budgets/update": handleUpdateBudget,
