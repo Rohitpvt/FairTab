@@ -226,7 +226,7 @@ export function generateCsvLedger(data: ExportDataResult): {
         set.id,
         group.id,
         group.name,
-        formatTimestamp(set.date),
+        formatTimestamp(set.createdAt),
         set.payerId,
         memberNameMap[set.payerId] || set.payerId,
         set.payeeId,
