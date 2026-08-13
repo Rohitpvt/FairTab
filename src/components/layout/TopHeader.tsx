@@ -10,9 +10,9 @@ export interface TopHeaderProps {
 }
 
 export const TopHeader: React.FC<TopHeaderProps> = ({ title, onSearchClick }) => {
-  const { user } = useAuth();
-  const name = user?.displayName || user?.email || "User";
-  const avatarUrl = user?.photoURL || "";
+  const { user, profile } = useAuth();
+  const name = profile?.displayName || user?.displayName || user?.email || "User";
+  const avatarUrl = profile?.photoURL || user?.photoURL || "";
 
   return (
     <header className="sticky top-0 right-0 left-0 border-b border-border-color glass-standard min-h-[72px] flex items-center justify-between px-4 md:px-8 z-20">

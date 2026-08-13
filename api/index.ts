@@ -1,6 +1,6 @@
 import { withAuth, createHandlerContext } from "./_lib/middleware.js";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { handleDeleteAccount } from "../functions/src/accountOperations.js";
+import { handleDeleteAccount, handleUpdateProfile } from "../functions/src/accountOperations.js";
 import { handleCreateBudget, handleUpdateBudget, handleDeleteBudget } from "../functions/src/budgetOperations.js";
 import { handleCreateExpense, handleUpdateExpense, handleVoidExpense } from "../functions/src/expenseOperations.js";
 import { handleDeleteGroup } from "../functions/src/groupOperations.js";
@@ -92,6 +92,7 @@ async function verifyGroupMembership(groupId: string, userId: string): Promise<v
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- unavoidable cast to map standard route handlers dynamically
 const standardHandlers: Record<string, (data: any, context: any) => Promise<any>> = {
   "/api/accounts/delete": handleDeleteAccount,
+  "/api/accounts/update-profile": handleUpdateProfile,
   "/api/budgets/create": handleCreateBudget,
   "/api/budgets/delete": handleDeleteBudget,
   "/api/budgets/update": handleUpdateBudget,

@@ -47,7 +47,10 @@ const mapPathToFunction = (path: string): string => {
       if (action === "process-ocr") return "processReceiptOCR";
     }
     if (category === "groups" && action === "delete") return "deleteGroup";
-    if (category === "accounts" && action === "delete") return "deleteAccount";
+    if (category === "accounts") {
+      if (action === "delete") return "deleteAccount";
+      if (action === "update-profile") return "updateProfile";
+    }
     if (category === "invitations") {
       if (action === "create-email") return "createEmailInvitation";
       if (action === "accept-email") return "acceptEmailInvitation";
@@ -190,6 +193,7 @@ export const fairtabApi = {
   },
   accounts: {
     delete: (data: unknown) => postRequest<unknown, unknown>("/api/accounts/delete", data),
+    updateProfile: (data: unknown) => postRequest<unknown, unknown>("/api/accounts/update-profile", data),
   },
   invitations: {
     createEmail: (data: unknown) => postRequest<unknown, unknown>("/api/invitations/create-email", data),

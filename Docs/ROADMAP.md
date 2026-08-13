@@ -1,12 +1,14 @@
 # FairTab — Product and Engineering Roadmap
 
+**Current Status:** All Phase 0 through Phase 10 engineering deliverables have been fully implemented, tested (via Vitest, Firestore Security Rules, and Playwright E2E tests), and successfully integrated.
+
 ## Guiding rule
 
 Each phase must end in a deployable, testable increment. Do not postpone security, loading states, offline behavior, or responsive design until the end.
 
 ---
 
-## Phase 0 — Discovery and foundation
+## [COMPLETED] Phase 0 — Discovery and foundation
 
 Deliverables:
 - freeze product scope;
@@ -28,7 +30,7 @@ Exit criteria:
 
 ---
 
-## Phase 1 — Application shell and premium design system
+## [COMPLETED] Phase 1 — Application shell and premium design system
 
 Features:
 - responsive app shell;
@@ -51,7 +53,7 @@ Exit criteria:
 
 ---
 
-## Phase 2 — Authentication and onboarding
+## [COMPLETED] Phase 2 — Authentication and onboarding
 
 Features:
 - email registration/login;
@@ -71,7 +73,7 @@ Exit criteria:
 
 ---
 
-## Phase 3 — Groups and membership
+## [COMPLETED] Phase 3 — Groups and membership
 
 Features:
 - create/edit/archive group;
@@ -89,7 +91,7 @@ Exit criteria:
 
 ---
 
-## Phase 4 — Core expense engine
+## [COMPLETED] Phase 4 — Core expense engine
 
 Features:
 - equal split;
@@ -110,7 +112,7 @@ Exit criteria:
 
 ---
 
-## Phase 5 — Balances and settlements
+## [COMPLETED] Phase 5 — Balances and settlements
 
 Features:
 - ledger-derived balances;
@@ -129,7 +131,7 @@ Exit criteria:
 
 ---
 
-## Phase 6 — Offline-first synchronization hardening
+## [COMPLETED] Phase 6 — Offline-first synchronization hardening
 
 Features:
 - custom IndexedDB outbox;
@@ -149,7 +151,7 @@ Exit criteria:
 
 ---
 
-## Phase 7 — Search, analytics, and budgets
+## [COMPLETED] Phase 7 — Search, analytics, and budgets
 
 Features:
 - indexed local search;
@@ -167,7 +169,7 @@ Exit criteria:
 
 ---
 
-## Phase 8 — Recurring expenses and multi-currency
+## [COMPLETED] Phase 8 — Recurring expenses and multi-currency
 
 Features:
 - recurrence templates;
@@ -185,7 +187,7 @@ Exit criteria:
 
 ---
 
-## Phase 9 — Receipts and itemisation
+## [COMPLETED] Phase 9 — Receipts and itemisation
 
 Features:
 - upload/camera input;
@@ -206,7 +208,7 @@ Exit criteria:
 
 ---
 
-## Phase 10 — Production hardening
+## [COMPLETED] Phase 10 — Production hardening
 
 Activities:
 - complete rules test suite;

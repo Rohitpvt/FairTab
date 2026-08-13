@@ -36,20 +36,24 @@ Enable strict TypeScript and add quality tooling.
 
 ## 3. Install recommended packages
 
-Example package groups; verify compatible current versions before installation.
+Verify packages match the `package.json` setup:
 
 ```bash
-npm install firebase react-router-dom zod react-hook-form \
-  @hookform/resolvers dexie zustand @tanstack/react-query \
-  recharts lucide-react framer-motion sonner
+npm install firebase @hookform/resolvers @radix-ui/react-avatar \
+  @radix-ui/react-dialog @radix-ui/react-dropdown-menu \
+  @radix-ui/react-tooltip dexie framer-motion lucide-react \
+  react react-dom react-hook-form react-router-dom sonner zod \
+  @aws-sdk/client-s3 @aws-sdk/s3-presigned-post @aws-sdk/s3-request-presigner \
+  @vercel/oidc @vercel/oidc-aws-credentials-provider firebase-admin
 
-npm install -D tailwindcss postcss autoprefixer vite-plugin-pwa \
-  vitest @testing-library/react @testing-library/jest-dom \
-  @testing-library/user-event playwright eslint prettier \
-  firebase-tools
+npm install -D @eslint/js @firebase/rules-unit-testing @playwright/test \
+  @tailwindcss/vite @testing-library/jest-dom @testing-library/react \
+  @testing-library/user-event @types/node @types/react @types/react-dom \
+  @vercel/node @vitejs/plugin-react autoprefixer eslint \
+  eslint-plugin-react-hooks eslint-plugin-react-refresh fake-indexeddb \
+  firebase-tools globals jsdom postcss prettier tailwindcss \
+  typescript typescript-eslint vite vite-plugin-pwa vitest
 ```
-
-If using shadcn/ui, initialize it according to its current official CLI.
 
 ---
 
@@ -261,21 +265,22 @@ firebase deploy --only storage
 
 ## 14. Development commands
 
-Recommended scripts:
+Actual project scripts defined in `package.json`:
 
 ```json
 {
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "preview": "vite preview",
-    "lint": "eslint .",
-    "format": "prettier --write .",
-    "test": "vitest run",
+    "postbuild": "node scripts/verify-paths.js",
+    "lint": "eslint . --max-warnings=0",
+    "typecheck": "tsc -b --noEmit",
+    "test": "vitest run --exclude **/rules.test.ts --exclude **/rules-groups.test.ts --exclude **/rules-expenses.test.ts --exclude **/rules-settlements.test.ts --exclude **/rules-recurring.test.ts --exclude **/rules-storage.test.ts --exclude **/functions.test.ts --exclude **/rules-budgets.test.ts --exclude **/api.test.ts --exclude **/invitations.test.ts",
+    "test:rules": "firebase emulators:exec --only firestore \"vitest run src/test/rules.test.ts src/test/rules-groups.test.ts src/test/rules-expenses.test.ts src/test/rules-settlements.test.ts src/test/rules-recurring.test.ts src/test/rules-budgets.test.ts\"",
+    "test:functions": "firebase emulators:exec --only firestore,functions,auth \"vitest run src/test/functions.test.ts src/test/api.test.ts src/test/invitations.test.ts --fileParallelism=false\"",
     "test:watch": "vitest",
-    "test:e2e": "playwright test",
-    "emulators": "firebase emulators:start",
-    "test:rules": "firebase emulators:exec --only firestore,storage \"npm run test:rules:unit\""
+    "test:e2e": "firebase emulators:exec \"playwright test\"",
+    "preview": "vite preview"
   }
 }
 ```

@@ -117,3 +117,14 @@ body {
     scroll-behavior: auto !important;
   }
 }
+
+/* Ensure native dropdown select and options are readable in both light & dark modes */
+select {
+  color-scheme: dark light;
+}
+
+select option {
+  background-color: hsl(var(--bg-deep));
+  color: hsl(var(--text-primary));
+}
+

@@ -2,9 +2,7 @@ import {
   doc,
   getDoc,
   runTransaction,
-  serverTimestamp,
-  updateDoc,
-  increment
+  serverTimestamp
 } from "firebase/firestore";
 import { db } from "./firebase";
 
@@ -86,37 +84,8 @@ export const profileService = {
    * Updates only self-service fields on user profiles.
    * Increments version, validates immutable properties client-side.
    */
-  async updateUserProfile(uid: string, updates: Partial<Pick<UserProfile, "displayName" | "photoURL" | "defaultCurrency" | "locale" | "timeZone" | "onboardingCompleted">>): Promise<void> {
-    const docRef = doc(db, "users", uid);
-
-    // Validate that only approved fields are being sent
-    const allowedKeys = [
-      "displayName",
-      "photoURL",
-      "defaultCurrency",
-      "locale",
-      "timeZone",
-      "onboardingCompleted"
-    ];
-
-    const keys = Object.keys(updates);
-    const forbiddenKeys = keys.filter((k) => !allowedKeys.includes(k));
-    if (forbiddenKeys.length > 0) {
-      throw new Error(`Profile updates reject forbidden attributes: ${forbiddenKeys.join(", ")}`);
-    }
-
-    // Build standard payload matching safety rules
-    const updatePayload: Record<string, unknown> = {
-      ...updates,
-      updatedAt: serverTimestamp(),
-      updatedBy: uid,
-      version: increment(1) // Increments by exactly one
-    };
-
-    if (updates.displayName) {
-      updatePayload.displayNameLower = updates.displayName.toLowerCase();
-    }
-
-    await updateDoc(docRef, updatePayload);
+  async updateUserProfile(_uid: string, updates: Partial<Pick<UserProfile, "displayName" | "photoURL" | "defaultCurrency" | "locale" | "timeZone" | "onboardingCompleted">>): Promise<void> {
+    const { fairtabApi } = await import("../api/fairtabApi");
+    await fairtabApi.accounts.updateProfile(updates);
   }
 };

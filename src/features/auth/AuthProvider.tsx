@@ -45,13 +45,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!auth.currentUser) return;
     try {
       const p = await profileService.getUserProfile(auth.currentUser.uid);
+      console.log("[refreshProfile] p.exists =", !!p);
       if (p) {
         setProfile(p);
         
         // Google authentication uses Firebase verified-email state
-        const requireVerification = false;
+        const requireVerification = import.meta.env.VITE_REQUIRE_EMAIL_VERIFICATION !== "false";
         const isVerified = !requireVerification || auth.currentUser.emailVerified || auth.currentUser.providerData.some(p => p.providerId === "google.com");
         
+        console.log("[refreshProfile] uid =", auth.currentUser.uid, "emailVerified =", auth.currentUser.emailVerified, "onboardingCompleted =", p.onboardingCompleted, "isVerified =", isVerified);
+
         if (!isVerified) {
           setAuthState("email-verification-required");
         } else if (!p.onboardingCompleted) {
@@ -82,7 +85,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [refreshProfile]);
 
   useEffect(() => {
+    let unsubscribeProfile: (() => void) | null = null;
+
     const unsubscribe = onAuthStateChanged(auth, async (u) => {
+      if (unsubscribeProfile) {
+        unsubscribeProfile();
+        unsubscribeProfile = null;
+      }
+
       if (!u) {
         setUser(null);
         setProfile(null);
@@ -115,26 +125,40 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         setAuthState("authenticated-profile-loading");
         try {
-          const p = await profileService.getUserProfile(u.uid);
-          if (p) {
-            setProfile(p);
-            
-            const requireVerification = false;
-            const isVerified = !requireVerification || u.emailVerified || u.providerData.some(prov => prov.providerId === "google.com");
-            
-            if (!isVerified) {
-              setAuthState("email-verification-required");
-            } else if (!p.onboardingCompleted) {
-              setAuthState("onboarding-required");
+          const { doc, onSnapshot } = await import("firebase/firestore");
+          const { db } = await import("../../infrastructure/firebase/firebase");
+          const docRef = doc(db, "users", u.uid);
+
+          unsubscribeProfile = onSnapshot(docRef, async (snap) => {
+            console.log("[onSnapshot] snap.exists() =", snap.exists());
+            if (snap.exists()) {
+              const p = snap.data() as UserProfile;
+              setProfile(p);
+              
+              const requireVerification = import.meta.env.VITE_REQUIRE_EMAIL_VERIFICATION !== "false";
+              const emailVerified = auth.currentUser?.emailVerified ?? u.emailVerified;
+              const isVerified = !requireVerification || emailVerified || (auth.currentUser?.providerData ?? u.providerData).some(prov => prov.providerId === "google.com");
+              
+              console.log("[onSnapshot] uid =", u.uid, "emailVerified =", emailVerified, "onboardingCompleted =", p.onboardingCompleted, "isVerified =", isVerified);
+
+              if (!isVerified) {
+                setAuthState("email-verification-required");
+              } else if (!p.onboardingCompleted) {
+                setAuthState("onboarding-required");
+              } else {
+                setAuthState("ready");
+              }
             } else {
-              setAuthState("ready");
+              // Document doesn't exist yet, trigger idempotent bootstrap
+              await bootstrapProfile(u);
             }
-          } else {
-            // Document doesn't exist yet, trigger idempotent bootstrap
-            await bootstrapProfile(u);
-          }
+          }, (err) => {
+            console.error("Error listening to profile:", err);
+            setError(err.message || "An error occurred while loading your profile.");
+            setAuthState("error");
+          });
         } catch (err: unknown) {
-          console.error("Error loading user profile:", err);
+          console.error("Error setting up profile subscription:", err);
           const errorObj = err instanceof Error ? err : new Error(String(err));
           setError(errorObj.message || "An error occurred while loading your profile.");
           setAuthState("error");
@@ -142,7 +166,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     });
 
-    return () => unsubscribe();
+    return () => {
+      unsubscribe();
+      if (unsubscribeProfile) {
+        unsubscribeProfile();
+      }
+    };
   }, [bootstrapProfile, refreshProfile]);
 
   const setTrustedDevicePreference = useCallback(async (value: boolean, triggerReload = false) => {

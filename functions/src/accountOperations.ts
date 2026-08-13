@@ -141,3 +141,89 @@ export async function handleDeleteAccount(
 
   return { success: true };
 }
+
+export async function handleUpdateProfile(
+  data: any,
+  context: functions.https.CallableContext
+): Promise<{ success: boolean }> {
+  if (!context.auth) {
+    throw new functions.https.HttpsError("unauthenticated", "Authentication required.");
+  }
+  const uid = context.auth.uid;
+  const { displayName, photoURL, defaultCurrency, locale, timeZone, onboardingCompleted } = data;
+
+  const db = admin.firestore();
+  const userRef = db.doc(`users/${uid}`);
+
+  let cleanName = "";
+  if (displayName !== undefined) {
+    if (!displayName || !displayName.trim()) {
+      throw new functions.https.HttpsError("invalid-argument", "Display name cannot be empty.");
+    }
+    cleanName = displayName.trim();
+  }
+
+  // 1. Update authoritative profile document users/{uid}
+  await db.runTransaction(async (transaction) => {
+    const userSnap = await transaction.get(userRef);
+    if (!userSnap.exists) {
+      throw new functions.https.HttpsError("not-found", "User profile document not found.");
+    }
+    
+    const updatePayload: Record<string, any> = {
+      updatedAt: FieldValue.serverTimestamp(),
+      updatedBy: uid,
+      version: FieldValue.increment(1),
+    };
+
+    if (displayName !== undefined) {
+      updatePayload.displayName = cleanName;
+      updatePayload.displayNameLower = cleanName.toLowerCase();
+    }
+    if (photoURL !== undefined) updatePayload.photoURL = photoURL;
+    if (defaultCurrency !== undefined) updatePayload.defaultCurrency = defaultCurrency;
+    if (locale !== undefined) updatePayload.locale = locale;
+    if (timeZone !== undefined) updatePayload.timeZone = timeZone;
+    if (onboardingCompleted !== undefined) updatePayload.onboardingCompleted = onboardingCompleted;
+
+    transaction.update(userRef, updatePayload);
+  });
+
+  // 2. Synchronize Firebase Auth displayName if changed (outside Firestore transaction)
+  if (displayName !== undefined) {
+    try {
+      await admin.auth().updateUser(uid, {
+        displayName: cleanName,
+      });
+    } catch (err: any) {
+      console.error(`Failed to update Firebase Auth displayName for ${uid}:`, err);
+    }
+
+    // 3. Update required denormalized membership fields (outside transaction to avoid unbounded lockups)
+    try {
+      const indexColl = db.collection(`userGroupIndex/${uid}/groups`);
+      const indexSnap = await indexColl.get();
+      
+      if (!indexSnap.empty) {
+        const batch = db.batch();
+        indexSnap.forEach((doc) => {
+          const groupId = doc.id;
+          const memberRef = db.doc(`groups/${groupId}/members/${uid}`);
+          batch.update(memberRef, {
+            displayName: cleanName,
+            displayNameLower: cleanName.toLowerCase(),
+            updatedAt: FieldValue.serverTimestamp(),
+            updatedBy: uid,
+            version: FieldValue.increment(1),
+          });
+        });
+        await batch.commit();
+      }
+    } catch (err: any) {
+      console.error(`Failed to propagate displayName to group memberships for ${uid}:`, err);
+    }
+  }
+
+  return { success: true };
+}
+

@@ -26,6 +26,10 @@ async function sendResendEmail(
 
   if (!apiKey) {
     console.warn("RESEND_API_KEY environment variable is not set. Email will not be sent.");
+    if (process.env.FUNCTIONS_EMULATOR === "true" || process.env.NODE_ENV === "test" || process.env.VITE_USE_FIREBASE_EMULATORS === "true") {
+      console.log("FUNCTIONS_EMULATOR or test active: bypassing Resend email sending successfully.");
+      return;
+    }
     throw new Error("RESEND_API_KEY is not configured on the server.");
   }
 

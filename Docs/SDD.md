@@ -34,12 +34,10 @@ GitHub Pages serves static production assets. Firebase handles authentication an
 - Framer Motion, used selectively
 - React Hook Form
 - Zod
-- TanStack Query for server-state coordination where appropriate
-- Zustand or Redux Toolkit for focused client state
 - Firebase modular Web SDK
 - Dexie for custom IndexedDB tables
 - vite-plugin-pwa with Workbox
-- Recharts
+- Custom SVG / CSS charts for analytics rendering
 - Vitest and React Testing Library
 - Playwright
 - Firebase Emulator Suite

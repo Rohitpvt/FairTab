@@ -5,7 +5,7 @@
 **Tagline:** Every expense, fairly shared.  
 **Status:** Authoritative frontend blueprint  
 **Deployment:** GitHub Pages  
-**Frontend stack:** React, TypeScript, Vite, Tailwind CSS, Radix UI/shadcn-style primitives, Lucide React, Framer Motion, React Hook Form, Zod, TanStack Query, Zustand, Firebase Web SDK, Dexie, vite-plugin-pwa
+**Frontend stack:** React, TypeScript, Vite, Tailwind CSS, Radix UI/shadcn-style primitives, Lucide React, Framer Motion, React Hook Form, Zod, Firebase Web SDK, Dexie, vite-plugin-pwa
 
 ---
 
@@ -703,7 +703,7 @@ Use Dexie/IndexedDB.
 - filter drawer;
 - command palette.
 
-Use local React state or a focused Zustand store.
+Use local React state or a React context/reducer.
 
 ### Global application state
 

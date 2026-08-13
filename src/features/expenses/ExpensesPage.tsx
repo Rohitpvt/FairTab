@@ -29,7 +29,7 @@ interface AggregatedExpense {
 const isTest = typeof process !== "undefined" && process.env.NODE_ENV === "test";
 
 export const ExpensesPage: React.FC = () => {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const [isLoading, setIsLoading] = useState(!isTest);
   const [groups, setGroups] = useState<UserGroupIndexDocument[]>([]);
   const [expensesMap, setExpensesMap] = useState<Record<string, ExpenseDocument[]>>({});
@@ -83,7 +83,7 @@ export const ExpensesPage: React.FC = () => {
     if (memberNames[key]) return memberNames[key];
 
     if (memberId === user?.uid) {
-      return user.displayName || user.email || "You";
+      return profile?.displayName || user?.displayName || user?.email || "You";
     }
 
     // Trigger Firestore retrieval in background

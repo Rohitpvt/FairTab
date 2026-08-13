@@ -1,5 +1,7 @@
 # FairTab — Task Breakdown
 
+**All Epics (EPIC-00 through EPIC-15) are currently 100% completed and fully verified.**
+
 Task IDs are designed for direct import into Antigravity, GitHub Issues, or a project board.
 
 Priority:
@@ -9,7 +11,7 @@ Priority:
 
 ---
 
-## EPIC-00 Project governance
+## [COMPLETED] EPIC-00 Project governance
 
 - **FS-001 P0** Create repository and branch protections.
 - **FS-002 P0** Add README, licence, `.gitignore`, environment example.

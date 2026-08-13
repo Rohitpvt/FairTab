@@ -267,8 +267,10 @@ describe("Group Invitations & Notifications Backend Operations Tests", () => {
     const bobNotif = await db.doc(`users/${bobUid}/notifications/${reqRes.requestId}_${bobUid}`).get();
     expect(bobNotif.exists).toBe(false);
 
-    // Verify duplicate requests are rejected
-    await expect(handleRequestJoinViaGlobalLink({ token: linkRes.token }, contextBob)).rejects.toThrow();
+    // Verify duplicate requests are re-created (stale requests and notifications are cleaned up, returning a new request ID)
+    const reqRes2 = await handleRequestJoinViaGlobalLink({ token: linkRes.token }, contextBob);
+    expect(reqRes2.requestId).toBeDefined();
+    expect(reqRes2.requestId).not.toBe(reqRes.requestId);
 
     // Alice approves request
     const approveRes = await handleApproveJoinRequest({
@@ -283,11 +285,11 @@ describe("Group Invitations & Notifications Backend Operations Tests", () => {
     expect(bobMember.data()!.role).toBe("viewer");
     expect(bobMember.data()!.status).toBe("active");
 
-    // Verify all admin/owner notifications are resolved to approved
-    const updatedAliceNotif = await db.doc(`users/${aliceUid}/notifications/${reqRes.requestId}_${aliceUid}`).get();
+    // Verify all admin/owner notifications are resolved to approved for the new request ID
+    const updatedAliceNotif = await db.doc(`users/${aliceUid}/notifications/${reqRes2.requestId}_${aliceUid}`).get();
     expect(updatedAliceNotif.data()!.status).toBe("approved");
 
-    const updatedCharlieNotif = await db.doc(`users/${charlieUid}/notifications/${reqRes.requestId}_${charlieUid}`).get();
+    const updatedCharlieNotif = await db.doc(`users/${charlieUid}/notifications/${reqRes2.requestId}_${charlieUid}`).get();
     expect(updatedCharlieNotif.data()!.status).toBe("approved");
 
     // Verify applicant Bob received join_request_approved notification
@@ -296,10 +298,11 @@ describe("Group Invitations & Notifications Backend Operations Tests", () => {
       .get();
     expect(bobApprovedNotif.empty).toBe(false);
 
-    // Verify concurrent approves remain safe/idempotent
-    await expect(handleApproveJoinRequest({
+    // Verify concurrent approves remain safe/idempotent and return cleared status
+    const concurrentRes = await handleApproveJoinRequest({
       groupId,
       applicantUid: bobUid
-    }, contextAlice)).rejects.toThrow();
+    }, contextAlice);
+    expect(concurrentRes.status).toBe("cleared");
   });
 });
