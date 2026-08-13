@@ -17,6 +17,7 @@ const EditExpenseFlow = lazy(() => import("./features/expenses/EditExpenseFlow")
 const ExpenseDetailPage = lazy(() => import("./features/expenses/ExpenseDetailPage"));
 const OCRReviewPage = lazy(() => import("./features/receipts/OCRReviewPage"));
 const SettlementsPage = lazy(() => import("./features/settlements/SettlementsPage"));
+const GlobalSettlementsPage = lazy(() => import("./features/settlements/GlobalSettlementsPage"));
 const RecordSettlementFlow = lazy(() => import("./features/settlements/RecordSettlementFlow"));
 const SettlementDetailPage = lazy(() => import("./features/settlements/SettlementDetailPage"));
 const AnalyticsPage = lazy(() => import("./features/analytics/AnalyticsPage"));
@@ -220,6 +221,14 @@ export function App() {
                   element={
                     <Suspense fallback={<RoutePending />}>
                       <ExpensesPage />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="settlements"
+                  element={
+                    <Suspense fallback={<RoutePending />}>
+                      <GlobalSettlementsPage />
                     </Suspense>
                   }
                 />
