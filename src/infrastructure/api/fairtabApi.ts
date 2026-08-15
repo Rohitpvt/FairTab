@@ -1,7 +1,7 @@
 import { auth } from "../firebase/firebase";
 
 const getBaseUrl = (): string => {
-  let url = import.meta.env.VITE_API_BASE_URL || "";
+  let url = import.meta.env.VITE_API_BASE_URL || "https://fairtab-api.vercel.app";
   if (!url && typeof process !== "undefined" && process.env.NODE_ENV === "test") {
     url = "http://localhost";
   }
