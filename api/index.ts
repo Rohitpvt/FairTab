@@ -12,7 +12,12 @@ import {
   handleSkipRecurringOccurrence,
   handleUpdateRecurringTemplate
 } from "../functions/src/recurringOperations.js";
-import { handleCreateSettlement, handleVoidSettlement } from "../functions/src/settlementOperations.js";
+import {
+  handleCreateSettlement,
+  handleVoidSettlement,
+  handleSettleExpenseSplit,
+  handleUnsettleExpenseSplit,
+} from "../functions/src/settlementOperations.js";
 import {
   handleCreateEmailInvitation,
   handleAcceptEmailInvitation,
@@ -110,6 +115,8 @@ const standardHandlers: Record<string, (data: any, context: any) => Promise<any>
   "/api/recurring/update-template": handleUpdateRecurringTemplate,
   "/api/settlements/create": handleCreateSettlement,
   "/api/settlements/void": handleVoidSettlement,
+  "/api/settlements/settle-split": handleSettleExpenseSplit,
+  "/api/settlements/unsettle-split": handleUnsettleExpenseSplit,
   "/api/invitations/create-email": handleCreateEmailInvitation,
   "/api/invitations/accept-email": handleAcceptEmailInvitation,
   "/api/invitations/create-global": handleCreateGlobalInviteLink,
