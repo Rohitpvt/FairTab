@@ -349,6 +349,11 @@ service cloud.firestore {
           allow read: if isActiveMember(groupId, request.auth.uid);
           allow write: if false;
         }
+
+        match /payments/{memberId} {
+          allow read: if isActiveMember(groupId, request.auth.uid);
+          allow write: if false;
+        }
       }
 
       // Expense operation receipts (idempotency audits)

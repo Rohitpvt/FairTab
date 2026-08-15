@@ -7,8 +7,9 @@ import type { GroupDocument } from "../groups/groupSchema";
 import type { GroupMemberDocument } from "../groups/memberSchema";
 import { useMemberNameResolver } from "../../hooks/useMemberNameResolver";
 import { expenseService } from "../../infrastructure/firebase/expenseService";
-import type { ExpenseDocument, ExpenseRevision } from "@fairtab/domain";
+import type { ExpenseDocument, ExpenseRevision, ParticipantPaymentDocument } from "@fairtab/domain";
 import { formatMinorUnit } from "@fairtab/domain";
+import { auth } from "../../infrastructure/firebase/firebase";
 import { syncManager } from "../../infrastructure/offline/syncManager";
 import { Button } from "../../components/ui/Button";
 import { Skeleton } from "../../components/ui/Skeleton";
@@ -32,6 +33,8 @@ export const ExpenseDetailPage: React.FC = () => {
   const [members, setMembers] = useState<GroupMemberDocument[]>([]);
   const [expense, setExpense] = useState<ExpenseDocument | null>(null);
   const [revisions, setRevisions] = useState<ExpenseRevision[]>([]);
+  const [payments, setPayments] = useState<ParticipantPaymentDocument[]>([]);
+  const [isUpdatingPayment, setIsUpdatingPayment] = useState<Record<string, boolean>>({});
   
   const [isLoading, setIsLoading] = useState(true);
   const [isVoiding, setIsVoiding] = useState(false);
@@ -59,13 +62,45 @@ export const ExpenseDetailPage: React.FC = () => {
       setRevisions(revs);
     });
 
+    const unsubPayments = expenseService.watchParticipantPayments(groupId, expenseId, (p) => {
+      setPayments(p);
+    });
+
     return () => {
       unsubGroup();
       unsubMembers();
       unsubExpense();
       unsubRevisions();
+      unsubPayments();
     };
   }, [groupId, expenseId]);
+
+  const togglePaymentStatus = async (memberId: string) => {
+    if (!groupId || !expenseId) return;
+    const isPaid = payments.some((p) => p.memberId === memberId && p.status === "paid");
+    setIsUpdatingPayment((prev) => ({ ...prev, [memberId]: true }));
+    try {
+      const clientOperationId = crypto.randomUUID();
+      const payload = {
+        clientOperationId,
+        groupId,
+        expenseId,
+        memberId,
+      };
+      const { fairtabApi } = await import("../../infrastructure/api/fairtabApi");
+      if (isPaid) {
+        await fairtabApi.settlements.unsettleSplit(payload);
+        toast.success("Split payment reverted successfully.");
+      } else {
+        await fairtabApi.settlements.settleSplit(payload);
+        toast.success("Split marked as paid successfully.");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Failed to update payment status.");
+    } finally {
+      setIsUpdatingPayment((prev) => ({ ...prev, [memberId]: false }));
+    }
+  };
 
   const handleVoid = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -121,6 +156,24 @@ export const ExpenseDetailPage: React.FC = () => {
   const formattedIncurred = expense.incurredAt?.seconds
     ? new Date(expense.incurredAt.seconds * 1000).toLocaleDateString()
     : "Unknown Date";
+
+  const currentUserUid = auth.currentUser?.uid;
+  const currentMember = members.find((m) => m.userId === currentUserUid);
+  const isAuthorized = !!(currentUserUid && (
+    expense.createdBy === currentUserUid ||
+    currentMember?.role === "owner" ||
+    currentMember?.role === "admin"
+  ));
+
+  const totalParticipants = expense.splits.length;
+  const paidPayments = payments.filter((p) => p.status === "paid");
+  const paidCount = paidPayments.filter(p => expense.splits.some(s => s.memberId === p.memberId)).length;
+  const totalAmount = expense.amountMinor;
+  const paidAmount = expense.splits
+    .filter((s) => payments.some((p) => p.memberId === s.memberId && p.status === "paid"))
+    .reduce((sum, s) => sum + s.amountMinor, 0);
+
+  const progressText = `${paidCount} of ${totalParticipants} paid • ${formatMinorUnit(paidAmount, expense.currency)} of ${formatMinorUnit(totalAmount, expense.currency)} collected`;
 
   return (
     <PageContainer
@@ -246,28 +299,68 @@ export const ExpenseDetailPage: React.FC = () => {
             </div>
 
             <div className="glass-elevated border border-white/10 rounded-2xl p-6">
-              <h3 className="text-sm font-bold text-text-primary mb-4 uppercase tracking-wider">Split Breakdown</h3>
-              <div className="flex flex-col gap-3">
-                {expense.splits.map((s) => (
-                  <div key={s.memberId} className="flex justify-between items-center text-xs">
-                    <span className="text-text-secondary">{getMemberName(s.memberId)}</span>
-                    <div className="text-right">
-                      <span className="text-text-primary font-bold block">
-                        {formatMinorUnit(s.amountMinor, expense.currency)}
-                      </span>
-                      {s.percentageBps !== undefined && (
-                        <span className="text-[9px] text-text-muted block">
-                          {(s.percentageBps / 100).toFixed(2)}%
-                        </span>
-                      )}
-                      {s.shares !== undefined && (
-                        <span className="text-[9px] text-text-muted block">
-                          {s.shares} {s.shares === 1 ? "share" : "shares"}
-                        </span>
-                      )}
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-sm font-bold text-text-primary uppercase tracking-wider">Split Breakdown</h3>
+                <span className="text-[10px] text-accent-cyan font-semibold bg-accent-cyan/10 px-2.5 py-1 rounded-full">
+                  {progressText}
+                </span>
+              </div>
+              <div className="flex flex-col gap-4">
+                {expense.splits.map((s) => {
+                  const payment = payments.find((p) => p.memberId === s.memberId);
+                  const isPaid = payment?.status === "paid";
+                  const isUpdating = !!isUpdatingPayment[s.memberId];
+                  return (
+                    <div key={s.memberId} className="flex justify-between items-center text-xs border-b border-white/5 pb-3 last:border-0 last:pb-0">
+                      <div className="flex flex-col gap-1">
+                        <span className="text-text-secondary font-medium">{getMemberName(s.memberId)}</span>
+                        <div className="flex items-center gap-1.5">
+                          {isPaid ? (
+                            <span className="text-[10px] text-green-400 font-bold bg-green-500/10 px-2 py-0.5 rounded-full flex items-center gap-1">
+                              ✓ Paid
+                            </span>
+                          ) : (
+                            <span className="text-[10px] text-text-muted bg-white/5 px-2 py-0.5 rounded-full">
+                              Unpaid
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <div className="text-right">
+                          <span className="text-text-primary font-bold block">
+                            {formatMinorUnit(s.amountMinor, expense.currency)}
+                          </span>
+                          {s.percentageBps !== undefined && (
+                            <span className="text-[9px] text-text-muted block">
+                              {(s.percentageBps / 100).toFixed(2)}%
+                            </span>
+                          )}
+                          {s.shares !== undefined && (
+                            <span className="text-[9px] text-text-muted block">
+                              {s.shares} {s.shares === 1 ? "share" : "shares"}
+                            </span>
+                          )}
+                        </div>
+                        {isAuthorized && !isVoided && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            disabled={isUpdating}
+                            onClick={() => togglePaymentStatus(s.memberId)}
+                            className={`px-3 py-1.5 h-8 text-[10px] rounded-lg border font-semibold transition-all ${
+                              isPaid
+                                ? "border-red-500/30 text-red-400 hover:bg-red-500/10"
+                                : "border-accent-cyan/30 text-accent-cyan hover:bg-accent-cyan/10"
+                            }`}
+                          >
+                            {isUpdating ? "..." : isPaid ? "Unmark" : "Mark Paid"}
+                          </Button>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </div>

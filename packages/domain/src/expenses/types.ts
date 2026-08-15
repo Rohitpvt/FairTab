@@ -122,6 +122,8 @@ export interface SettlementDocument {
   version: number;
   schemaVersion: number;
   latestOperationId: string;
+  relatedExpenseId?: string;
+  relatedMemberId?: string;
 }
 
 export interface SettlementRevision {
@@ -141,6 +143,8 @@ export interface SettlementRevision {
   operationId: string;
   createdAt: any;
   createdBy: string;
+  relatedExpenseId?: string;
+  relatedMemberId?: string;
 }
 
 export interface SettlementOperationReceipt {
@@ -283,4 +287,14 @@ export interface RecurringOccurrenceDocument {
   createdAt: any;
   schemaVersion: 1;
 }
+
+export interface ParticipantPaymentDocument {
+  memberId: string;
+  status: "paid" | "unpaid";
+  settlementIds: string[];
+  markedBy: string;
+  markedAt: any;
+  version: number;
+}
+
 

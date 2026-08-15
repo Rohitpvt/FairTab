@@ -29,6 +29,8 @@ const mapPathToFunction = (path: string): string => {
     if (category === "settlements") {
       if (action === "create") return "createSettlement";
       if (action === "void") return "voidSettlement";
+      if (action === "settle-split") return "settleExpenseSplit";
+      if (action === "unsettle-split") return "unsettleExpenseSplit";
     }
     if (category === "budgets") {
       if (action === "create") return "createBudget";
@@ -170,6 +172,8 @@ export const fairtabApi = {
   settlements: {
     create: (data: unknown) => postRequest<unknown, unknown>("/api/settlements/create", data),
     void: (data: unknown) => postRequest<unknown, unknown>("/api/settlements/void", data),
+    settleSplit: (data: unknown) => postRequest<unknown, unknown>("/api/settlements/settle-split", data),
+    unsettleSplit: (data: unknown) => postRequest<unknown, unknown>("/api/settlements/unsettle-split", data),
   },
   budgets: {
     create: (data: unknown) => postRequest<unknown, unknown>("/api/budgets/create", data),

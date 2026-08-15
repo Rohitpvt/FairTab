@@ -2,6 +2,9 @@
 import * as admin from "firebase-admin";
 import * as functions from "firebase-functions";
 import { FieldValue, Timestamp } from "firebase-admin/firestore";
+import {
+  splitProportional,
+} from "@fairtab/domain";
 import type {
   SettlementDocument,
   SettlementRevision,
@@ -553,3 +556,522 @@ export const handleVoidSettlement = async (
     return receipt.result;
   });
 };
+
+interface SettleExpenseSplitInput {
+  clientOperationId: string;
+  groupId: string;
+  expenseId: string;
+  memberId: string;
+}
+
+export const handleSettleExpenseSplit = async (
+  data: SettleExpenseSplitInput,
+  context: functions.https.CallableContext
+): Promise<any> => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError(
+      "unauthenticated",
+      "Authentication is required."
+    );
+  }
+  const actorUid = context.auth.uid;
+
+  const { clientOperationId, groupId, expenseId, memberId } = data;
+  if (!clientOperationId || !groupId || !expenseId || !memberId) {
+    throw new functions.https.HttpsError(
+      "invalid-argument",
+      "Missing required fields."
+    );
+  }
+
+  const db = admin.firestore();
+  const groupRef = db.doc(`groups/${groupId}`);
+  const expenseRef = db.doc(`groups/${groupId}/expenses/${expenseId}`);
+  const memberActorRef = db.doc(`groups/${groupId}/members/${actorUid}`);
+  const paymentTrackingRef = db.doc(`groups/${groupId}/expenses/${expenseId}/payments/${memberId}`);
+  const operationRef = db.doc(`groups/${groupId}/settlementOperations/${clientOperationId}`);
+
+  const payloadHash = computePayloadHash({
+    groupId,
+    expenseId,
+    memberId,
+  });
+
+  return db.runTransaction(async (transaction) => {
+    // 1. Idempotency Check
+    const opSnap = await transaction.get(operationRef);
+    if (opSnap.exists) {
+      const receipt = opSnap.data() as SettlementOperationReceipt;
+      if (receipt.payloadHash !== payloadHash) {
+        throw new functions.https.HttpsError(
+          "already-exists",
+          "An operation with this ID exists with a different payload."
+        );
+      }
+      return receipt.result;
+    }
+
+    // 2. Fetch Group & verify status
+    const groupSnap = await transaction.get(groupRef);
+    if (!groupSnap.exists) {
+      throw new functions.https.HttpsError("not-found", "Group not found.", { reason: "group_not_found", path: groupRef.path });
+    }
+    const group = groupSnap.data()!;
+    if (group.status === "archived" || group.status === "deleted") {
+      throw new functions.https.HttpsError(
+        "failed-precondition",
+        "Group is archived or deleted."
+      );
+    }
+
+    // 3. Fetch Actor & verify status
+    const actorSnap = await transaction.get(memberActorRef);
+    if (!actorSnap.exists || actorSnap.data()!.status !== "active") {
+      throw new functions.https.HttpsError(
+        "permission-denied",
+        "Actor is not an active member."
+      );
+    }
+    const actorRole = actorSnap.data()!.role;
+
+    // 4. Fetch Expense
+    const expenseSnap = await transaction.get(expenseRef);
+    if (!expenseSnap.exists) {
+      throw new functions.https.HttpsError("not-found", "Expense not found.", { reason: "expense_not_found", path: expenseRef.path });
+    }
+    const expense = expenseSnap.data()!;
+    if (expense.status !== "active") {
+      throw new functions.https.HttpsError(
+        "failed-precondition",
+        "Cannot settle splits on a voided expense."
+      );
+    }
+
+    // 5. Verify member is participant in the expense
+    const participantIds = expense.participantMemberIds || [];
+    if (!participantIds.includes(memberId)) {
+      throw new functions.https.HttpsError(
+        "invalid-argument",
+        "Member is not a participant in this expense."
+      );
+    }
+
+    // 6. Verify Authorization (Creator, Owner, Admin)
+    const isCreator = expense.createdBy === actorUid;
+    const isOwnerOrAdmin = actorRole === "owner" || actorRole === "admin";
+    if (!isCreator && !isOwnerOrAdmin) {
+      throw new functions.https.HttpsError(
+        "permission-denied",
+        "You are not authorized to mark this participant split as paid."
+      );
+    }
+
+    // 7. Check current payment tracking status
+    const trackingSnap = await transaction.get(paymentTrackingRef);
+    if (trackingSnap.exists) {
+      const trackingData = trackingSnap.data()!;
+      if (trackingData.status === "paid") {
+        // Already paid, return success (idempotency)
+        const receipt = {
+          clientOperationId,
+          groupId,
+          type: "create",
+          actorUid,
+          settlementId: trackingData.settlementIds[0] || "",
+          payloadHash,
+          createdAt: Timestamp.now(),
+          result: {
+            expenseId,
+            memberId,
+            status: "paid",
+          },
+        };
+        transaction.set(operationRef, receipt);
+        return receipt.result;
+      }
+    }
+
+    // 8. Calculate what memberId owes and distribute proportionally to creditors
+    const split = expense.splits.find((s: any) => s.memberId === memberId);
+    if (!split || split.amountMinor <= 0) {
+      throw new functions.https.HttpsError(
+        "invalid-argument",
+        "Participant owes zero or no split found."
+      );
+    }
+
+    const debtAmount = split.amountMinor;
+    const baseDebtAmount = split.baseAmountMinor;
+
+    // Calculate net credit inside this expense for each payer
+    const creditors: { memberId: string; credit: number }[] = [];
+    expense.payers.forEach((p: any) => {
+      const payerSplit = expense.splits.find((s: any) => s.memberId === p.memberId);
+      const payerSplitAmount = payerSplit ? payerSplit.amountMinor : 0;
+      const netCredit = p.amountMinor - payerSplitAmount;
+      if (netCredit > 0) {
+        creditors.push({ memberId: p.memberId, credit: netCredit });
+      }
+    });
+
+    if (creditors.length === 0) {
+      throw new functions.https.HttpsError(
+        "failed-precondition",
+        "No net creditors found inside this expense to settle to."
+      );
+    }
+
+    // Proportional debt splitting logic using statically imported helper
+    const splits = splitProportional(debtAmount, creditors);
+    const baseSplits = splitProportional(baseDebtAmount, creditors);
+
+    const generatedSettlementIds: string[] = [];
+    const timestamp = Timestamp.now();
+
+    for (let i = 0; i < splits.length; i++) {
+      const share = splits[i];
+      const baseShare = baseSplits[i];
+
+      if (share.amountMinor > 0) {
+        const settlementId = `${expenseId}_${memberId}_${share.memberId}`;
+        const settlementRef = db.doc(`groups/${groupId}/settlements/${settlementId}`);
+
+        // Prevent duplicate settlement document writes if somehow left active
+        const existingSetSnap = await transaction.get(settlementRef);
+        if (existingSetSnap.exists) {
+          const existingSet = existingSetSnap.data()!;
+          if (existingSet.status === "active") {
+            generatedSettlementIds.push(settlementId);
+            continue;
+          }
+        }
+
+        const settlementDoc: SettlementDocument = {
+          id: settlementId,
+          groupId,
+          payerId: memberId,
+          receiverId: share.memberId,
+          amountMinor: share.amountMinor,
+          currency: expense.currency,
+          baseAmountMinor: baseShare.amountMinor,
+          fx: expense.fx,
+          status: "active",
+          createdAt: timestamp,
+          createdBy: actorUid,
+          updatedAt: timestamp,
+          updatedBy: actorUid,
+          version: 1,
+          schemaVersion: 1,
+          latestOperationId: clientOperationId,
+          relatedExpenseId: expenseId,
+          relatedMemberId: memberId,
+        };
+
+        const revisionDoc: SettlementRevision = {
+          id: "1",
+          settlementId,
+          groupId,
+          payerId: memberId,
+          receiverId: share.memberId,
+          amountMinor: share.amountMinor,
+          currency: expense.currency,
+          baseAmountMinor: baseShare.amountMinor,
+          fx: expense.fx,
+          status: "active",
+          version: 1,
+          schemaVersion: 1,
+          operationId: clientOperationId,
+          createdAt: timestamp,
+          createdBy: actorUid,
+          relatedExpenseId: expenseId,
+          relatedMemberId: memberId,
+        };
+
+        const activityId = db.collection(`groups/${groupId}/activities`).doc().id;
+        const activityDoc = {
+          id: activityId,
+          groupId,
+          type: "settlement_created",
+          summary: `Repayment marked: Split participant resolved share of "${expense.title}"`,
+          actorUserId: actorUid,
+          entityId: settlementId,
+          createdAt: timestamp,
+        };
+
+        transaction.set(settlementRef, settlementDoc);
+        transaction.set(db.doc(`groups/${groupId}/settlements/${settlementId}/revisions/1`), revisionDoc);
+        transaction.set(db.doc(`groups/${groupId}/activities/${activityId}`), activityDoc);
+        generatedSettlementIds.push(settlementId);
+      }
+    }
+
+    // 9. Write tracking document
+    const paymentDoc = {
+      memberId,
+      status: "paid",
+      settlementIds: generatedSettlementIds,
+      markedBy: actorUid,
+      markedAt: timestamp,
+      version: 1,
+    };
+    transaction.set(paymentTrackingRef, paymentDoc);
+
+    // 10. Write operation receipt
+    const receipt = {
+      clientOperationId,
+      groupId,
+      type: "create",
+      actorUid,
+      settlementId: generatedSettlementIds[0] || "",
+      payloadHash,
+      createdAt: timestamp,
+      result: {
+        expenseId,
+        memberId,
+        status: "paid",
+      },
+    };
+    transaction.set(operationRef, receipt);
+
+    // Update group latest metadata
+    transaction.update(groupRef, {
+      updatedAt: timestamp,
+      updatedBy: actorUid,
+      latestActivityAt: timestamp,
+      version: FieldValue.increment(1),
+    });
+
+    return receipt.result;
+  });
+};
+
+export const handleUnsettleExpenseSplit = async (
+  data: SettleExpenseSplitInput,
+  context: functions.https.CallableContext
+): Promise<any> => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError(
+      "unauthenticated",
+      "Authentication is required."
+    );
+  }
+  const actorUid = context.auth.uid;
+
+  const { clientOperationId, groupId, expenseId, memberId } = data;
+  if (!clientOperationId || !groupId || !expenseId || !memberId) {
+    throw new functions.https.HttpsError(
+      "invalid-argument",
+      "Missing required fields."
+    );
+  }
+
+  const db = admin.firestore();
+  const groupRef = db.doc(`groups/${groupId}`);
+  const expenseRef = db.doc(`groups/${groupId}/expenses/${expenseId}`);
+  const memberActorRef = db.doc(`groups/${groupId}/members/${actorUid}`);
+  const paymentTrackingRef = db.doc(`groups/${groupId}/expenses/${expenseId}/payments/${memberId}`);
+  const operationRef = db.doc(`groups/${groupId}/settlementOperations/${clientOperationId}`);
+
+  const payloadHash = computePayloadHash({
+    groupId,
+    expenseId,
+    memberId,
+    action: "unsettle",
+  });
+
+  return db.runTransaction(async (transaction) => {
+    // 1. Idempotency Check
+    const opSnap = await transaction.get(operationRef);
+    if (opSnap.exists) {
+      const receipt = opSnap.data() as SettlementOperationReceipt;
+      if (receipt.payloadHash !== payloadHash) {
+        throw new functions.https.HttpsError(
+          "already-exists",
+          "An operation with this ID exists with a different payload."
+        );
+      }
+      return receipt.result;
+    }
+
+    // 2. Fetch Group & verify status
+    const groupSnap = await transaction.get(groupRef);
+    if (!groupSnap.exists) {
+      throw new functions.https.HttpsError("not-found", "Group not found.");
+    }
+    const group = groupSnap.data()!;
+    if (group.status === "archived" || group.status === "deleted") {
+      throw new functions.https.HttpsError(
+        "failed-precondition",
+        "Group is archived or deleted."
+      );
+    }
+
+    // 3. Fetch Actor & verify status
+    const actorSnap = await transaction.get(memberActorRef);
+    if (!actorSnap.exists || actorSnap.data()!.status !== "active") {
+      throw new functions.https.HttpsError(
+        "permission-denied",
+        "Actor is not an active member."
+      );
+    }
+    const actorRole = actorSnap.data()!.role;
+
+    // 4. Fetch Expense
+    const expenseSnap = await transaction.get(expenseRef);
+    if (!expenseSnap.exists) {
+      throw new functions.https.HttpsError("not-found", "Expense not found.");
+    }
+    const expense = expenseSnap.data()!;
+
+    // 5. Verify Authorization (Creator, Owner, Admin)
+    const isCreator = expense.createdBy === actorUid;
+    const isOwnerOrAdmin = actorRole === "owner" || actorRole === "admin";
+    if (!isCreator && !isOwnerOrAdmin) {
+      throw new functions.https.HttpsError(
+        "permission-denied",
+        "You are not authorized to mark this participant split as unpaid."
+      );
+    }
+
+    // 6. Fetch tracking document
+    const trackingSnap = await transaction.get(paymentTrackingRef);
+    if (!trackingSnap.exists) {
+      // Already unpaid/no record, register success (idempotency)
+      const receipt = {
+        clientOperationId,
+        groupId,
+        type: "void",
+        actorUid,
+        settlementId: "",
+        payloadHash,
+        createdAt: Timestamp.now(),
+        result: {
+          expenseId,
+          memberId,
+          status: "unpaid",
+        },
+      };
+      transaction.set(operationRef, receipt);
+      return receipt.result;
+    }
+
+    const trackingData = trackingSnap.data()!;
+    if (trackingData.status === "unpaid") {
+      // Already unpaid, return success (idempotency)
+      const receipt = {
+        clientOperationId,
+        groupId,
+        type: "void",
+        actorUid,
+        settlementId: "",
+        payloadHash,
+        createdAt: Timestamp.now(),
+        result: {
+          expenseId,
+          memberId,
+          status: "unpaid",
+        },
+      };
+      transaction.set(operationRef, receipt);
+      return receipt.result;
+    }
+
+    const settlementIds = trackingData.settlementIds || [];
+    const timestamp = Timestamp.now();
+
+    // 7. Void only the settlements created by this payment status
+    for (const settlementId of settlementIds) {
+      const settlementRef = db.doc(`groups/${groupId}/settlements/${settlementId}`);
+      const setSnap = await transaction.get(settlementRef);
+      if (setSnap.exists) {
+        const settlement = setSnap.data() as SettlementDocument;
+        if (settlement.status === "active") {
+          const newVersion = settlement.version + 1;
+          const updatedSettlement = {
+            ...settlement,
+            status: "voided",
+            voidReason: "Participant split unmarked as paid",
+            updatedAt: timestamp,
+            updatedBy: actorUid,
+            version: newVersion,
+            latestOperationId: clientOperationId,
+          };
+
+          const revisionDoc: SettlementRevision = {
+            id: String(newVersion),
+            settlementId,
+            groupId,
+            payerId: settlement.payerId,
+            receiverId: settlement.receiverId,
+            amountMinor: settlement.amountMinor,
+            currency: settlement.currency,
+            baseAmountMinor: settlement.baseAmountMinor,
+            fx: settlement.fx,
+            status: "voided",
+            voidReason: "Participant split unmarked as paid",
+            version: newVersion,
+            schemaVersion: 1,
+            operationId: clientOperationId,
+            createdAt: timestamp,
+            createdBy: actorUid,
+            relatedExpenseId: expenseId,
+            relatedMemberId: memberId,
+          };
+
+          const activityId = db.collection(`groups/${groupId}/activities`).doc().id;
+          const activityDoc = {
+            id: activityId,
+            groupId,
+            type: "settlement_voided",
+            summary: `Repayment unmarked: Split participant share of "${expense.title}" reverted to unpaid`,
+            actorUserId: actorUid,
+            entityId: settlementId,
+            createdAt: timestamp,
+          };
+
+          transaction.set(settlementRef, updatedSettlement);
+          transaction.set(db.doc(`groups/${groupId}/settlements/${settlementId}/revisions/${newVersion}`), revisionDoc);
+          transaction.set(db.doc(`groups/${groupId}/activities/${activityId}`), activityDoc);
+        }
+      }
+    }
+
+    // 8. Update tracking document
+    const updatedPaymentDoc = {
+      ...trackingData,
+      status: "unpaid",
+      markedBy: actorUid,
+      markedAt: timestamp,
+      version: trackingData.version + 1,
+    };
+    transaction.set(paymentTrackingRef, updatedPaymentDoc);
+
+    // 9. Write operation receipt
+    const receipt = {
+      clientOperationId,
+      groupId,
+      type: "void",
+      actorUid,
+      settlementId: settlementIds[0] || "",
+      payloadHash,
+      createdAt: timestamp,
+      result: {
+        expenseId,
+        memberId,
+        status: "unpaid",
+      },
+    };
+    transaction.set(operationRef, receipt);
+
+    // Update group latest metadata
+    transaction.update(groupRef, {
+      updatedAt: timestamp,
+      updatedBy: actorUid,
+      latestActivityAt: timestamp,
+      version: FieldValue.increment(1),
+    });
+
+    return receipt.result;
+  });
+};
+

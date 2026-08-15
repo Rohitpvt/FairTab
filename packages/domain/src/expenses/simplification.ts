@@ -78,7 +78,7 @@ export function simplifyMinimumTransactions(balances: MemberBalance[]): DebtReco
  * Helper proportional division function.
  * Splits amountMinor proportionally among creditors using stable remainder allocation.
  */
-function splitProportional(
+export function splitProportional(
   amountMinor: number,
   creditors: { memberId: string; credit: number }[]
 ): { memberId: string; amountMinor: number }[] {

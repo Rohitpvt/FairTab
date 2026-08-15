@@ -7,7 +7,7 @@ import {
   orderBy,
 } from "firebase/firestore";
 import { db } from "./firebase";
-import type { ExpenseDocument, ExpenseRevision } from "@fairtab/domain";
+import type { ExpenseDocument, ExpenseRevision, ParticipantPaymentDocument } from "@fairtab/domain";
 
 export const expenseService = {
   /**
@@ -103,6 +103,30 @@ export const expenseService = {
       },
       (error) => {
         console.error(`Failed to watch revisions for expense ${expenseId}:`, error);
+      }
+    );
+  },
+
+  /**
+   * Watch participant payments for an expense
+   */
+  watchParticipantPayments(
+    groupId: string,
+    expenseId: string,
+    callback: (payments: ParticipantPaymentDocument[]) => void
+  ) {
+    const q = collection(db, `groups/${groupId}/expenses/${expenseId}/payments`);
+    return onSnapshot(
+      q,
+      (snapshot) => {
+        const payments: ParticipantPaymentDocument[] = [];
+        snapshot.forEach((d) => {
+          payments.push(d.data() as ParticipantPaymentDocument);
+        });
+        callback(payments);
+      },
+      (error) => {
+        console.error(`Failed to watch participant payments for expense ${expenseId}:`, error);
       }
     );
   },

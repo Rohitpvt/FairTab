@@ -14,6 +14,8 @@ import {
 import {
   handleCreateSettlement,
   handleVoidSettlement,
+  handleSettleExpenseSplit,
+  handleUnsettleExpenseSplit,
 } from "./settlementOperations.js";
 
 import {
@@ -55,6 +57,8 @@ export const voidExpense = functions.https.onCall(handleVoidExpense);
 
 export const createSettlement = functions.https.onCall(handleCreateSettlement);
 export const voidSettlement = functions.https.onCall(handleVoidSettlement);
+export const settleExpenseSplit = functions.https.onCall(handleSettleExpenseSplit);
+export const unsettleExpenseSplit = functions.https.onCall(handleUnsettleExpenseSplit);
 
 export const createReceipt = functions.https.onCall(handleCreateReceipt);
 export const processReceiptOCR = functions.https.onCall(handleProcessReceiptOCR);

@@ -13,9 +13,9 @@
     "postbuild": "node scripts/verify-paths.js",
     "lint": "eslint . --max-warnings=0",
     "typecheck": "tsc -b --noEmit",
-    "test": "vitest run --exclude **/rules.test.ts --exclude **/rules-groups.test.ts --exclude **/rules-expenses.test.ts --exclude **/rules-settlements.test.ts --exclude **/rules-recurring.test.ts --exclude **/rules-storage.test.ts --exclude **/functions.test.ts --exclude **/rules-budgets.test.ts --exclude **/api.test.ts --exclude **/invitations.test.ts --exclude **/profilePropagation.test.ts",
+    "test": "vitest run --exclude **/rules.test.ts --exclude **/rules-groups.test.ts --exclude **/rules-expenses.test.ts --exclude **/rules-settlements.test.ts --exclude **/rules-recurring.test.ts --exclude **/rules-storage.test.ts --exclude **/functions.test.ts --exclude **/rules-budgets.test.ts --exclude **/api.test.ts --exclude **/invitations.test.ts --exclude **/profilePropagation.test.ts --exclude **/participantPayments.test.ts",
     "test:rules": "firebase emulators:exec --only firestore \"vitest run src/test/rules.test.ts src/test/rules-groups.test.ts src/test/rules-expenses.test.ts src/test/rules-settlements.test.ts src/test/rules-recurring.test.ts src/test/rules-budgets.test.ts\"",
-    "test:functions": "firebase emulators:exec --only firestore,functions,auth \"vitest run src/test/functions.test.ts src/test/api.test.ts src/test/invitations.test.ts src/test/profilePropagation.test.ts --fileParallelism=false\"",
+    "test:functions": "firebase emulators:exec --project mock-project-id --only firestore,functions,auth \"vitest run src/test/functions.test.ts src/test/api.test.ts src/test/invitations.test.ts src/test/profilePropagation.test.ts src/test/participantPayments.test.ts --fileParallelism=false --pool=forks\"",
     "test:watch": "vitest",
     "test:e2e": "firebase emulators:exec \"playwright test\"",
     "preview": "vite preview"
