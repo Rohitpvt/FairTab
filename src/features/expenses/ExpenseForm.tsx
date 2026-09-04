@@ -168,28 +168,32 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({
     }
 
     if (splitMethod === "exact") {
-      return participantMembers.map((m) => {
-        const val = parseFloat(exactAmounts[m.id] || "0");
-        const minor = Math.round(val * 100);
-        return {
-          memberId: m.id,
-          amountMinor: minor,
-          baseAmountMinor: Math.round(minor * fxNum),
-        };
-      });
+      return participantMembers
+        .map((m) => {
+          const val = parseFloat(exactAmounts[m.id] || "0");
+          const minor = Math.round(val * 100);
+          return {
+            memberId: m.id,
+            amountMinor: minor,
+            baseAmountMinor: Math.round(minor * fxNum),
+          };
+        })
+        .filter((s) => s.amountMinor > 0);
     }
 
     if (splitMethod === "percentage") {
-      return participantMembers.map((m) => {
-        const pct = parseFloat(percentages[m.id] || "0");
-        const minor = Math.round((amountMinor * pct) / 100);
-        return {
-          memberId: m.id,
-          amountMinor: minor,
-          baseAmountMinor: Math.round(minor * fxNum),
-          percentageBps: Math.round(pct * 100),
-        };
-      });
+      return participantMembers
+        .map((m) => {
+          const pct = parseFloat(percentages[m.id] || "0");
+          const minor = Math.round((amountMinor * pct) / 100);
+          return {
+            memberId: m.id,
+            amountMinor: minor,
+            baseAmountMinor: Math.round(minor * fxNum),
+            percentageBps: Math.round(pct * 100),
+          };
+        })
+        .filter((s) => s.amountMinor > 0);
     }
 
     if (splitMethod === "shares") {
@@ -197,16 +201,18 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({
         (sum, m) => sum + (parseInt(shareValues[m.id] || "1", 10) || 1),
         0
       );
-      return participantMembers.map((m) => {
-        const sh = parseInt(shareValues[m.id] || "1", 10) || 1;
-        const minor = Math.round((amountMinor * sh) / totalShares);
-        return {
-          memberId: m.id,
-          amountMinor: minor,
-          baseAmountMinor: Math.round(minor * fxNum),
-          shares: sh,
-        };
-      });
+      return participantMembers
+        .map((m) => {
+          const sh = parseInt(shareValues[m.id] || "1", 10) || 1;
+          const minor = Math.round((amountMinor * sh) / totalShares);
+          return {
+            memberId: m.id,
+            amountMinor: minor,
+            baseAmountMinor: Math.round(minor * fxNum),
+            shares: sh,
+          };
+        })
+        .filter((s) => s.amountMinor > 0);
     }
 
     return [];
@@ -230,6 +236,10 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({
     }
 
     const splits = computeSplits();
+    if (splits.length === 0) {
+      setFormError("At least one participant must have a split amount greater than zero.");
+      return;
+    }
     const splitSum = splits.reduce((s, sp) => s + sp.amountMinor, 0);
 
     if (splitMethod !== "equal" && splitSum !== amountMinor) {
