@@ -685,17 +685,76 @@ export const groupService = {
    * Fetch all active/archived groups owned by a given user
    */
   async fetchOwnedGroups(userId: string): Promise<GroupDocument[]> {
-    const groupsRef = collection(db, "groups");
-    const q = query(
-      groupsRef,
-      where("ownerUserId", "==", userId),
-      where("status", "in", ["active", "archived"])
-    );
-    const snap = await getDocs(q);
     const results: GroupDocument[] = [];
-    snap.forEach((doc) => {
-      results.push(doc.data() as GroupDocument);
-    });
+    try {
+      // 1. Check userGroupIndex which the user is always authorized to read
+      const indexRef = collection(db, `userGroupIndex/${userId}/groups`);
+      const qIndex = query(
+        indexRef,
+        where("role", "==", "owner"),
+        where("status", "in", ["active", "archived"])
+      );
+      const indexSnap = await getDocs(qIndex);
+      
+      for (const idxDoc of indexSnap.docs) {
+        const groupId = idxDoc.id;
+        try {
+          const gSnap = await getDoc(doc(db, "groups", groupId));
+          if (gSnap.exists()) {
+            const gData = gSnap.data() as GroupDocument;
+            if (gData.ownerUserId === userId && (gData.status === "active" || gData.status === "archived")) {
+              results.push(gData);
+            }
+          }
+        } catch {
+          // If group doc read fails, construct synthetic group entry from index
+          const idxData = idxDoc.data();
+          results.push({
+            id: groupId,
+            name: idxData.groupName || "Group",
+            nameLower: (idxData.groupName || "Group").toLowerCase(),
+            type: "trip",
+            baseCurrency: "USD",
+            ownerUserId: userId,
+            memberUserIds: [userId],
+            activeMemberCount: 1,
+            simplifyDebts: true,
+            settlementStrategy: "minimum_transactions",
+            status: idxData.status as "active" | "archived",
+            latestActivityAt: idxData.latestActivityAt,
+            createdAt: idxData.updatedAt,
+            createdBy: userId,
+            updatedAt: idxData.updatedAt,
+            updatedBy: userId,
+            version: 1,
+            schemaVersion: 1,
+          });
+        }
+      }
+
+      if (results.length > 0) {
+        return results;
+      }
+    } catch (e) {
+      console.warn("Index query for owned groups failed, checking groups collection directly", e);
+    }
+
+    // 2. Direct query on groups collection
+    try {
+      const groupsRef = collection(db, "groups");
+      const q = query(
+        groupsRef,
+        where("ownerUserId", "==", userId),
+        where("status", "in", ["active", "archived"])
+      );
+      const snap = await getDocs(q);
+      snap.forEach((doc) => {
+        results.push(doc.data() as GroupDocument);
+      });
+    } catch (e) {
+      console.warn("Direct query on groups collection failed", e);
+    }
+
     return results;
   },
 
