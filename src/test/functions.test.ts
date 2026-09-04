@@ -26,6 +26,7 @@ async function executeVercelHandler(
     method?: string;
     headers?: Record<string, string>;
     body?: any;
+    url?: string;
   }
 ) {
   let status = 200;
@@ -36,6 +37,7 @@ async function executeVercelHandler(
     method: reqOpts.method || "POST",
     headers: reqOpts.headers || {},
     body: reqOpts.body || {},
+    url: reqOpts.url || "/",
   } as unknown as VercelRequest;
 
   const res = {
@@ -1825,6 +1827,17 @@ describe("Group & Account Deletion Integration Tests", () => {
     return { data: res };
   };
 
+  const transferOwnershipFn = async (data: any) => {
+    const handler = (await import("../../api/index.js")).default;
+    const token = await auth.currentUser?.getIdToken();
+    const res = await executeVercelHandler(handler, {
+      headers: { authorization: `Bearer ${token}` },
+      body: data,
+      url: "/api/groups/transfer-ownership"
+    });
+    return { data: res };
+  };
+
   beforeAll(async () => {
     testEnvDel = await initializeTestEnvironment({
       projectId: "mock-project-id",
@@ -1832,10 +1845,21 @@ describe("Group & Account Deletion Integration Tests", () => {
     });
 
     // Create users
-    const aliceCred = await createUserWithEmailAndPassword(auth, aliceDEmail, aliceDPass);
-    aliceDUid = aliceCred.user.uid;
-    const bobCred = await createUserWithEmailAndPassword(auth, bobDEmail, bobDPass);
-    bobDUid = bobCred.user.uid;
+    try {
+      const aliceCred = await createUserWithEmailAndPassword(auth, aliceDEmail, aliceDPass);
+      aliceDUid = aliceCred.user.uid;
+    } catch {
+      const aliceCred = await signInWithEmailAndPassword(auth, aliceDEmail, aliceDPass);
+      aliceDUid = aliceCred.user.uid;
+    }
+
+    try {
+      const bobCred = await createUserWithEmailAndPassword(auth, bobDEmail, bobDPass);
+      bobDUid = bobCred.user.uid;
+    } catch {
+      const bobCred = await signInWithEmailAndPassword(auth, bobDEmail, bobDPass);
+      bobDUid = bobCred.user.uid;
+    }
 
     // Set up user profiles
     await testEnvDel.withSecurityRulesDisabled(async (context: any) => {
@@ -1946,8 +1970,14 @@ describe("Group & Account Deletion Integration Tests", () => {
     // Create a temp user who doesn't own any groups
     const tempEmail = "temp.del@example.com";
     const tempPass = "password123";
-    const userCred = await createUserWithEmailAndPassword(auth, tempEmail, tempPass);
-    const tempUid = userCred.user.uid;
+    let tempUid = "";
+    try {
+      const userCred = await createUserWithEmailAndPassword(auth, tempEmail, tempPass);
+      tempUid = userCred.user.uid;
+    } catch {
+      const userCred = await signInWithEmailAndPassword(auth, tempEmail, tempPass);
+      tempUid = userCred.user.uid;
+    }
 
     await testEnvDel.withSecurityRulesDisabled(async (context: any) => {
       const db = context.firestore();
@@ -1984,5 +2014,205 @@ describe("Group & Account Deletion Integration Tests", () => {
       expect(profileSnap.data()?.displayName).toBe("Deleted User");
     });
   }, 30000);
+
+  test("handleTransferGroupOwnership validates permissions, roles, index consistency, idempotency, and preserves financial data", async () => {
+    const transferGroupId = "grp-transfer-test";
+    const placeholderMemberId = "ph-member-123";
+    const leftMemberUid = "left-member-uid";
+
+    await testEnvDel.withSecurityRulesDisabled(async (context: any) => {
+      const db = context.firestore();
+      
+      // Setup Group owned by Alice
+      await setDoc(doc(db, "groups", transferGroupId), {
+        id: transferGroupId,
+        name: "Transfer Test Group",
+        ownerUserId: aliceDUid,
+        memberUserIds: [aliceDUid, bobDUid, leftMemberUid],
+        activeMemberCount: 3,
+        status: "active",
+        baseCurrency: "USD",
+        version: 1,
+      });
+
+      // Setup Alice: owner
+      await setDoc(doc(db, `groups/${transferGroupId}/members/${aliceDUid}`), {
+        id: aliceDUid,
+        userId: aliceDUid,
+        groupId: transferGroupId,
+        displayName: "Alice Owner",
+        role: "owner",
+        status: "active",
+        kind: "account",
+        version: 1,
+      });
+      await setDoc(doc(db, `userGroupIndex/${aliceDUid}/groups/${transferGroupId}`), {
+        groupId: transferGroupId,
+        groupName: "Transfer Test Group",
+        role: "owner",
+        status: "active",
+      });
+
+      // Setup Bob: member (eligible successor)
+      await setDoc(doc(db, `groups/${transferGroupId}/members/${bobDUid}`), {
+        id: bobDUid,
+        userId: bobDUid,
+        groupId: transferGroupId,
+        displayName: "Bob Successor",
+        role: "member",
+        status: "active",
+        kind: "account",
+        version: 1,
+      });
+      await setDoc(doc(db, `userGroupIndex/${bobDUid}/groups/${transferGroupId}`), {
+        groupId: transferGroupId,
+        groupName: "Transfer Test Group",
+        role: "member",
+        status: "active",
+      });
+
+      // Setup Placeholder member (not eligible)
+      await setDoc(doc(db, `groups/${transferGroupId}/members/${placeholderMemberId}`), {
+        id: placeholderMemberId,
+        groupId: transferGroupId,
+        displayName: "Placeholder Member",
+        role: "member",
+        status: "active",
+        kind: "placeholder",
+        version: 1,
+      });
+
+      // Setup Left member (not eligible)
+      await setDoc(doc(db, `groups/${transferGroupId}/members/${leftMemberUid}`), {
+        id: leftMemberUid,
+        userId: leftMemberUid,
+        groupId: transferGroupId,
+        displayName: "Left Member",
+        role: "member",
+        status: "left",
+        kind: "account",
+        version: 1,
+      });
+
+      // Setup existing financial document to verify it remains unmodified
+      await setDoc(doc(db, `groups/${transferGroupId}/expenses/exp-1`), {
+        id: "exp-1",
+        groupId: transferGroupId,
+        description: "Team Dinner",
+        amount: 50,
+        paidByMemberId: aliceDUid,
+        version: 1,
+      });
+    });
+
+    // 1. Non-owner (Bob) attempts to transfer ownership -> fails with permission-denied
+    await signInWithEmailAndPassword(auth, bobDEmail, bobDPass);
+    await expect(
+      transferOwnershipFn({ groupId: transferGroupId, newOwnerMemberId: bobDUid })
+    ).rejects.toThrow();
+
+    // Sign back in as Alice (Owner)
+    await signInWithEmailAndPassword(auth, aliceDEmail, aliceDPass);
+
+    // 2. Transfer to invalid target member -> fails
+    await expect(
+      transferOwnershipFn({ groupId: transferGroupId, newOwnerMemberId: "nonexistent-member" })
+    ).rejects.toThrow();
+
+    // 3. Transfer to placeholder target -> fails
+    await expect(
+      transferOwnershipFn({ groupId: transferGroupId, newOwnerMemberId: placeholderMemberId })
+    ).rejects.toThrow();
+
+    // 4. Transfer to left/inactive target -> fails
+    await expect(
+      transferOwnershipFn({ groupId: transferGroupId, newOwnerMemberId: leftMemberUid })
+    ).rejects.toThrow();
+
+    // 5. Transfer to current owner as target -> returns safe idempotent success
+    const selfTransferRes = await transferOwnershipFn({
+      groupId: transferGroupId,
+      newOwnerMemberId: aliceDUid,
+    });
+    expect(selfTransferRes.data.success).toBe(true);
+    expect(selfTransferRes.data.newOwnerUserId).toBe(aliceDUid);
+
+    // 6. Valid transfer from Alice -> Bob succeeds
+    const transferRes = await transferOwnershipFn({
+      groupId: transferGroupId,
+      newOwnerMemberId: bobDUid,
+    });
+    expect(transferRes.data.success).toBe(true);
+    expect(transferRes.data.newOwnerUserId).toBe(bobDUid);
+
+    // 7. Verify atomic DB updates: group owner, roles, indexes, single activity
+    await testEnvDel.withSecurityRulesDisabled(async (context: any) => {
+      const db = context.firestore();
+
+      const groupSnap = await getDoc(doc(db, "groups", transferGroupId));
+      expect(groupSnap.data()?.ownerUserId).toBe(bobDUid);
+      expect(groupSnap.data()?.version).toBe(2);
+
+      // Alice role -> admin (not removed)
+      const aliceMemberSnap = await getDoc(doc(db, `groups/${transferGroupId}/members/${aliceDUid}`));
+      expect(aliceMemberSnap.data()?.role).toBe("admin");
+      expect(aliceMemberSnap.data()?.status).toBe("active");
+
+      // Bob role -> owner
+      const bobMemberSnap = await getDoc(doc(db, `groups/${transferGroupId}/members/${bobDUid}`));
+      expect(bobMemberSnap.data()?.role).toBe("owner");
+      expect(bobMemberSnap.data()?.status).toBe("active");
+
+      // Alice index -> admin
+      const aliceIndexSnap = await getDoc(doc(db, `userGroupIndex/${aliceDUid}/groups/${transferGroupId}`));
+      expect(aliceIndexSnap.data()?.role).toBe("admin");
+
+      // Bob index -> owner
+      const bobIndexSnap = await getDoc(doc(db, `userGroupIndex/${bobDUid}/groups/${transferGroupId}`));
+      expect(bobIndexSnap.data()?.role).toBe("owner");
+
+      // Exactly one role_changed transfer activity created
+      const actSnap = await getDocs(collection(db, `groups/${transferGroupId}/activities`));
+      const transferActs = actSnap.docs.filter(
+        (d) => d.data().type === "role_changed" && d.data().entityType === "group"
+      );
+      expect(transferActs.length).toBe(1);
+
+      // Financial document remains completely untouched
+      const expSnap = await getDoc(doc(db, `groups/${transferGroupId}/expenses/exp-1`));
+      expect(expSnap.exists()).toBe(true);
+      expect(expSnap.data()?.amount).toBe(50);
+      expect(expSnap.data()?.version).toBe(1);
+    });
+
+    // 8. Idempotency / repeated request:
+    // Bob is now owner. Calling transfer from Bob -> Bob returns safe success
+    await signInWithEmailAndPassword(auth, bobDEmail, bobDPass);
+    const idempotentRes = await transferOwnershipFn({
+      groupId: transferGroupId,
+      newOwnerMemberId: bobDUid,
+    });
+    expect(idempotentRes.data.success).toBe(true);
+
+    // 9. Archived group: Bob archives group, then transfers ownership back to Alice -> succeeds
+    await testEnvDel.withSecurityRulesDisabled(async (context: any) => {
+      const db = context.firestore();
+      await setDoc(doc(db, "groups", transferGroupId), { status: "archived" }, { merge: true });
+    });
+
+    const archiveTransferRes = await transferOwnershipFn({
+      groupId: transferGroupId,
+      newOwnerMemberId: aliceDUid,
+    });
+    expect(archiveTransferRes.data.success).toBe(true);
+
+    await testEnvDel.withSecurityRulesDisabled(async (context: any) => {
+      const db = context.firestore();
+      const groupSnap = await getDoc(doc(db, "groups", transferGroupId));
+      expect(groupSnap.data()?.ownerUserId).toBe(aliceDUid);
+      expect(groupSnap.data()?.status).toBe("archived");
+    });
+  }, 45000);
 });
+
 

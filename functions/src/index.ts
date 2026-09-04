@@ -38,7 +38,7 @@ import {
   handleDeleteBudget,
 } from "./budgetOperations.js";
 
-import { handleDeleteGroup } from "./groupOperations.js";
+import { handleDeleteGroup, handleTransferGroupOwnership } from "./groupOperations.js";
 import { handleDeleteAccount, handleUpdateProfile, handleRepairProfile } from "./accountOperations.js";
 import {
   handleCreateEmailInvitation,
@@ -74,6 +74,7 @@ export const updateBudget = functions.https.onCall(handleUpdateBudget);
 export const deleteBudget = functions.https.onCall(handleDeleteBudget);
 
 export const deleteGroup = functions.https.onCall(handleDeleteGroup);
+export const transferGroupOwnership = functions.https.onCall(handleTransferGroupOwnership);
 export const deleteAccount = functions.https.onCall(handleDeleteAccount);
 export const updateProfile = functions.https.onCall(handleUpdateProfile);
 export const repairProfile = functions.https.onCall(handleRepairProfile);

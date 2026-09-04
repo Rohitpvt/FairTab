@@ -5,6 +5,7 @@ import {
   serverTimestamp,
   increment,
   getDoc,
+  getDocs,
   query,
   where,
   onSnapshot,
@@ -673,5 +674,42 @@ export const groupService = {
   async deleteGroup(data: unknown): Promise<unknown> {
     const { fairtabApi } = await import("../api/fairtabApi");
     return fairtabApi.groups.delete(data);
+  },
+
+  async transferOwnership(groupId: string, newOwnerMemberId: string): Promise<unknown> {
+    const { fairtabApi } = await import("../api/fairtabApi");
+    return fairtabApi.groups.transferOwnership({ groupId, newOwnerMemberId });
+  },
+
+  /**
+   * Fetch all active/archived groups owned by a given user
+   */
+  async fetchOwnedGroups(userId: string): Promise<GroupDocument[]> {
+    const groupsRef = collection(db, "groups");
+    const q = query(
+      groupsRef,
+      where("ownerUserId", "==", userId),
+      where("status", "in", ["active", "archived"])
+    );
+    const snap = await getDocs(q);
+    const results: GroupDocument[] = [];
+    snap.forEach((doc) => {
+      results.push(doc.data() as GroupDocument);
+    });
+    return results;
+  },
+
+  /**
+   * Fetch active members of a group
+   */
+  async fetchGroupMembers(groupId: string): Promise<GroupMemberDocument[]> {
+    const membersRef = collection(db, `groups/${groupId}/members`);
+    const q = query(membersRef, where("status", "==", "active"));
+    const snap = await getDocs(q);
+    const members: GroupMemberDocument[] = [];
+    snap.forEach((doc) => {
+      members.push(doc.data() as GroupMemberDocument);
+    });
+    return members;
   },
 };

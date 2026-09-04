@@ -40,7 +40,7 @@ export async function ensureFirebaseInitialized() {
     return;
   }
 
-  const projectId = process.env.GCP_PROJECT_ID || process.env.FIREBASE_PROJECT_ID;
+  const projectId = process.env.GCP_PROJECT_ID || process.env.FIREBASE_PROJECT_ID || process.env.GCLOUD_PROJECT || "mock-project-id";
   const clientEmail = process.env.GCP_CLIENT_EMAIL || process.env.FIREBASE_CLIENT_EMAIL;
   const privateKey = process.env.GCP_PRIVATE_KEY || process.env.FIREBASE_PRIVATE_KEY;
 
@@ -80,7 +80,7 @@ export async function ensureFirebaseInitialized() {
       }),
     });
   } else {
-    initializeApp();
+    initializeApp({ projectId });
   }
 
   getFirestore().settings({ ignoreUndefinedProperties: true });

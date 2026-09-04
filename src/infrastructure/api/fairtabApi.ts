@@ -48,7 +48,10 @@ const mapPathToFunction = (path: string): string => {
       if (action === "create") return "createReceipt";
       if (action === "process-ocr") return "processReceiptOCR";
     }
-    if (category === "groups" && action === "delete") return "deleteGroup";
+    if (category === "groups") {
+      if (action === "delete") return "deleteGroup";
+      if (action === "transfer-ownership") return "transferGroupOwnership";
+    }
     if (category === "accounts") {
       if (action === "delete") return "deleteAccount";
       if (action === "update-profile") return "updateProfile";
@@ -195,6 +198,7 @@ export const fairtabApi = {
   },
   groups: {
     delete: (data: unknown) => postRequest<unknown, unknown>("/api/groups/delete", data),
+    transferOwnership: (data: unknown) => postRequest<unknown, unknown>("/api/groups/transfer-ownership", data),
   },
   accounts: {
     delete: (data: unknown) => postRequest<unknown, unknown>("/api/accounts/delete", data),

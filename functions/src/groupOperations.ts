@@ -140,3 +140,177 @@ async function processIndexCleanupChunk(
 
   return { status: nextStatus, processedCount: newProcessedCount };
 }
+
+export interface TransferOwnershipInput {
+  groupId: string;
+  newOwnerMemberId: string;
+}
+
+export async function handleTransferGroupOwnership(
+  data: TransferOwnershipInput,
+  context: functions.https.CallableContext
+): Promise<{ success: boolean; groupId: string; newOwnerUserId: string }> {
+  if (!context.auth) {
+    throw new functions.https.HttpsError("unauthenticated", "Authentication required.");
+  }
+
+  const callerUid = context.auth.uid;
+  const { groupId, newOwnerMemberId } = data;
+
+  if (!groupId || typeof groupId !== "string") {
+    throw new functions.https.HttpsError("invalid-argument", "Missing or invalid groupId.");
+  }
+
+  if (!newOwnerMemberId || typeof newOwnerMemberId !== "string") {
+    throw new functions.https.HttpsError("invalid-argument", "Missing or invalid newOwnerMemberId.");
+  }
+
+  const db = admin.firestore();
+  const groupRef = db.collection("groups").doc(groupId);
+  const callerMemberRef = db.collection(`groups/${groupId}/members`).doc(callerUid);
+  const targetMemberRef = db.collection(`groups/${groupId}/members`).doc(newOwnerMemberId);
+
+  return db.runTransaction(async (transaction) => {
+    const groupSnap = await transaction.get(groupRef);
+    if (!groupSnap.exists) {
+      throw new functions.https.HttpsError("not-found", "Group not found.");
+    }
+
+    const groupData = groupSnap.data()!;
+
+    // Verify group is active or archived
+    if (groupData.status === "deleted") {
+      throw new functions.https.HttpsError(
+        "failed-precondition",
+        "Cannot transfer ownership of a deleted group."
+      );
+    }
+
+    // Verify caller is the current owner
+    if (groupData.ownerUserId !== callerUid) {
+      throw new functions.https.HttpsError(
+        "permission-denied",
+        "Only the current group owner can transfer ownership."
+      );
+    }
+
+    // Fetch target member doc
+    const targetMemberSnap = await transaction.get(targetMemberRef);
+    if (!targetMemberSnap.exists) {
+      throw new functions.https.HttpsError(
+        "not-found",
+        "Target member not found in this group."
+      );
+    }
+
+    const targetMemberData = targetMemberSnap.data()!;
+
+    // Check target member properties
+    if (targetMemberData.status !== "active") {
+      throw new functions.https.HttpsError(
+        "failed-precondition",
+        "Target member is not active."
+      );
+    }
+
+    if (targetMemberData.kind !== "account" || !targetMemberData.userId) {
+      throw new functions.https.HttpsError(
+        "failed-precondition",
+        "Ownership can only be transferred to an account-backed member with a valid user ID."
+      );
+    }
+
+    const newOwnerUid = targetMemberData.userId;
+
+    // Idempotency: if caller is trying to transfer to self or target is already recorded as owner
+    if (newOwnerUid === callerUid) {
+      if (groupData.ownerUserId === callerUid && targetMemberData.role === "owner") {
+        return { success: true, groupId, newOwnerUserId: callerUid };
+      }
+      throw new functions.https.HttpsError(
+        "invalid-argument",
+        "Target member is already the current owner."
+      );
+    }
+
+    // Check caller member doc
+    const callerMemberSnap = await transaction.get(callerMemberRef);
+    const callerMemberData = callerMemberSnap.exists ? callerMemberSnap.data() : null;
+
+    // Deterministic activity ID for idempotency per version/transfer
+    const currentVersion = groupData.version || 1;
+    const nextVersion = currentVersion + 1;
+    const activityRef = db
+      .collection(`groups/${groupId}/activities`)
+      .doc(`transfer_v${nextVersion}_${callerUid}_to_${newOwnerUid}`);
+
+    // Update group document
+    transaction.update(groupRef, {
+      ownerUserId: newOwnerUid,
+      updatedAt: FieldValue.serverTimestamp(),
+      updatedBy: callerUid,
+      version: FieldValue.increment(1),
+    });
+
+    // Update caller member role: transition to admin (preserves active membership)
+    if (callerMemberData && callerMemberData.status === "active") {
+      transaction.update(callerMemberRef, {
+        role: "admin",
+        updatedAt: FieldValue.serverTimestamp(),
+        updatedBy: callerUid,
+        version: FieldValue.increment(1),
+      });
+    }
+
+    // Update target member role: transition to owner
+    transaction.update(targetMemberRef, {
+      role: "owner",
+      updatedAt: FieldValue.serverTimestamp(),
+      updatedBy: callerUid,
+      version: FieldValue.increment(1),
+    });
+
+    // Update userGroupIndex for caller
+    const callerIndexRef = db.doc(`userGroupIndex/${callerUid}/groups/${groupId}`);
+    transaction.set(
+      callerIndexRef,
+      {
+        groupId,
+        groupName: groupData.name || "Group",
+        role: "admin",
+        status: groupData.status,
+        updatedAt: FieldValue.serverTimestamp(),
+      },
+      { merge: true }
+    );
+
+    // Update userGroupIndex for new owner
+    const newOwnerIndexRef = db.doc(`userGroupIndex/${newOwnerUid}/groups/${groupId}`);
+    transaction.set(
+      newOwnerIndexRef,
+      {
+        groupId,
+        groupName: groupData.name || "Group",
+        role: "owner",
+        status: groupData.status,
+        updatedAt: FieldValue.serverTimestamp(),
+      },
+      { merge: true }
+    );
+
+    // Record single ownership transfer activity
+    transaction.set(activityRef, {
+      id: activityRef.id,
+      groupId,
+      type: "role_changed",
+      actorUserId: callerUid,
+      entityType: "group",
+      entityId: groupId,
+      summary: `Ownership transferred to ${targetMemberData.displayName || "new owner"}.`,
+      createdAt: FieldValue.serverTimestamp(),
+    });
+
+    return { success: true, groupId, newOwnerUserId: newOwnerUid };
+  });
+}
+

@@ -3,7 +3,7 @@ import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { handleDeleteAccount, handleUpdateProfile, handleRepairProfile } from "../functions/src/accountOperations.js";
 import { handleCreateBudget, handleUpdateBudget, handleDeleteBudget } from "../functions/src/budgetOperations.js";
 import { handleCreateExpense, handleUpdateExpense, handleVoidExpense } from "../functions/src/expenseOperations.js";
-import { handleDeleteGroup } from "../functions/src/groupOperations.js";
+import { handleDeleteGroup, handleTransferGroupOwnership } from "../functions/src/groupOperations.js";
 import { handleCreateReceipt, handleProcessReceiptOCR } from "../functions/src/receiptOperations.js";
 import {
   handleApproveRecurringDraft,
@@ -106,6 +106,7 @@ const standardHandlers: Record<string, (data: any, context: any) => Promise<any>
   "/api/expenses/update": handleUpdateExpense,
   "/api/expenses/void": handleVoidExpense,
   "/api/groups/delete": handleDeleteGroup,
+  "/api/groups/transfer-ownership": handleTransferGroupOwnership,
   "/api/receipts/create": handleCreateReceipt,
   "/api/receipts/process-ocr": handleProcessReceiptOCR,
   "/api/recurring/approve-draft": handleApproveRecurringDraft,

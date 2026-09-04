@@ -19,15 +19,19 @@ import { Dialog } from "../../components/ui/Dialogs";
 import { useAuth } from "../auth/AuthProvider";
 import { profileService } from "../../infrastructure/firebase/profileService";
 import { accountService } from "../../infrastructure/firebase/accountService";
+import { groupService } from "../../infrastructure/firebase/groupService";
 import { EmailAuthProvider, reauthenticateWithCredential, GoogleAuthProvider, reauthenticateWithPopup } from "firebase/auth";
 import { purgeUserOfflineData } from "../../infrastructure/offline/db";
 import { fetchUserExportData, generateCsvLedger, triggerDownload } from "../../utils/exportHelper";
+import { AccountGroupResolutionModal } from "./AccountGroupResolutionModal";
 
 export const SettingsPage: React.FC = () => {
   const { user, profile, refreshProfile, signOut, trustedDevice, setTrustedDevicePreference } = useAuth();
   
   const [syncOnStart, setSyncOnStart] = useState(true);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [isResolutionOpen, setIsResolutionOpen] = useState(false);
+  const [isCheckingOwnedGroups, setIsCheckingOwnedGroups] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deletePassword, setDeletePassword] = useState("");
   
@@ -92,12 +96,45 @@ export const SettingsPage: React.FC = () => {
     }
   };
 
+  const handleInitiateDeleteAccount = async () => {
+    if (!user) return;
+    setIsCheckingOwnedGroups(true);
+    try {
+      const owned = await groupService.fetchOwnedGroups(user.uid);
+      if (owned.length > 0) {
+        setIsResolutionOpen(true);
+      } else {
+        setIsDeleteOpen(true);
+      }
+    } catch (e: any) {
+      console.error("Failed to check owned groups:", e);
+      // Fall back to opening delete dialog; server will safely reject if owned groups exist
+      setIsDeleteOpen(true);
+    } finally {
+      setIsCheckingOwnedGroups(false);
+    }
+  };
+
+  const handleGroupsResolved = () => {
+    setIsResolutionOpen(false);
+    setIsDeleteOpen(true);
+  };
+
   const handleDeleteAccount = async () => {
     if (!user) return;
     setIsDeleting(true);
     const toastId = toast.loading("Processing account deletion...");
     try {
-      // 1. Re-authenticate user
+      // 1. Verify zero owned groups remain before proceeding
+      const owned = await groupService.fetchOwnedGroups(user.uid);
+      if (owned.length > 0) {
+        setIsDeleteOpen(false);
+        setIsResolutionOpen(true);
+        toast.error("You still own active or archived groups. Please resolve them first.", { id: toastId });
+        return;
+      }
+
+      // 2. Re-authenticate user
       const isGoogleUser = user.providerData.some((p) => p.providerId === "google.com");
       if (isGoogleUser) {
         toast.info("Re-authenticating with Google provider. Please approve the popup...", { id: toastId });
@@ -113,14 +150,14 @@ export const SettingsPage: React.FC = () => {
         await reauthenticateWithCredential(user, credential);
       }
 
-      // 2. Call deleteAccount Cloud Function for server-side ownership check and index leaving
+      // 3. Call deleteAccount Cloud Function for server-side ownership check and index leaving
       toast.loading("Running server-side group and profile cleanups...", { id: toastId });
       await accountService.deleteAccount({});
 
-      // 3. Purge user-scoped IndexedDB tables
+      // 4. Purge user-scoped IndexedDB tables
       await purgeUserOfflineData(user.uid);
 
-      // 4. Sign out session
+      // 5. Sign out session
       await signOut();
 
       toast.success("Account deleted successfully. We are sorry to see you go!", { id: toastId });
@@ -376,7 +413,9 @@ export const SettingsPage: React.FC = () => {
                 variant="primary"
                 size="sm"
                 className="w-full bg-danger text-text-primary hover:bg-opacity-90 justify-center py-2 border-none"
-                onClick={() => setIsDeleteOpen(true)}
+                onClick={handleInitiateDeleteAccount}
+                isLoading={isCheckingOwnedGroups}
+                loadingText="Checking groups..."
               >
                 Delete Account
               </Button>
@@ -455,6 +494,16 @@ export const SettingsPage: React.FC = () => {
           )}
         </div>
       </Dialog>
+
+      {/* Group Resolution Modal before Account Deletion */}
+      {user && (
+        <AccountGroupResolutionModal
+          isOpen={isResolutionOpen}
+          onClose={() => setIsResolutionOpen(false)}
+          userId={user.uid}
+          onResolved={handleGroupsResolved}
+        />
+      )}
     </PageContainer>
   );
 };
