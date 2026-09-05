@@ -27,9 +27,9 @@ export const Dialog: React.FC<DialogProps> = ({
         {/* Overlay backdrop */}
         <RadixDialog.Overlay className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 transition-opacity duration-150 data-[state=open]:animate-fade-in data-[state=closed]:animate-fade-out" />
         
-        {/* Central desktop dialog overlay */}
+        {/* Central desktop/mobile dialog overlay */}
         <RadixDialog.Content
-          className={`fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] max-w-lg glass-elevated p-6 rounded-xl border border-white/10 shadow-2xl focus:outline-none z-50 transition-all duration-180 ease-out data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 ${className}`}
+          className={`fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[94vw] sm:w-[90vw] max-w-lg glass-elevated p-4 sm:p-6 rounded-2xl border border-white/10 shadow-2xl focus:outline-none z-50 transition-all duration-180 ease-out data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 max-h-[90vh] flex flex-col ${className}`}
           onCloseAutoFocus={(e) => {
             const dashboardTrigger = Array.from(document.querySelectorAll("button")).find(b => b.textContent?.trim() === "New Expense");
             const mobileTrigger = document.querySelector('button[aria-label="Add new expense"]') as HTMLButtonElement;

@@ -77,14 +77,14 @@ export const DebtSimplificationPanel: React.FC<DebtSimplificationPanelProps> = (
         </div>
 
         {/* Strategy Selector Toggles */}
-        <div className="flex bg-surface-primary p-0.5 rounded-lg border border-white/5 self-start sm:self-auto shrink-0">
+        <div className="flex w-full sm:w-auto bg-surface-primary p-1 rounded-xl border border-white/5 shrink-0 gap-1">
           <button
             type="button"
             onClick={() => setStrategy("min_tx")}
-            className={`px-3 py-1 text-xs font-semibold rounded-md transition-all ${
+            className={`flex-1 sm:flex-initial px-3 py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer text-center min-h-[36px] ${
               strategy === "min_tx"
-                ? "bg-accent-cyan/15 text-accent-cyan shadow-sm"
-                : "text-text-secondary hover:text-text-primary"
+                ? "bg-accent-cyan/15 text-accent-cyan shadow-sm border border-accent-cyan/20"
+                : "text-text-secondary hover:text-text-primary hover:bg-white/5"
             }`}
           >
             Minimize Transfers
@@ -92,10 +92,10 @@ export const DebtSimplificationPanel: React.FC<DebtSimplificationPanelProps> = (
           <button
             type="button"
             onClick={() => setStrategy("preserve_rel")}
-            className={`px-3 py-1 text-xs font-semibold rounded-md transition-all ${
+            className={`flex-1 sm:flex-initial px-3 py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer text-center min-h-[36px] ${
               strategy === "preserve_rel"
-                ? "bg-accent-indigo/15 text-accent-indigo shadow-sm"
-                : "text-text-secondary hover:text-text-primary"
+                ? "bg-accent-indigo/15 text-accent-indigo shadow-sm border border-accent-indigo/20"
+                : "text-text-secondary hover:text-text-primary hover:bg-white/5"
             }`}
           >
             Preserve Relationships

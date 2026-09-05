@@ -169,25 +169,25 @@ export const ExpensesPage: React.FC = () => {
       description="Authoritative ledger of shared expenditures across your groups."
     >
       {/* Search & Filters block */}
-      <div className="flex flex-col md:flex-row items-center gap-4 mb-6">
-        <div className="relative w-full md:flex-grow">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mb-6">
+        <div className="relative w-full sm:flex-grow">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-muted" />
           <input
             type="text"
             placeholder="Search by title, group, or payer..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 bg-surface-primary border border-white/10 rounded-lg text-sm text-text-primary focus:outline-none focus:border-accent-cyan"
+            className="w-full pl-10 pr-4 py-2.5 bg-surface-primary border border-white/10 rounded-xl text-sm text-text-primary focus:outline-none focus:border-accent-cyan transition-colors"
           />
         </div>
 
-        <div className="flex items-center gap-3 w-full md:w-auto shrink-0">
-          <div className="flex items-center gap-1.5 glass-subtle px-3 py-2.5 rounded-lg border border-white/5 text-xs text-text-secondary w-full md:w-auto">
-            <Filter className="h-3.5 w-3.5 text-text-muted" />
+        <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full sm:w-auto shrink-0">
+          <div className="flex items-center gap-1.5 glass-subtle px-3 py-2 rounded-xl border border-white/5 text-xs text-text-secondary w-full sm:w-auto min-h-[42px]">
+            <Filter className="h-3.5 w-3.5 text-text-muted shrink-0" />
             <select
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
-              className="bg-transparent border-none focus:outline-none cursor-pointer w-full"
+              className="bg-transparent border-none focus:outline-none cursor-pointer w-full text-xs font-medium"
             >
               <option value="all">All Categories</option>
               <option value="equipment">Equipment</option>
@@ -198,18 +198,18 @@ export const ExpensesPage: React.FC = () => {
             </select>
           </div>
 
-          <div className="flex items-center gap-1.5 glass-subtle px-3 py-2.5 rounded-lg border border-white/5 text-xs text-text-secondary w-full md:w-auto">
-            <SlidersHorizontal className="h-3.5 w-3.5 text-text-muted" />
+          <div className="flex items-center gap-1.5 glass-subtle px-3 py-2 rounded-xl border border-white/5 text-xs text-text-secondary w-full sm:w-auto min-h-[42px]">
+            <SlidersHorizontal className="h-3.5 w-3.5 text-text-muted shrink-0" />
             <select
               value={syncFilter}
               onChange={(e) => setSyncFilter(e.target.value)}
-              className="bg-transparent border-none focus:outline-none cursor-pointer w-full"
+              className="bg-transparent border-none focus:outline-none cursor-pointer w-full text-xs font-medium"
             >
               <option value="all">All Sync States</option>
               <option value="synced">Synced</option>
               <option value="queued">Queued Offline</option>
               <option value="syncing">Syncing</option>
-              <option value="conflict">Conflict</option>
+              <option value="failed">Failed Sync</option>
             </select>
           </div>
         </div>

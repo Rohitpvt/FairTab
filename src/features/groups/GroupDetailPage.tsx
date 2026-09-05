@@ -226,25 +226,25 @@ export const GroupDetailPage: React.FC = () => {
       title={group.name}
       description={group.description || `Split ledger group using ${group.baseCurrency}.`}
       action={
-        <div className="flex gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Link to={`/groups/${group.id}/settlements`}>
-            <Button variant="secondary" size="sm" className="flex gap-1.5">
-              <HandCoins className="h-4 w-4" />
-              Settlements
+            <Button variant="secondary" size="sm" className="flex items-center gap-1.5 text-xs">
+              <HandCoins className="h-3.5 w-3.5" />
+              <span>Settlements</span>
             </Button>
           </Link>
           {canEditSettings(currentUserRole) && (
             <Link to={`/groups/${group.id}/settings`}>
-              <Button variant="secondary" size="sm" className="flex gap-1.5">
-                <Settings className="h-4 w-4" />
-                Settings
+              <Button variant="secondary" size="sm" className="flex items-center gap-1.5 text-xs">
+                <Settings className="h-3.5 w-3.5" />
+                <span>Settings</span>
               </Button>
             </Link>
           )}
           {canLeaveGroup(currentUserRole) && (
-            <Button onClick={() => setIsLeaveOpen(true)} variant="ghost" size="sm" className="flex gap-1.5 text-danger hover:bg-danger/5">
-              <LogOut className="h-4 w-4" />
-              Leave Group
+            <Button onClick={() => setIsLeaveOpen(true)} variant="ghost" size="sm" className="flex items-center gap-1.5 text-danger hover:bg-danger/5 text-xs border border-transparent hover:border-danger/20">
+              <LogOut className="h-3.5 w-3.5" />
+              <span>Leave</span>
             </Button>
           )}
         </div>

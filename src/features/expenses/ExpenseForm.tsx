@@ -431,20 +431,20 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({
       {/* Split Method Selector */}
       <div>
         <label className={labelClass}>Split Method</label>
-        <div className="grid grid-cols-4 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           {SPLIT_METHODS.map((sm) => (
             <button
               key={sm.value}
               type="button"
               onClick={() => setSplitMethod(sm.value)}
-              className={`flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold transition-all border ${
+              className={`flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all border cursor-pointer min-h-[40px] ${
                 splitMethod === sm.value
-                  ? "bg-accent-indigo/20 border-accent-indigo/40 text-accent-cyan"
-                  : "bg-white/[0.02] border-white/5 text-text-muted hover:bg-white/[0.04]"
+                  ? "bg-accent-indigo/20 border-accent-indigo/40 text-accent-cyan shadow-sm"
+                  : "bg-white/[0.02] border-white/5 text-text-muted hover:bg-white/[0.04] hover:text-text-primary"
               }`}
             >
               {sm.icon}
-              {sm.label}
+              <span className="truncate">{sm.label}</span>
             </button>
           ))}
         </div>
@@ -463,13 +463,13 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({
                 key={m.id}
                 type="button"
                 onClick={() => toggleParticipant(m.id)}
-                className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${
+                className={`px-3 py-2 rounded-full text-xs font-semibold transition-all border cursor-pointer min-h-[36px] flex items-center gap-1.5 ${
                   isSelected
-                    ? "bg-accent-cyan/15 border-accent-cyan/30 text-accent-cyan"
+                    ? "bg-accent-cyan/15 border-accent-cyan/30 text-accent-cyan shadow-sm"
                     : "bg-white/[0.02] border-white/10 text-text-muted hover:bg-white/[0.04] line-through opacity-50"
                 }`}
               >
-                {resolveName(m)}
+                <span>{resolveName(m)}</span>
               </button>
             );
           })}
@@ -486,56 +486,58 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({
           </h4>
 
           {participantMembers.map((m) => (
-            <div key={m.id} className="flex items-center justify-between gap-3">
-              <span className="text-sm text-text-primary font-medium min-w-[100px]">
+            <div key={m.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3 p-2 rounded-lg bg-white/[0.02]">
+              <span className="text-sm text-text-primary font-medium min-w-[100px] truncate">
                 {resolveName(m)}
               </span>
-              {splitMethod === "exact" && (
-                <input
-                  type="number"
-                  value={exactAmounts[m.id] || ""}
-                  onChange={(e) =>
-                    setExactAmounts((prev) => ({ ...prev, [m.id]: e.target.value }))
-                  }
-                  placeholder="0.00"
-                  step="0.01"
-                  min="0"
-                  className={inputClass + " max-w-[140px] text-right"}
-                />
-              )}
-              {splitMethod === "percentage" && (
-                <div className="flex items-center gap-1">
+              <div className="flex items-center gap-2 self-end sm:self-auto">
+                {splitMethod === "exact" && (
                   <input
                     type="number"
-                    value={percentages[m.id] || ""}
+                    value={exactAmounts[m.id] || ""}
                     onChange={(e) =>
-                      setPercentages((prev) => ({ ...prev, [m.id]: e.target.value }))
+                      setExactAmounts((prev) => ({ ...prev, [m.id]: e.target.value }))
                     }
-                    placeholder="0"
+                    placeholder="0.00"
                     step="0.01"
                     min="0"
-                    max="100"
-                    className={inputClass + " max-w-[100px] text-right"}
+                    className={inputClass + " w-28 sm:w-36 text-right"}
                   />
-                  <span className="text-text-muted text-xs">%</span>
-                </div>
-              )}
-              {splitMethod === "shares" && (
-                <div className="flex items-center gap-1">
-                  <input
-                    type="number"
-                    value={shareValues[m.id] || "1"}
-                    onChange={(e) =>
-                      setShareValues((prev) => ({ ...prev, [m.id]: e.target.value }))
-                    }
-                    placeholder="1"
-                    step="1"
-                    min="1"
-                    className={inputClass + " max-w-[80px] text-right"}
-                  />
-                  <span className="text-text-muted text-xs">shares</span>
-                </div>
-              )}
+                )}
+                {splitMethod === "percentage" && (
+                  <div className="flex items-center gap-1">
+                    <input
+                      type="number"
+                      value={percentages[m.id] || ""}
+                      onChange={(e) =>
+                        setPercentages((prev) => ({ ...prev, [m.id]: e.target.value }))
+                      }
+                      placeholder="0"
+                      step="0.01"
+                      min="0"
+                      max="100"
+                      className={inputClass + " w-24 sm:w-28 text-right"}
+                    />
+                    <span className="text-text-muted text-xs">%</span>
+                  </div>
+                )}
+                {splitMethod === "shares" && (
+                  <div className="flex items-center gap-1">
+                    <input
+                      type="number"
+                      value={shareValues[m.id] || "1"}
+                      onChange={(e) =>
+                        setShareValues((prev) => ({ ...prev, [m.id]: e.target.value }))
+                      }
+                      placeholder="1"
+                      step="1"
+                      min="1"
+                      className={inputClass + " w-20 sm:w-24 text-right"}
+                    />
+                    <span className="text-text-muted text-xs">shares</span>
+                  </div>
+                )}
+              </div>
             </div>
           ))}
 
