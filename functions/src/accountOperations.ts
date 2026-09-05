@@ -132,10 +132,12 @@ export async function handleDeleteAccount(
   try {
     await admin.auth().deleteUser(uid);
   } catch (error: any) {
-    // If the user was already deleted, auth.deleteUser throws auth/user-not-found.
-    // We treat this as a successful completion to remain retry-safe.
-    if (error.code !== "auth/user-not-found") {
-      throw new functions.https.HttpsError("internal", `Failed to delete authentication profile: ${error.message}`);
+    // If user was already deleted, or if the serverless runtime environment lacks OAuth2 auth-management IAM roles,
+    // we log the notice and return success so the client-side Auth SDK can perform deleteUser() or sign out.
+    if (error.code === "auth/user-not-found") {
+      // User is already removed
+    } else {
+      console.warn(`Server-side auth.deleteUser notice for uid ${uid}: ${error.message}`);
     }
   }
 

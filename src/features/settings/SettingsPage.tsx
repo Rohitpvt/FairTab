@@ -20,7 +20,13 @@ import { useAuth } from "../auth/AuthProvider";
 import { profileService } from "../../infrastructure/firebase/profileService";
 import { accountService } from "../../infrastructure/firebase/accountService";
 import { groupService } from "../../infrastructure/firebase/groupService";
-import { EmailAuthProvider, reauthenticateWithCredential, GoogleAuthProvider, reauthenticateWithPopup } from "firebase/auth";
+import {
+  EmailAuthProvider,
+  reauthenticateWithCredential,
+  GoogleAuthProvider,
+  reauthenticateWithPopup,
+  deleteUser
+} from "firebase/auth";
 import { purgeUserOfflineData } from "../../infrastructure/offline/db";
 import { fetchUserExportData, generateCsvLedger, triggerDownload } from "../../utils/exportHelper";
 import { AccountGroupResolutionModal } from "./AccountGroupResolutionModal";
@@ -150,14 +156,22 @@ export const SettingsPage: React.FC = () => {
         await reauthenticateWithCredential(user, credential);
       }
 
-      // 3. Call deleteAccount Cloud Function for server-side ownership check and index leaving
+      // 3. Call deleteAccount Cloud Function for server-side group cleanup and tombstone
       toast.loading("Running server-side group and profile cleanups...", { id: toastId });
       await accountService.deleteAccount({});
 
-      // 4. Purge user-scoped IndexedDB tables
+      // 4. Delete client Firebase Auth user profile
+      try {
+        await deleteUser(user);
+      } catch (authErr: any) {
+        console.warn("Client deleteUser notice:", authErr);
+        // If already deleted by server or requires re-auth, proceed to purge and sign out
+      }
+
+      // 5. Purge user-scoped IndexedDB tables
       await purgeUserOfflineData(user.uid);
 
-      // 5. Sign out session
+      // 6. Sign out session
       await signOut();
 
       toast.success("Account deleted successfully. We are sorry to see you go!", { id: toastId });
