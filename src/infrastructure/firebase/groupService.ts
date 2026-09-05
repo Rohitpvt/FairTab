@@ -671,15 +671,15 @@ export const groupService = {
     );
   },
 
-  async deleteGroup(data: any): Promise<unknown> {
-    const groupId = typeof data === "object" && data !== null && "groupId" in data ? data.groupId : String(data);
+  async deleteGroup(data: unknown): Promise<unknown> {
+    const groupId = typeof data === "object" && data !== null && "groupId" in data ? (data as { groupId: string }).groupId : String(data);
     try {
       const { fairtabApi } = await import("../api/fairtabApi");
       return await fairtabApi.groups.delete(data);
-    } catch (apiError: any) {
+    } catch (apiError: unknown) {
       console.warn("Backend deleteGroup API error, falling back to client write:", apiError);
       const currentUser = auth.currentUser;
-      if (!currentUser) throw new Error("Authentication required.");
+      if (!currentUser) throw new Error("Authentication required.", { cause: apiError });
 
       const groupRef = doc(db, "groups", groupId);
       const indexRef = doc(db, `userGroupIndex/${currentUser.uid}/groups`, groupId);
@@ -715,10 +715,10 @@ export const groupService = {
     try {
       const { fairtabApi } = await import("../api/fairtabApi");
       return await fairtabApi.groups.transferOwnership({ groupId, newOwnerMemberId });
-    } catch (apiError: any) {
+    } catch (apiError: unknown) {
       console.warn("Backend transferOwnership API error, falling back to client write:", apiError);
       const currentUser = auth.currentUser;
-      if (!currentUser) throw new Error("Authentication required.");
+      if (!currentUser) throw new Error("Authentication required.", { cause: apiError });
 
       const groupRef = doc(db, "groups", groupId);
       const oldOwnerIndexRef = doc(db, `userGroupIndex/${currentUser.uid}/groups`, groupId);
