@@ -41,8 +41,6 @@ export const AccountGroupResolutionModal: React.FC<AccountGroupResolutionModalPr
     if (!isOpen || !userId) return;
 
     let isMounted = true;
-    setLoading(true);
-    setShowConfirmationStep(false);
 
     const loadOwnedGroups = async () => {
       try {
