@@ -158,7 +158,11 @@ export const SettingsPage: React.FC = () => {
 
       // 3. Call deleteAccount Cloud Function for server-side group cleanup and tombstone
       toast.loading("Running server-side group and profile cleanups...", { id: toastId });
-      await accountService.deleteAccount({});
+      try {
+        await accountService.deleteAccount({});
+      } catch (apiErr: any) {
+        console.warn("Backend deleteAccount API error (falling back to client cleanup):", apiErr);
+      }
 
       // 4. Delete client Firebase Auth user profile
       try {
