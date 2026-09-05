@@ -20,6 +20,7 @@ import { calculateBalances, simplifyMinimumTransactions } from "@fairtab/domain"
 import type { UserGroupIndexDocument } from "../../features/groups/userGroupIndexSchema";
 import type { ExpenseDocument, SettlementDocument } from "@fairtab/domain";
 import { EmptyState } from "../../components/feedback/FeedbackStates";
+import { PersonalDebtSummaryCard } from "../../components/dashboard/PersonalDebtSummaryCard";
 
 interface AggregatedTransaction {
   id: string;
@@ -46,6 +47,7 @@ export const OverviewPage: React.FC = () => {
   const [groups, setGroups] = useState<UserGroupIndexDocument[]>([]);
   const [expensesMap, setExpensesMap] = useState<Record<string, ExpenseDocument[]>>({});
   const [settlementsMap, setSettlementsMap] = useState<Record<string, SettlementDocument[]>>({});
+  const [membersMap, setMembersMap] = useState<Record<string, { id: string; displayName: string; userId?: string }[]>>({});
   const [memberNames, setMemberNames] = useState<Record<string, string>>({});
 
   // 1. Watch user groups
@@ -65,7 +67,7 @@ export const OverviewPage: React.FC = () => {
     };
   }, [user]);
 
-  // 2. Watch expenses and settlements for all user groups dynamically
+  // 2. Watch expenses, settlements, and members for all user groups dynamically
   useEffect(() => {
     if (groups.length === 0) {
       return;
@@ -83,6 +85,23 @@ export const OverviewPage: React.FC = () => {
         setSettlementsMap((prev) => ({ ...prev, [g.groupId]: setList }));
       });
       unsubscribes.push(unsubSet);
+
+      const unsubMem = groupService.watchMembers(g.groupId, (memList) => {
+        const activeMembers = memList.filter((m) => m.status === "active");
+        setMembersMap((prev) => ({ ...prev, [g.groupId]: activeMembers }));
+        // Also seed memberNames
+        setMemberNames((prev) => {
+          const next = { ...prev };
+          activeMembers.forEach((m) => {
+            next[`${g.groupId}:${m.id}`] = m.displayName;
+            if (m.userId) {
+              next[`${g.groupId}:${m.userId}`] = m.displayName;
+            }
+          });
+          return next;
+        });
+      });
+      unsubscribes.push(unsubMem);
     });
 
     return () => {
@@ -94,6 +113,12 @@ export const OverviewPage: React.FC = () => {
   const getMemberName = (groupId: string, memberId: string): string => {
     const key = `${groupId}:${memberId}`;
     if (memberNames[key]) return memberNames[key];
+
+    const groupMembers = membersMap[groupId] || [];
+    const foundMem = groupMembers.find((m) => m.id === memberId || m.userId === memberId);
+    if (foundMem) {
+      return foundMem.displayName;
+    }
 
     if (memberId === user?.uid) {
       return profile?.displayName || user?.displayName || user?.email || "You";
@@ -110,15 +135,21 @@ export const OverviewPage: React.FC = () => {
       // Ignore background load error
     });
 
-    return "Loading...";
+    return "Member";
   };
 
   const getGroupMemberIds = (
+    groupId: string,
     expenses: ExpenseDocument[],
     settlements: SettlementDocument[],
     currentUserId: string
   ): string[] => {
-    const ids = new Set<string>([currentUserId]);
+    const ids = new Set<string>();
+    const groupMembers = membersMap[groupId] || [];
+    if (groupMembers.length > 0) {
+      groupMembers.forEach((m) => ids.add(m.id));
+    }
+    if (currentUserId) ids.add(currentUserId);
     expenses.forEach((e) => {
       e.payers.forEach((p) => ids.add(p.memberId));
       e.splits.forEach((s) => ids.add(s.memberId));
@@ -130,21 +161,37 @@ export const OverviewPage: React.FC = () => {
     return Array.from(ids);
   };
 
-  // 4. Calculate Net Balances, Owed, Owe
+  // 4. Calculate Net Balances, Owed, Owe, and Detailed Person Breakdown
   let totalOwedMinor = 0;
   let totalOwesMinor = 0;
   let totalNetBalanceMinor = 0;
   let dashboardCurrency = "INR"; // Default fallback
+  const userBreakdowns: {
+    id: string;
+    groupId: string;
+    groupName: string;
+    otherMemberId: string;
+    otherMemberName: string;
+    amountMinor: number;
+    currency: string;
+    type: "owed_to_user" | "user_owes";
+  }[] = [];
 
   groups.forEach((g) => {
     const groupExpenses = expensesMap[g.groupId] || [];
     const groupSettlements = settlementsMap[g.groupId] || [];
+    const groupMembers = membersMap[g.groupId] || [];
     const currentUserId = user?.uid || "";
-    const memberIds = getGroupMemberIds(groupExpenses, groupSettlements, currentUserId);
+    
+    // Find member record corresponding to current auth user in this group
+    const userMember = groupMembers.find((m) => m.userId === currentUserId || m.id === currentUserId);
+    const userMemberId = userMember?.id || currentUserId;
+
+    const memberIds = getGroupMemberIds(g.groupId, groupExpenses, groupSettlements, userMemberId);
 
     try {
       const balances = calculateBalances(groupExpenses, groupSettlements, memberIds);
-      const userBalanceObj = balances.find((b) => b.memberId === currentUserId);
+      const userBalanceObj = balances.find((b) => b.memberId === userMemberId || b.memberId === currentUserId);
       const balance = userBalanceObj ? userBalanceObj.netBaseMinor : 0;
 
       totalNetBalanceMinor += balance;
@@ -154,10 +201,40 @@ export const OverviewPage: React.FC = () => {
         totalOwesMinor += Math.abs(balance);
       }
 
-      // Infer currency if group base currency is configured
-      if (groupExpenses[0]?.groupBaseCurrency) {
-        dashboardCurrency = groupExpenses[0].groupBaseCurrency;
-      }
+      const currency = groupExpenses[0]?.groupBaseCurrency || "INR";
+      dashboardCurrency = currency;
+
+      // Calculate simplified debts for this group to know who owes whom
+      const recommendations = simplifyMinimumTransactions(balances);
+      recommendations.forEach((rec) => {
+        if (rec.toMemberId === userMemberId || rec.toMemberId === currentUserId) {
+          // Other member owes the user
+          const otherName = getMemberName(g.groupId, rec.fromMemberId);
+          userBreakdowns.push({
+            id: `${g.groupId}:${rec.fromMemberId}->${rec.toMemberId}`,
+            groupId: g.groupId,
+            groupName: g.groupName,
+            otherMemberId: rec.fromMemberId,
+            otherMemberName: otherName,
+            amountMinor: rec.amountMinor,
+            currency,
+            type: "owed_to_user",
+          });
+        } else if (rec.fromMemberId === userMemberId || rec.fromMemberId === currentUserId) {
+          // User owes other member
+          const otherName = getMemberName(g.groupId, rec.toMemberId);
+          userBreakdowns.push({
+            id: `${g.groupId}:${rec.fromMemberId}->${rec.toMemberId}`,
+            groupId: g.groupId,
+            groupName: g.groupName,
+            otherMemberId: rec.toMemberId,
+            otherMemberName: otherName,
+            amountMinor: rec.amountMinor,
+            currency,
+            type: "user_owes",
+          });
+        }
+      });
     } catch (e) {
       console.warn(`Failed to compute balances for group ${g.groupId}:`, e);
     }
@@ -220,7 +297,7 @@ export const OverviewPage: React.FC = () => {
     const groupExpenses = expensesMap[g.groupId] || [];
     const groupSettlements = settlementsMap[g.groupId] || [];
     const currentUserId = user?.uid || "";
-    const memberIds = getGroupMemberIds(groupExpenses, groupSettlements, currentUserId);
+    const memberIds = getGroupMemberIds(g.groupId, groupExpenses, groupSettlements, currentUserId);
 
     try {
       const balances = calculateBalances(groupExpenses, groupSettlements, memberIds);
@@ -296,6 +373,16 @@ export const OverviewPage: React.FC = () => {
         </div>
       }
     >
+      {/* Personal Detailed Debt Breakdown Card */}
+      <PersonalDebtSummaryCard
+        totalNetMinor={totalNetBalanceMinor}
+        totalOwedMinor={totalOwedMinor}
+        totalOwesMinor={totalOwesMinor}
+        currency={dashboardCurrency}
+        breakdowns={userBreakdowns}
+        className="mb-6"
+      />
+
       {/* Balances Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <BalanceCard amountMinor={totalNetBalanceMinor} currency={dashboardCurrency} />

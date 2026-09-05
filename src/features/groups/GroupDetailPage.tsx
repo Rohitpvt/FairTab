@@ -38,10 +38,12 @@ import { toast } from "sonner";
 // Phase 4 imports
 import { expenseService } from "../../infrastructure/firebase/expenseService";
 import { settlementService } from "../../infrastructure/firebase/settlementService";
+import { calculateBalances, simplifyMinimumTransactions, simplifyPreserveRelationships } from "@fairtab/domain";
 import type { ExpenseDocument, SettlementDocument } from "@fairtab/domain";
 import BalanceProjectionCard from "../expenses/BalanceProjectionCard";
 import ExpenseListPage from "../expenses/ExpenseListPage";
 import ConflictResolutionDialog from "../expenses/ConflictResolutionDialog";
+import { PersonalDebtSummaryCard } from "../../components/dashboard/PersonalDebtSummaryCard";
 import { offlineDb } from "../../infrastructure/offline/db";
 import { syncManager } from "../../infrastructure/offline/syncManager";
 
@@ -221,6 +223,72 @@ export const GroupDetailPage: React.FC = () => {
     }
   };
 
+  // Group-level balance & individual debt calculation for the logged-in user
+  const activeMembers = members.filter((m) => m.status === "active");
+  const memberIds = activeMembers.map((m) => m.id);
+  const activeExpenses = expenses.filter((e) => e.status !== "voided");
+  const balances = calculateBalances(activeExpenses, settlements, memberIds);
+
+  const userMember = currentMember;
+  const userMemberId = userMember?.id || currentUserUid || "";
+
+  const userBalObj = balances.find((b) => b.memberId === userMemberId || b.memberId === currentUserUid);
+  const userNetMinor = userBalObj ? userBalObj.netBaseMinor : 0;
+
+  // Use group strategy or default
+  const recommendations =
+    group.settlementStrategy === "preserve_relationships"
+      ? simplifyPreserveRelationships(activeExpenses, settlements, memberIds)
+      : simplifyMinimumTransactions(balances);
+
+  const groupUserBreakdowns: {
+    id: string;
+    groupId: string;
+    groupName: string;
+    otherMemberId: string;
+    otherMemberName: string;
+    amountMinor: number;
+    currency: string;
+    type: "owed_to_user" | "user_owes";
+  }[] = [];
+
+  let groupTotalOwed = 0;
+  let groupTotalOwes = 0;
+
+  recommendations.forEach((rec) => {
+    if (rec.toMemberId === userMemberId || rec.toMemberId === currentUserUid) {
+      // Someone owes user
+      const otherMem = activeMembers.find((m) => m.id === rec.fromMemberId || m.userId === rec.fromMemberId);
+      const name = otherMem ? resolveName(otherMem) : rec.fromMemberId;
+      groupTotalOwed += rec.amountMinor;
+      groupUserBreakdowns.push({
+        id: `${group.id}:${rec.fromMemberId}->${rec.toMemberId}`,
+        groupId: group.id,
+        groupName: group.name,
+        otherMemberId: rec.fromMemberId,
+        otherMemberName: name,
+        amountMinor: rec.amountMinor,
+        currency: group.baseCurrency,
+        type: "owed_to_user",
+      });
+    } else if (rec.fromMemberId === userMemberId || rec.fromMemberId === currentUserUid) {
+      // User owes someone
+      const otherMem = activeMembers.find((m) => m.id === rec.toMemberId || m.userId === rec.toMemberId);
+      const name = otherMem ? resolveName(otherMem) : rec.toMemberId;
+      groupTotalOwes += rec.amountMinor;
+      groupUserBreakdowns.push({
+        id: `${group.id}:${rec.fromMemberId}->${rec.toMemberId}`,
+        groupId: group.id,
+        groupName: group.name,
+        otherMemberId: rec.toMemberId,
+        otherMemberName: name,
+        amountMinor: rec.amountMinor,
+        currency: group.baseCurrency,
+        type: "user_owes",
+      });
+    }
+  });
+
   return (
     <PageContainer
       title={group.name}
@@ -250,6 +318,17 @@ export const GroupDetailPage: React.FC = () => {
         </div>
       }
     >
+      {/* Personal Group Debt Breakdown Header */}
+      <PersonalDebtSummaryCard
+        totalNetMinor={userNetMinor}
+        totalOwedMinor={groupTotalOwed}
+        totalOwesMinor={groupTotalOwes}
+        currency={group.baseCurrency}
+        breakdowns={groupUserBreakdowns}
+        className="mb-6"
+        isGroupContext={true}
+      />
+
       {/* Offline and Caching Alert Banners */}
       <div className="flex flex-col gap-3 mb-6">
         {fromCache && (
