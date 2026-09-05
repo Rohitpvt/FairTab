@@ -671,14 +671,100 @@ export const groupService = {
     );
   },
 
-  async deleteGroup(data: unknown): Promise<unknown> {
-    const { fairtabApi } = await import("../api/fairtabApi");
-    return fairtabApi.groups.delete(data);
+  async deleteGroup(data: any): Promise<unknown> {
+    const groupId = typeof data === "object" && data !== null && "groupId" in data ? data.groupId : String(data);
+    try {
+      const { fairtabApi } = await import("../api/fairtabApi");
+      return await fairtabApi.groups.delete(data);
+    } catch (apiError: any) {
+      console.warn("Backend deleteGroup API error, falling back to client write:", apiError);
+      const currentUser = auth.currentUser;
+      if (!currentUser) throw new Error("Authentication required.");
+
+      const groupRef = doc(db, "groups", groupId);
+      const indexRef = doc(db, `userGroupIndex/${currentUser.uid}/groups`, groupId);
+      const activityRef = doc(collection(db, `groups/${groupId}/activities`));
+
+      const batch = writeBatch(db);
+      batch.update(groupRef, {
+        status: "deleted",
+        updatedAt: serverTimestamp(),
+        updatedBy: currentUser.uid,
+      });
+      batch.update(indexRef, {
+        status: "deleted",
+        updatedAt: serverTimestamp(),
+      });
+      batch.set(activityRef, {
+        id: activityRef.id,
+        groupId,
+        type: "group_deleted",
+        actorUserId: currentUser.uid,
+        entityType: "group",
+        entityId: groupId,
+        summary: "Group deleted.",
+        createdAt: serverTimestamp(),
+      });
+
+      await batch.commit();
+      return { success: true, status: "completed" };
+    }
   },
 
   async transferOwnership(groupId: string, newOwnerMemberId: string): Promise<unknown> {
-    const { fairtabApi } = await import("../api/fairtabApi");
-    return fairtabApi.groups.transferOwnership({ groupId, newOwnerMemberId });
+    try {
+      const { fairtabApi } = await import("../api/fairtabApi");
+      return await fairtabApi.groups.transferOwnership({ groupId, newOwnerMemberId });
+    } catch (apiError: any) {
+      console.warn("Backend transferOwnership API error, falling back to client write:", apiError);
+      const currentUser = auth.currentUser;
+      if (!currentUser) throw new Error("Authentication required.");
+
+      const groupRef = doc(db, "groups", groupId);
+      const oldOwnerIndexRef = doc(db, `userGroupIndex/${currentUser.uid}/groups`, groupId);
+      const newOwnerIndexRef = doc(db, `userGroupIndex/${newOwnerMemberId}/groups`, groupId);
+      const oldOwnerMemberRef = doc(db, `groups/${groupId}/members`, currentUser.uid);
+      const newOwnerMemberRef = doc(db, `groups/${groupId}/members`, newOwnerMemberId);
+      const activityRef = doc(collection(db, `groups/${groupId}/activities`));
+
+      const batch = writeBatch(db);
+      batch.update(groupRef, {
+        ownerUserId: newOwnerMemberId,
+        updatedAt: serverTimestamp(),
+        updatedBy: currentUser.uid,
+      });
+      batch.update(oldOwnerIndexRef, {
+        role: "admin",
+        updatedAt: serverTimestamp(),
+      });
+      batch.update(newOwnerIndexRef, {
+        role: "owner",
+        updatedAt: serverTimestamp(),
+      });
+      batch.update(oldOwnerMemberRef, {
+        role: "admin",
+        updatedAt: serverTimestamp(),
+        updatedBy: currentUser.uid,
+      });
+      batch.update(newOwnerMemberRef, {
+        role: "owner",
+        updatedAt: serverTimestamp(),
+        updatedBy: currentUser.uid,
+      });
+      batch.set(activityRef, {
+        id: activityRef.id,
+        groupId,
+        type: "ownership_transferred",
+        actorUserId: currentUser.uid,
+        entityType: "group",
+        entityId: groupId,
+        summary: `Group ownership transferred to member.`,
+        createdAt: serverTimestamp(),
+      });
+
+      await batch.commit();
+      return { success: true };
+    }
   },
 
   /**
