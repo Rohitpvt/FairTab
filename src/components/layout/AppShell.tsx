@@ -145,7 +145,14 @@ export const AppShell: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col min-h-screen text-text-primary app-background selection:bg-accent-cyan/30">
+    <div className="flex flex-col min-h-screen text-text-primary app-background selection:bg-accent-cyan/30 relative">
+      {/* Liquid Ambient Light Blobs */}
+      <div className="bg-mesh-container">
+        <div className="ambient-blob ambient-blob-1" />
+        <div className="ambient-blob ambient-blob-2" />
+        <div className="ambient-blob ambient-blob-3" />
+      </div>
+
       {/* Toast Announcements */}
       <Toaster
         theme="dark"

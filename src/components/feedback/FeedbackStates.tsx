@@ -205,13 +205,26 @@ export const ThemeToggle: React.FC = () => {
     setTheme((prev) => (prev === "dark" ? "light" : "dark"));
   };
 
+  const isDark = theme === "dark";
+
   return (
     <button
       onClick={toggleTheme}
-      className="p-2 rounded-full hover:bg-white/5 text-text-secondary hover:text-text-primary transition-colors focus-visible:outline-2 focus-visible:outline-accent-cyan cursor-pointer min-w-[44px] min-h-[44px] flex items-center justify-center"
-      aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}
+      className="relative p-2 rounded-full hover:bg-white/10 text-text-secondary hover:text-text-primary transition-all duration-300 focus-visible:outline-2 focus-visible:outline-accent-cyan cursor-pointer min-w-[40px] min-h-[40px] flex items-center justify-center active:scale-80 overflow-hidden"
+      aria-label={`Switch to ${isDark ? "light" : "dark"} theme`}
     >
-      {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+      <div className="relative w-5 h-5 flex items-center justify-center pointer-events-none">
+        <Sun
+          className={`h-5 w-5 absolute transition-all duration-500 ease-[cubic-bezier(0.34,1.2,0.64,1)] ${
+            isDark ? "opacity-100 rotate-0 scale-100 text-amber-300" : "opacity-0 rotate-90 scale-0 text-text-secondary"
+          }`}
+        />
+        <Moon
+          className={`h-5 w-5 absolute transition-all duration-500 ease-[cubic-bezier(0.34,1.2,0.64,1)] ${
+            !isDark ? "opacity-100 rotate-0 scale-100 text-indigo-400" : "opacity-0 -rotate-90 scale-0 text-text-secondary"
+          }`}
+        />
+      </div>
     </button>
   );
 };

@@ -67,24 +67,160 @@ body {
 }
 
 /* Restrained UI Premium Surfaces */
+/* Restrained UI Premium Surfaces */
 .glass-subtle {
-  background-color: hsl(var(--surface-primary));
-  border: 1px solid hsl(var(--border-color));
+  background-color: hsl(var(--surface-primary) / 0.85);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid hsl(var(--border-color) / 0.6);
   transition: background-color var(--duration-standard) var(--ease-standard), border-color var(--duration-standard) var(--ease-standard);
 }
 
 .glass-standard {
-  background-color: hsl(var(--surface-secondary));
-  border: 1px solid hsl(var(--border-color));
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  background-color: hsl(var(--surface-secondary) / 0.75);
+  backdrop-filter: blur(24px) saturate(190%);
+  -webkit-backdrop-filter: blur(24px) saturate(190%);
+  border: 1px solid hsl(var(--border-color) / 0.6);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.25);
   transition: background-color var(--duration-standard) var(--ease-standard), border-color var(--duration-standard) var(--ease-standard), box-shadow var(--duration-standard) var(--ease-standard);
 }
 
 .glass-elevated {
-  background-color: hsl(var(--surface-elevated));
-  border: 1px solid hsl(var(--border-color));
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  background-color: hsl(var(--surface-elevated) / 0.8);
+  backdrop-filter: blur(30px) saturate(200%);
+  -webkit-backdrop-filter: blur(30px) saturate(200%);
+  border: 1px solid hsl(var(--border-color) / 0.7);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
   transition: background-color var(--duration-standard) var(--ease-standard), border-color var(--duration-standard) var(--ease-standard), box-shadow var(--duration-standard) var(--ease-standard);
+}
+
+/* =========================================
+   Apple Liquid Glass Aqua & Glare Effects
+   ========================================= */
+.liquid-glass-nav {
+  position: relative;
+  background: hsl(var(--surface-primary) / 0.65);
+  backdrop-filter: blur(40px) saturate(200%);
+  -webkit-backdrop-filter: blur(40px) saturate(200%);
+  box-shadow:
+    0 20px 50px -10px rgba(0, 0, 0, 0.3),
+    0 10px 20px -5px rgba(0, 0, 0, 0.2),
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.25),
+    inset 0 -1px 2px 0 rgba(255, 255, 255, 0.05),
+    inset 0 0 0 1px hsl(var(--border-color) / 0.5);
+  transition: all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* Wet curved aqua reflection */
+.liquid-glass-nav::before {
+  content: '';
+  position: absolute;
+  top: 1px;
+  left: 1px;
+  right: 1px;
+  height: 44%;
+  border-radius: inherit;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0.0) 100%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.light .liquid-glass-nav {
+  background: rgba(255, 255, 255, 0.65);
+  box-shadow:
+    0 20px 40px -15px rgba(0, 0, 0, 0.08),
+    0 8px 16px -4px rgba(0, 0, 0, 0.04),
+    inset 0 1.5px 2px 0 rgba(255, 255, 255, 0.9),
+    inset 0 -1px 2px 0 rgba(0, 0, 0, 0.04),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.6);
+}
+
+.light .liquid-glass-nav::before {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.7) 0%, rgba(255, 255, 255, 0.0) 100%);
+}
+
+/* Mouse-tracking Interactive Glare */
+.liquid-glare-layer {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.liquid-glare-spot {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  background: radial-gradient(circle 120px at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(255, 255, 255, 0.25) 0%, transparent 100%);
+  mix-blend-mode: overlay;
+}
+
+.liquid-glass-nav:hover .liquid-glare-spot {
+  opacity: 1;
+}
+
+/* Liquid Floating Blobs */
+.bg-mesh-container {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.ambient-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(100px);
+  opacity: 0.15;
+  animation: ambientFloat 24s infinite alternate cubic-bezier(0.45, 0.05, 0.55, 0.95);
+  will-change: transform;
+}
+
+.light .ambient-blob {
+  opacity: 0.22;
+}
+
+.ambient-blob-1 {
+  width: 45vw;
+  height: 45vw;
+  top: -10%;
+  left: 10%;
+  background: hsl(var(--accent-indigo));
+  animation-delay: 0s;
+}
+
+.ambient-blob-2 {
+  width: 40vw;
+  height: 40vw;
+  bottom: 5%;
+  right: 5%;
+  background: hsl(var(--accent-cyan));
+  animation-delay: -6s;
+}
+
+.ambient-blob-3 {
+  width: 35vw;
+  height: 35vw;
+  top: 40%;
+  left: 50%;
+  background: hsl(var(--accent-violet));
+  animation-delay: -12s;
+}
+
+@keyframes ambientFloat {
+  0% {
+    transform: translate(0, 0) scale(1) rotate(0deg);
+  }
+  50% {
+    transform: translate(4%, 6%) scale(1.06) rotate(6deg);
+  }
+  100% {
+    transform: translate(-4%, -6%) scale(0.94) rotate(-6deg);
+  }
 }
 
 /* Fallback Opaque Surfaces */
