@@ -66,14 +66,34 @@ export const ExpenseListPage: React.FC<ExpenseListPageProps> = ({
 
   const getMemberName = (id: string) => memberNameMap[id] || id;
 
-  // Filtered list
-  const filtered = expenses.filter((e) => {
-    const matchesSearch =
-      e.title.toLowerCase().includes(search.toLowerCase()) ||
-      getMemberName(e.payers[0]?.memberId || "").toLowerCase().includes(search.toLowerCase());
-    const matchesCategory = categoryFilter === "all" || e.category === categoryFilter;
-    return matchesSearch && matchesCategory;
-  });
+  // Filtered and sorted list (newest first)
+  const filtered = expenses
+    .filter((e) => {
+      const matchesSearch =
+        e.title.toLowerCase().includes(search.toLowerCase()) ||
+        getMemberName(e.payers[0]?.memberId || "").toLowerCase().includes(search.toLowerCase());
+      const matchesCategory = categoryFilter === "all" || e.category === categoryFilter;
+      return matchesSearch && matchesCategory;
+    })
+    .sort((a, b) => {
+      const timeA =
+        (a.incurredAt as { seconds?: number })?.seconds ??
+        (a.createdAt as { seconds?: number })?.seconds ??
+        0;
+      const timeB =
+        (b.incurredAt as { seconds?: number })?.seconds ??
+        (b.createdAt as { seconds?: number })?.seconds ??
+        0;
+
+      if (timeB !== timeA) {
+        return timeB - timeA;
+      }
+
+      // Secondary tie-breaker by createdAt
+      const createdA = (a.createdAt as { seconds?: number })?.seconds ?? 0;
+      const createdB = (b.createdAt as { seconds?: number })?.seconds ?? 0;
+      return createdB - createdA;
+    });
 
   return (
     <div className="flex flex-col gap-4 text-left">
