@@ -40,9 +40,9 @@ describe("App Shell and Layout", () => {
     // Wait for OverviewPage lazy component to load
     await screen.findByText("Recent Transactions");
 
-    // Verify Brand Logo initials is rendered
-    const brandInitials = screen.getAllByText("FT");
-    expect(brandInitials.length).toBeGreaterThan(0);
+    // Verify Brand Logo text FairTab is rendered
+    const brandTitles = screen.getAllByText("FairTab");
+    expect(brandTitles.length).toBeGreaterThan(0);
 
     // Verify page context title is displayed
     expect(screen.getByText("Dashboard Overview")).toBeInTheDocument();
