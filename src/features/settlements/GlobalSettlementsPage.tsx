@@ -14,7 +14,7 @@ import type { UserGroupIndexDocument } from "../groups/userGroupIndexSchema";
 import type { ExpenseDocument, SettlementDocument } from "@fairtab/domain";
 import type { GroupMemberDocument } from "../groups/memberSchema";
 import { resolveMemberName } from "../../hooks/useMemberNameResolver";
-import { formatCurrency } from "../../utils/format";
+import { formatCurrency, formatTimestamp } from "../../utils/format";
 
 interface GroupData {
   groupId: string;
@@ -402,9 +402,7 @@ export const GlobalSettlementsPage: React.FC = () => {
                             <span className="truncate max-w-[80px]">{set.receiverName}</span>
                           </div>
                           <span className="text-[10px] text-text-muted mt-1 block">
-                            {set.createdAt?.seconds
-                              ? new Date(set.createdAt.seconds * 1000).toLocaleDateString()
-                              : "Just now"}
+                            {formatTimestamp(set.createdAt)}
                           </span>
                         </div>
                         <div className="text-right flex-shrink-0 flex items-center gap-2">

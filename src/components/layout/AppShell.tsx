@@ -6,6 +6,7 @@ import { TopHeader } from "./TopHeader";
 import { MobileNavigation } from "./MobileNavigation";
 import { OfflineBanner } from "../feedback/FeedbackStates";
 import { PwaUpdatePrompt } from "../feedback/PwaUpdatePrompt";
+import { ErrorBoundary } from "../feedback/ErrorBoundary";
 import { CommandPalette } from "../ui/CommandPalette";
 import { Dialog } from "../ui/Dialogs";
 import { Button } from "../ui/Button";
@@ -188,7 +189,9 @@ export const AppShell: React.FC = () => {
 
           {/* Dynamic page content slot */}
           <main className="flex-grow overflow-x-hidden">
-            <Outlet />
+            <ErrorBoundary>
+              <Outlet />
+            </ErrorBoundary>
           </main>
         </div>
       </div>

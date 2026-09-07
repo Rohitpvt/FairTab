@@ -39,6 +39,7 @@ export const SettlementDetailPage: React.FC = () => {
 
     const unsubscribeGroup = groupService.watchGroup(groupId, (data) => {
       setGroup(data);
+      setIsLoading(false);
     });
 
     const unsubscribeMembers = groupService.watchMembers(groupId, (data) => {
