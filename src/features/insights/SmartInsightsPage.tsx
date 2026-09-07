@@ -25,6 +25,7 @@ import type { OfflineInsight } from "../../infrastructure/offline/db";
 import { InsightCard } from "./InsightCard";
 import { useMemberNameResolver } from "../../hooks/useMemberNameResolver";
 import { InsightExplanationDialog } from "./InsightDetailDialogs";
+import { CoolLoader } from "../../components/feedback/CoolLoader";
 
 export const SmartInsightsPage: React.FC = () => {
   const [activeGroups, setActiveGroups] = useState<{ groupId: string; groupName: string }[]>([]);
@@ -279,8 +280,7 @@ export const SmartInsightsPage: React.FC = () => {
 
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-16 gap-3">
-            <span className="h-8 w-8 rounded-full border-2 border-accent-indigo border-t-transparent animate-spin" />
-            <span className="text-xs text-text-muted">Analyzing ledger data...</span>
+            <CoolLoader size="md" label="Analyzing ledger data..." />
           </div>
         ) : activeGroups.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 border border-white/5 rounded-xl bg-white/5 text-center">

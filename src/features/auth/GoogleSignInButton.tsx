@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { authService } from "../../infrastructure/firebase/authService";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { CoolLoader } from "../../components/feedback/CoolLoader";
 
 import { useAuth } from "./AuthProvider";
 
@@ -23,10 +23,16 @@ export const GoogleSignInButton: React.FC<GoogleSignInButtonProps> = ({ disabled
     } catch (error: unknown) {
       try {
         sessionStorage.removeItem("fairtab:pending-remember");
-      } catch (e) {
-        console.warn("Failed to clean up pending remember preference:", e);
+      } catch {
+        // ignore
       }
-      const errorObj = error instanceof Error ? error : new Error(String(error));
+      const errorObj = error as { message?: string; code?: string };
+      if (
+        errorObj.code === "auth/popup-closed-by-user" ||
+        errorObj.code === "auth/cancelled-popup-request"
+      ) {
+        return;
+      }
       toast.error(errorObj.message || "Google authentication failed.");
     } finally {
       setIsLoading(false);
@@ -45,7 +51,7 @@ export const GoogleSignInButton: React.FC<GoogleSignInButtonProps> = ({ disabled
       className="w-full flex items-center justify-center gap-3 px-4 py-2.5 rounded-lg border border-white/10 glass-subtle hover:bg-surface-hover active:scale-98 transition-all duration-150 font-medium text-sm text-text-primary disabled:opacity-50 disabled:pointer-events-none cursor-pointer focus-visible:outline-2 focus-visible:outline-accent-cyan focus-visible:outline-offset-2"
     >
       {isLoading ? (
-        <Loader2 className="h-4 w-4 animate-spin text-accent-cyan" aria-hidden="true" />
+        <CoolLoader size="xs" />
       ) : (
         <svg
           className="h-4 w-4"

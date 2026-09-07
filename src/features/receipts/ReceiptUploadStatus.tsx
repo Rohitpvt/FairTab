@@ -3,9 +3,10 @@ import { offlineDb } from "../../infrastructure/offline/db";
 import type { ReceiptDraft } from "../../infrastructure/offline/db";
 import { syncManager } from "../../infrastructure/offline/syncManager";
 import { auth } from "../../infrastructure/firebase/firebase";
-import { Loader2, AlertCircle, Clock, CheckCircle } from "lucide-react";
+import { AlertCircle, Clock, CheckCircle } from "lucide-react";
+import { CoolLoader } from "../../components/feedback/CoolLoader";
 
-export const ReceiptUploadStatus: React.FC<{ groupId: string }> = ({ groupId }) => {
+export const ReceiptUploadStatus: React.FC<{ groupId: string; currentDraftId?: string }> = ({ groupId }) => {
   const [receiptDrafts, setReceiptDrafts] = useState<ReceiptDraft[]>([]);
   const mountedRef = useRef(true);
 
@@ -27,21 +28,15 @@ export const ReceiptUploadStatus: React.FC<{ groupId: string }> = ({ groupId }) 
 
   useEffect(() => {
     mountedRef.current = true;
+    fetchDrafts();
 
-    // Subscribe to sync changes; listener callback triggers async fetch
-    const unsubscribe = syncManager.registerListener(() => {
+    const unsub = syncManager.registerListener(() => {
       fetchDrafts();
     });
 
-    // Schedule initial fetch after mount (deferred to avoid synchronous setState)
-    const timerId = setTimeout(() => {
-      fetchDrafts();
-    }, 0);
-
     return () => {
       mountedRef.current = false;
-      clearTimeout(timerId);
-      unsubscribe();
+      unsub();
     };
   }, [fetchDrafts]);
 
@@ -57,7 +52,7 @@ export const ReceiptUploadStatus: React.FC<{ groupId: string }> = ({ groupId }) 
           let badgeColor = "bg-white/5 border-white/10 text-white/60";
 
           if (draft.status === "uploading") {
-            icon = <Loader2 className="w-4 h-4 text-sky-400 animate-spin" />;
+            icon = <CoolLoader size="xs" />;
             statusText = "Uploading...";
             badgeColor = "bg-sky-500/10 border-sky-500/20 text-sky-400";
           } else if (draft.status === "failed") {

@@ -16,6 +16,7 @@ import { receiptStorage } from "../../infrastructure/storage/receiptStorage";
 import { receiptService } from "../../infrastructure/firebase/receiptService";
 import { toast } from "sonner";
 import { Loader2, ArrowLeft, Send, Sparkles } from "lucide-react";
+import { CoolLoader } from "../../components/feedback/CoolLoader";
 
 interface ItemizedLine {
   description: string;
@@ -291,7 +292,7 @@ export const OCRReviewPage: React.FC = () => {
     return (
       <PageContainer title="Scan Receipt" description="Initializing OCR environment...">
         <div className="flex items-center justify-center p-12">
-          <Loader2 className="w-8 h-8 text-sky-400 animate-spin" />
+          <CoolLoader size="md" label="Initializing OCR environment..." />
         </div>
       </PageContainer>
     );
@@ -307,10 +308,21 @@ export const OCRReviewPage: React.FC = () => {
 
   return (
     <PageContainer
-      title="Scan Receipt & Split"
-      description={`Upload receipt file to automatically parse and split costs for ${group.name}.`}
+      title="Review Receipt Scan"
+      description={`AI OCR extraction and line-item splitting for "${group.name}".`}
     >
-      <div className="max-w-5xl mx-auto space-y-6">
+      <div className="max-w-6xl mx-auto space-y-6">
+        {/* Navigation & Status Header */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-white/10">
+          <button
+            onClick={() => navigate(`/groups/${groupId}`)}
+            className="flex items-center gap-1.5 text-xs text-white/60 hover:text-white transition"
+          >
+            <ArrowLeft className="w-4 h-4" /> Back to Group
+          </button>
+          <ReceiptUploadStatus groupId={groupId!} />
+        </div>
+
         {step === "upload" ? (
           <div className="max-w-xl mx-auto space-y-6">
             <ReceiptUploader onFileSelected={handleFileSelected} />
@@ -324,9 +336,9 @@ export const OCRReviewPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setStep("upload")}
-                  className="flex items-center gap-1.5 text-xs text-white/60 hover:text-white transition"
+                  className="text-xs text-sky-400 hover:text-sky-300 transition"
                 >
-                  <ArrowLeft className="w-4 h-4" /> Upload different file
+                  ← Scan different image
                 </button>
                 <div className="flex items-center gap-1.5 text-xs text-sky-400 font-semibold bg-sky-500/10 px-2.5 py-1 rounded-full">
                   <Sparkles className="w-3.5 h-3.5" />
@@ -336,8 +348,7 @@ export const OCRReviewPage: React.FC = () => {
 
               {isProcessingOcr ? (
                 <div className="flex flex-col items-center justify-center p-12 bg-white/5 border border-white/10 rounded-2xl h-[450px]">
-                  <Loader2 className="w-8 h-8 text-sky-400 animate-spin mb-2" />
-                  <p className="text-xs text-white">Analyzing receipt image via OCR...</p>
+                  <CoolLoader size="md" label="Analyzing receipt image via OCR..." />
                   <p className="text-[10px] text-white/40 mt-1">This takes a few seconds.</p>
                 </div>
               ) : (

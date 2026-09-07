@@ -24,6 +24,7 @@ import { ExportAnalyticsDialog } from "./ExportAnalyticsDialog";
 import { Button } from "../../components/ui/Button";
 import { Download, AlertCircle } from "lucide-react";
 import { useMemberNameResolver } from "../../hooks/useMemberNameResolver";
+import { CoolLoader } from "../../components/feedback/CoolLoader";
 
 export const AnalyticsPage: React.FC = () => {
   const [activeGroups, setActiveGroups] = useState<any[]>([]);
@@ -190,8 +191,7 @@ export const AnalyticsPage: React.FC = () => {
 
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-16 gap-3">
-            <span className="h-8 w-8 rounded-full border-2 border-accent-indigo border-t-transparent animate-spin" />
-            <span className="text-xs text-text-muted">Compiling transactions...</span>
+            <CoolLoader size="md" label="Compiling transactions..." />
           </div>
         ) : activeGroups.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 border border-white/5 rounded-xl bg-white/5 text-center">

@@ -3,7 +3,6 @@ import {
   onSnapshot,
   query,
   orderBy,
-  where,
 } from "firebase/firestore";
 import { db } from "./firebase";
 import type { BudgetDocument } from "@fairtab/domain";
@@ -16,11 +15,7 @@ export const budgetService = {
     groupId: string,
     callback: (budgets: BudgetDocument[], fromCache: boolean, hasPendingWrites: boolean) => void
   ) {
-    const q = query(
-      collection(db, `groups/${groupId}/budgets`),
-      where("status", "in", ["active", "paused"]),
-      orderBy("createdAt", "desc")
-    );
+    const q = collection(db, `groups/${groupId}/budgets`);
 
     return onSnapshot(
       q,
@@ -28,7 +23,16 @@ export const budgetService = {
       (snapshot) => {
         const budgets: BudgetDocument[] = [];
         snapshot.forEach((d) => {
-          budgets.push(d.data() as BudgetDocument);
+          const data = d.data() as BudgetDocument;
+          if (data.status === "active" || data.status === "paused") {
+            budgets.push(data);
+          }
+        });
+        // Sort in-memory by createdAt descending
+        budgets.sort((a, b) => {
+          const tA = (a.createdAt as { seconds?: number })?.seconds ?? 0;
+          const tB = (b.createdAt as { seconds?: number })?.seconds ?? 0;
+          return tB - tA;
         });
         callback(
           budgets,
@@ -38,6 +42,7 @@ export const budgetService = {
       },
       (error) => {
         console.error(`Failed to watch budgets for group ${groupId}:`, error);
+        callback([], false, false);
       }
     );
   },

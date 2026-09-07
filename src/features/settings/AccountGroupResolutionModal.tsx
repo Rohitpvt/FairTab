@@ -7,6 +7,7 @@ import type { GroupDocument } from "../groups/groupSchema";
 import type { GroupMemberDocument } from "../groups/memberSchema";
 import { AlertCircle, CheckCircle2, Shield, Trash2, ArrowRight, UserCheck, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
+import { CoolLoader } from "../../components/feedback/CoolLoader";
 
 export interface GroupResolutionItem {
   group: GroupDocument;
@@ -202,8 +203,7 @@ export const AccountGroupResolutionModal: React.FC<AccountGroupResolutionModalPr
         title="Review Group Ownership"
       >
         <div className="flex flex-col items-center justify-center p-8 gap-3">
-          <div className="h-7 w-7 border-2 border-accent-cyan border-t-transparent rounded-full animate-spin" />
-          <p className="text-xs text-text-muted">Analyzing owned groups and memberships...</p>
+          <CoolLoader size="sm" label="Analyzing owned groups and memberships..." />
         </div>
       </Dialog>
     );

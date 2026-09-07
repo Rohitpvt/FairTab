@@ -1,5 +1,5 @@
 import React from "react";
-import { Loader2 } from "lucide-react";
+import { CoolLoader } from "../feedback/CoolLoader";
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   isLoading?: boolean;
@@ -59,7 +59,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
 
         {isLoading && (
           <div className="absolute inset-0 flex items-center justify-center gap-2 text-current">
-            <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+            <CoolLoader size="xs" />
             {loadingText && <span className="text-xs font-semibold">{loadingText}</span>}
           </div>
         )}

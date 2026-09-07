@@ -1,7 +1,7 @@
 import React, { useId } from "react";
 
 export interface CoolLoaderProps {
-  size?: "sm" | "md" | "lg";
+  size?: "xs" | "sm" | "md" | "lg";
   className?: string;
   label?: string;
 }
@@ -15,6 +15,7 @@ export const CoolLoader: React.FC<CoolLoaderProps> = ({
   const gradientId = "cool-grad-" + rawId.replace(/[^a-zA-Z0-9_-]/g, "");
 
   const sizeClass = {
+    xs: "pl-xs",
     sm: "pl-sm",
     md: "pl-md",
     lg: "pl-lg",

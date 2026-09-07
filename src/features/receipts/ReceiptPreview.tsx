@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useReducer } from "react";
 import { receiptStorage } from "../../infrastructure/storage/receiptStorage";
-import { FileText, Loader2, RefreshCw } from "lucide-react";
+import { FileText, RefreshCw } from "lucide-react";
+import { CoolLoader } from "../../components/feedback/CoolLoader";
 
 interface ReceiptPreviewProps {
   fileBlob?: Blob | null;
@@ -112,8 +113,7 @@ export const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center p-12 bg-white/5 border border-white/10 rounded-2xl h-[400px]">
-        <Loader2 className="w-8 h-8 text-sky-400 animate-spin mb-2" />
-        <p className="text-xs text-white/50">Retrieving file securely from Firebase Storage...</p>
+        <CoolLoader size="md" label="Retrieving file securely from Firebase Storage..." />
       </div>
     );
   }
