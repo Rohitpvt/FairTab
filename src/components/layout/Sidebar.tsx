@@ -48,9 +48,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggleCollapse 
       {/* Brand logo header */}
       <div className="flex items-center px-4 py-4 border-b border-border-color/60 min-h-[72px] overflow-hidden">
         <div className="flex items-center gap-3 min-w-0">
-          <div className="h-9 w-9 rounded-xl bg-white/[0.04] border border-white/10 flex items-center justify-center p-1.5 shrink-0 shadow-lg shadow-accent-indigo/10 backdrop-blur-md">
-            <BrandLogo size="sm" className="h-full w-full object-contain filter drop-shadow-[0_0_8px_rgba(134,59,255,0.4)]" />
-          </div>
+          <BrandLogo size="md" className="shrink-0 shadow-lg shadow-accent-cyan/20 rounded-xl" />
           <div
             className={`flex flex-col overflow-hidden whitespace-nowrap transition-all duration-300 ease-[cubic-bezier(0.2,0.8,0.2,1)] ${
               isCollapsed ? "max-w-0 opacity-0 pointer-events-none" : "max-w-[160px] opacity-100"

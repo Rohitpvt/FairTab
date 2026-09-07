@@ -23,8 +23,8 @@ export const AuthLayout: React.FC<AuthLayoutProps> = ({ children, title, subtitl
       >
         <div className="text-center mb-6">
           {/* Logo container */}
-          <div className="inline-flex items-center justify-center p-3 rounded-2xl bg-white/[0.04] border border-white/10 shadow-xl mb-3 backdrop-blur-md">
-            <BrandLogo size="lg" className="filter drop-shadow-[0_0_12px_rgba(134,59,255,0.5)]" />
+          <div className="inline-flex items-center justify-center mb-3">
+            <BrandLogo size="xl" className="shadow-2xl shadow-accent-cyan/25 rounded-2xl" />
           </div>
           <h1 className="text-2xl font-extrabold tracking-tight bg-gradient-to-r from-text-primary to-text-secondary bg-clip-text text-transparent">
             {title}
