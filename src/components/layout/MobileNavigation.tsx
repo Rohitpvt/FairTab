@@ -58,7 +58,7 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({ onAddClick }
       <nav
         ref={navRef}
         onMouseMove={handleMouseMove}
-        className="pointer-events-auto w-full max-w-[420px] rounded-2xl liquid-glass-nav px-2 py-2 flex items-center justify-around shadow-2xl relative overflow-hidden"
+        className="pointer-events-auto w-full max-w-[420px] rounded-2xl liquid-glass-nav px-2 py-1.5 flex items-center justify-around shadow-2xl relative overflow-hidden"
       >
         {/* Interactive Glare Layer */}
         <div className="liquid-glare-layer">
@@ -80,16 +80,17 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({ onAddClick }
 
           if (tab.isAction) {
             return (
-              <button
-                key={idx}
-                onClick={onAddClick}
-                className="relative flex flex-col items-center justify-center p-1 cursor-pointer select-none -translate-y-3.5 z-20 group"
-                aria-label="Add new expense"
-              >
-                <div className="h-11 w-11 rounded-full bg-gradient-to-tr from-accent-indigo via-accent-violet to-accent-cyan flex items-center justify-center text-white shadow-lg shadow-accent-indigo/40 active:scale-85 hover:scale-105 transition-all duration-200 border-2 border-white/40">
-                  <Plus className="h-5 w-5 transition-transform duration-200 group-hover:rotate-90" />
-                </div>
-              </button>
+              <div key={idx} className="flex items-center justify-center min-w-[52px] min-h-[44px]">
+                <button
+                  onClick={onAddClick}
+                  className="flex items-center justify-center cursor-pointer select-none z-20 group"
+                  aria-label="Add new expense"
+                >
+                  <div className="h-10 w-10 rounded-full bg-gradient-to-tr from-accent-indigo via-accent-violet to-accent-cyan flex items-center justify-center text-white shadow-md shadow-accent-indigo/40 active:scale-85 hover:scale-105 transition-all duration-200 border border-white/40">
+                    <Plus className="h-5 w-5 transition-transform duration-200 group-hover:rotate-90 stroke-[2.5]" />
+                  </div>
+                </button>
+              </div>
             );
           }
 
