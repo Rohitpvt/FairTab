@@ -8,7 +8,6 @@ import {
   Trash2,
   Lock,
   Info,
-  LogOut,
   Edit2,
   Check
 } from "lucide-react";
@@ -228,22 +227,11 @@ export const SettingsPage: React.FC = () => {
         <div className="lg:col-span-2 flex flex-col gap-6">
           {/* User profile */}
           <GlassPanel variant="standard" className="flex flex-col gap-4">
-            <div className="flex items-center gap-2 border-b border-white/5 pb-3 justify-between">
-              <div className="flex items-center gap-2">
-                <UserIcon className="h-5 w-5 text-accent-indigo" />
-                <h3 className="text-sm font-bold text-text-primary uppercase tracking-wider">
-                  User Profile
-                </h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => signOut()}
-                className="flex items-center gap-1.5 text-xs text-text-muted hover:text-danger hover:underline transition-colors cursor-pointer"
-                title="Sign out of your session"
-              >
-                <LogOut className="h-3.5 w-3.5" />
-                <span>Sign Out</span>
-              </button>
+            <div className="flex items-center gap-2 border-b border-white/5 pb-3">
+              <UserIcon className="h-5 w-5 text-accent-indigo" />
+              <h3 className="text-sm font-bold text-text-primary uppercase tracking-wider">
+                User Profile
+              </h3>
             </div>
             
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
