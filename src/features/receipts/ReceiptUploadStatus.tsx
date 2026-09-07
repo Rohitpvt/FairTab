@@ -28,7 +28,9 @@ export const ReceiptUploadStatus: React.FC<{ groupId: string; currentDraftId?: s
 
   useEffect(() => {
     mountedRef.current = true;
-    fetchDrafts();
+    const timerId = setTimeout(() => {
+      fetchDrafts();
+    }, 0);
 
     const unsub = syncManager.registerListener(() => {
       fetchDrafts();
@@ -36,6 +38,7 @@ export const ReceiptUploadStatus: React.FC<{ groupId: string; currentDraftId?: s
 
     return () => {
       mountedRef.current = false;
+      clearTimeout(timerId);
       unsub();
     };
   }, [fetchDrafts]);
