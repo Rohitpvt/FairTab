@@ -70,9 +70,23 @@ export const SettlementsPage: React.FC = () => {
   if (isLoading) {
     return (
       <PageContainer title="Reconcile Settlements" description="Preparing debt optimization engine...">
-        <div className="flex flex-col gap-4">
-          <Skeleton className="h-[200px] rounded-xl" />
-          <Skeleton className="h-[150px] rounded-xl" />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 flex flex-col gap-4">
+            <div className="glass-elevated border border-white/10 rounded-2xl p-6 flex flex-col gap-4">
+              <Skeleton className="h-6 w-48" />
+              <div className="flex flex-col gap-3">
+                <Skeleton className="h-20 w-full rounded-xl" />
+                <Skeleton className="h-20 w-full rounded-xl" />
+              </div>
+            </div>
+          </div>
+          <div className="flex flex-col gap-4">
+            <div className="glass-standard border border-white/10 rounded-2xl p-5 flex flex-col gap-3">
+              <Skeleton className="h-5 w-32" />
+              <Skeleton className="h-16 w-full rounded-xl" />
+              <Skeleton className="h-16 w-full rounded-xl" />
+            </div>
+          </div>
         </div>
       </PageContainer>
     );

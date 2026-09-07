@@ -133,10 +133,42 @@ export const ExpenseDetailPage: React.FC = () => {
   if (isLoading) {
     return (
       <PageContainer title="Expense details" description="Loading transaction ledger...">
-        <div className="flex flex-col gap-4">
-          <Skeleton className="h-10 w-full" />
-          <Skeleton className="h-20 w-full" />
-          <Skeleton className="h-40 w-full" />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+          <div className="lg:col-span-2 flex flex-col gap-6">
+            <div className="glass-elevated border border-white/10 rounded-2xl p-6 flex flex-col gap-4">
+              <div className="flex justify-between items-start border-b border-white/5 pb-4">
+                <div className="flex flex-col gap-2">
+                  <Skeleton className="h-3 w-20" />
+                  <Skeleton className="h-9 w-36" />
+                </div>
+                <Skeleton className="h-6 w-24 rounded-full" />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <Skeleton className="h-10 rounded-xl" />
+                <Skeleton className="h-10 rounded-xl" />
+                <Skeleton className="h-10 rounded-xl" />
+              </div>
+            </div>
+            <div className="glass-standard border border-white/10 rounded-2xl p-6 flex flex-col gap-4">
+              <Skeleton className="h-5 w-32" />
+              <div className="flex flex-col gap-2">
+                <Skeleton className="h-12 w-full rounded-xl" />
+                <Skeleton className="h-12 w-full rounded-xl" />
+                <Skeleton className="h-12 w-full rounded-xl" />
+              </div>
+            </div>
+          </div>
+          <div className="flex flex-col gap-6">
+            <div className="glass-standard border border-white/10 rounded-2xl p-6 flex flex-col gap-3">
+              <Skeleton className="h-5 w-24" />
+              <Skeleton className="h-12 w-full rounded-xl" />
+            </div>
+            <div className="glass-standard border border-white/10 rounded-2xl p-6 flex flex-col gap-3">
+              <Skeleton className="h-5 w-28" />
+              <Skeleton className="h-10 w-full rounded-xl" />
+              <Skeleton className="h-10 w-full rounded-xl" />
+            </div>
+          </div>
         </div>
       </PageContainer>
     );

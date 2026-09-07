@@ -484,7 +484,7 @@ export const groupService = {
   watchUserGroups(callback: (groups: UserGroupIndexDocument[]) => void) {
     const currentUser = auth.currentUser;
     if (!currentUser) {
-      callback([]);
+      queueMicrotask(() => callback([]));
       return () => {};
     }
 

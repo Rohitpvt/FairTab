@@ -14,6 +14,7 @@ import {
 import { PageContainer } from "../../components/layout/PageContainer";
 import { GlassPanel } from "../../components/ui/GlassPanel";
 import { Button } from "../../components/ui/Button";
+import { ProfileCardSkeleton } from "../../components/ui/Skeleton";
 import { Dialog } from "../../components/ui/Dialogs";
 import { useAuth } from "../auth/AuthProvider";
 import { profileService } from "../../infrastructure/firebase/profileService";
@@ -226,15 +227,18 @@ export const SettingsPage: React.FC = () => {
         {/* Main Settings Sections */}
         <div className="lg:col-span-2 flex flex-col gap-6">
           {/* User profile */}
-          <GlassPanel variant="standard" className="flex flex-col gap-4">
-            <div className="flex items-center gap-2 border-b border-white/5 pb-3">
-              <UserIcon className="h-5 w-5 text-accent-indigo" />
-              <h3 className="text-sm font-bold text-text-primary uppercase tracking-wider">
-                User Profile
-              </h3>
-            </div>
-            
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          {!user && !profile ? (
+            <ProfileCardSkeleton />
+          ) : (
+            <GlassPanel variant="standard" className="flex flex-col gap-4">
+              <div className="flex items-center gap-2 border-b border-white/5 pb-3">
+                <UserIcon className="h-5 w-5 text-accent-indigo" />
+                <h3 className="text-sm font-bold text-text-primary uppercase tracking-wider">
+                  User Profile
+                </h3>
+              </div>
+              
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               {isEditingName ? (
                 <div className="flex items-center gap-2 w-full max-w-sm">
                   <input
@@ -285,6 +289,7 @@ export const SettingsPage: React.FC = () => {
               )}
             </div>
           </GlassPanel>
+        )}
 
           {/* Sync & Local Storage parameters */}
           <GlassPanel variant="standard" className="flex flex-col gap-4">

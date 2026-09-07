@@ -26,11 +26,9 @@ interface AggregatedExpense {
   timestamp: number;
 }
 
-const isTest = typeof process !== "undefined" && process.env.NODE_ENV === "test";
-
 export const ExpensesPage: React.FC = () => {
   const { user, profile } = useAuth();
-  const [isLoading, setIsLoading] = useState(!isTest);
+  const [isLoading, setIsLoading] = useState(true);
   const [groups, setGroups] = useState<UserGroupIndexDocument[]>([]);
   const [expensesMap, setExpensesMap] = useState<Record<string, ExpenseDocument[]>>({});
   const [memberNames, setMemberNames] = useState<Record<string, string>>({});
@@ -42,9 +40,6 @@ export const ExpensesPage: React.FC = () => {
 
   // 1. Watch user groups
   useEffect(() => {
-    if (isTest) {
-      return;
-    }
     if (!user) return;
     const unsubscribeGroups = groupService.watchUserGroups((userGroups) => {
       // Keep only active/archived where the user is an active member

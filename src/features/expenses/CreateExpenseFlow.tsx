@@ -9,7 +9,7 @@ import ExpenseForm from "./ExpenseForm";
 import type { ExpenseFormData } from "./ExpenseForm";
 import { syncManager } from "../../infrastructure/offline/syncManager";
 import { toast } from "sonner";
-import { Skeleton } from "../../components/ui/Skeleton";
+import { FormCardSkeleton } from "../../components/ui/Skeleton";
 
 export const CreateExpenseFlow: React.FC = () => {
   const { groupId } = useParams<{ groupId: string }>();
@@ -86,11 +86,7 @@ export const CreateExpenseFlow: React.FC = () => {
   if (isLoading) {
     return (
       <PageContainer title="Add Expense" description="Loading group ledger...">
-        <div className="flex flex-col gap-4">
-          <Skeleton className="h-10 w-full" />
-          <Skeleton className="h-10 w-full" />
-          <Skeleton className="h-40 w-full" />
-        </div>
+        <FormCardSkeleton />
       </PageContainer>
     );
   }

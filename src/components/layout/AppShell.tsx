@@ -10,6 +10,7 @@ import { ErrorBoundary } from "../feedback/ErrorBoundary";
 import { CommandPalette } from "../ui/CommandPalette";
 import { Dialog } from "../ui/Dialogs";
 import { Button } from "../ui/Button";
+import { Skeleton } from "../ui/Skeleton";
 import { useAppActions, useAppState } from "../../app/providers/AppActionProvider";
 import { groupService } from "../../infrastructure/firebase/groupService";
 import type { UserGroupIndexDocument } from "../../features/groups/userGroupIndexSchema";
@@ -79,9 +80,7 @@ const AddExpenseDialog: React.FC = () => {
             Select Splitting Group
           </label>
           {isLoadingGroups ? (
-            <div className="px-3.5 py-2.5 bg-surface-primary border border-white/10 rounded-lg text-sm text-text-muted animate-pulse">
-              Loading groups...
-            </div>
+            <Skeleton className="h-10 w-full rounded-lg" />
           ) : groups.length === 0 ? (
             <div className="flex flex-col gap-2">
               <div className="px-3.5 py-2.5 bg-surface-primary border border-danger/20 rounded-lg text-sm text-danger font-semibold">

@@ -18,6 +18,7 @@ import {
 import { PageContainer } from "../../components/layout/PageContainer";
 import { GlassPanel } from "../../components/ui/GlassPanel";
 import { Button } from "../../components/ui/Button";
+import { RecurringOccurrenceSkeleton, RecurringTemplateSkeleton } from "../../components/ui/Skeleton";
 import { useMemberNameResolver } from "../../hooks/useMemberNameResolver";
 import { groupService } from "../../infrastructure/firebase/groupService";
 import { recurringService } from "../../infrastructure/firebase/recurringService";
@@ -313,9 +314,15 @@ export const RecurringPage: React.FC = () => {
           </p>
         </GlassPanel>
       ) : isLoading ? (
-        <div className="flex flex-col gap-4">
-          <GlassPanel variant="standard" className="h-20 animate-pulse bg-white/5" />
-          <GlassPanel variant="standard" className="h-20 animate-pulse bg-white/5" />
+        <div className="flex flex-col gap-6">
+          <div className="flex flex-col gap-3">
+            <RecurringOccurrenceSkeleton />
+            <RecurringOccurrenceSkeleton />
+          </div>
+          <div className="flex flex-col gap-3">
+            <RecurringTemplateSkeleton />
+            <RecurringTemplateSkeleton />
+          </div>
         </div>
       ) : (
         <div className="flex flex-col gap-8 text-left">

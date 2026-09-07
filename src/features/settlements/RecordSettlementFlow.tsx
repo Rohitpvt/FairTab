@@ -18,18 +18,25 @@ import type { ExpenseDocument, SettlementDocument } from "@fairtab/domain";
 import type { GroupDocument } from "../groups/groupSchema";
 import type { GroupMemberDocument } from "../groups/memberSchema";
 import { useMemberNameResolver } from "../../hooks/useMemberNameResolver";
+import { FormCardSkeleton } from "../../components/ui/Skeleton";
 
 function generateRandomId(prefix: string): string {
   if (typeof crypto !== "undefined" && crypto.randomUUID) {
     return `${prefix}-${crypto.randomUUID()}`;
   }
-  return `${prefix}-${Math.random().toString(36).substring(2)}`;
+  return `${prefix}-${Math.random().toString(36).substring(2, 10)}`;
 }
 
 export const RecordSettlementFlow: React.FC = () => {
   const { groupId } = useParams<{ groupId: string }>();
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Query Params & Prefill values
+  const queryParams = new URLSearchParams(location.search);
+  const prefillFrom = queryParams.get("from") || queryParams.get("payerId") || "";
+  const prefillTo = queryParams.get("to") || queryParams.get("receiverId") || "";
+  const prefillAmount = queryParams.get("amount") || "";
 
   const [group, setGroup] = useState<GroupDocument | null>(null);
   const [members, setMembers] = useState<GroupMemberDocument[]>([]);
@@ -38,13 +45,7 @@ export const RecordSettlementFlow: React.FC = () => {
   const [settlements, setSettlements] = useState<SettlementDocument[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Parse prefill parameters from search query
-  const searchParams = new URLSearchParams(location.search);
-  const prefillFrom = searchParams.get("from") || "";
-  const prefillTo = searchParams.get("to") || "";
-  const prefillAmount = searchParams.get("amount") || "";
-
-  // Form State
+  // Form Fields
   const [payerId, setPayerId] = useState(prefillFrom);
   const [receiverId, setReceiverId] = useState(prefillTo);
   const [amount, setAmount] = useState(prefillAmount);
@@ -94,10 +95,20 @@ export const RecordSettlementFlow: React.FC = () => {
     }
   }, [members, payerId, receiverId]);
 
-  if (isLoading || !group) {
+  if (isLoading) {
     return (
       <PageContainer title="Record Repayment" description="Loading group settings...">
-        <div className="h-[300px] bg-surface-elevated animate-pulse rounded-xl" />
+        <FormCardSkeleton />
+      </PageContainer>
+    );
+  }
+
+  if (!group) {
+    return (
+      <PageContainer title="Group Not Found" description="The group you are looking for does not exist.">
+        <Button variant="secondary" onClick={() => navigate("/groups")}>
+          Back to Groups
+        </Button>
       </PageContainer>
     );
   }

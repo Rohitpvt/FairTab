@@ -7,6 +7,7 @@ import { auth, db } from "../../infrastructure/firebase/firebase";
 import { collection, query, orderBy, onSnapshot } from "firebase/firestore";
 import { fairtabApi } from "../../infrastructure/api/fairtabApi";
 import { Button } from "../../components/ui/Button";
+import { NotificationItemSkeleton } from "../../components/ui/Skeleton";
 import { toast } from "sonner";
 
 interface NotificationItem {
@@ -105,8 +106,9 @@ export const NotificationsPage: React.FC = () => {
       <div className="flex flex-col gap-4 max-w-2xl mx-auto w-full mt-4">
         {isLoading ? (
           <div className="flex flex-col gap-3">
-            <div className="h-20 w-full bg-white/5 animate-pulse rounded-2xl" />
-            <div className="h-20 w-full bg-white/5 animate-pulse rounded-2xl" />
+            <NotificationItemSkeleton />
+            <NotificationItemSkeleton />
+            <NotificationItemSkeleton />
           </div>
         ) : notifications.length === 0 ? (
           <EmptyState

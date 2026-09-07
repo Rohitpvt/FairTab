@@ -18,9 +18,9 @@ import {
 import { BudgetProgressCard } from "./BudgetProgressCard";
 import { CreateBudgetDialog } from "./CreateBudgetDialog";
 import { Button } from "../../components/ui/Button";
+import { BudgetCardSkeleton } from "../../components/ui/Skeleton";
 import { Plus, Wallet, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
-import { CoolLoader } from "../../components/feedback/CoolLoader";
 
 export const BudgetDashboard: React.FC = () => {
   const [activeGroups, setActiveGroups] = useState<any[]>([]);
@@ -273,8 +273,10 @@ export const BudgetDashboard: React.FC = () => {
         </div>
 
         {isLoading ? (
-          <div className="flex flex-col items-center justify-center py-16 gap-3">
-            <CoolLoader size="md" label="Loading budgets..." />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <BudgetCardSkeleton />
+            <BudgetCardSkeleton />
+            <BudgetCardSkeleton />
           </div>
         ) : activeGroups.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 border border-white/5 rounded-xl bg-white/5 text-center">

@@ -8,7 +8,7 @@ import { formatCurrency } from "../../utils/format";
 import { ExpenseRow } from "../../components/ui/ExpenseRow";
 import { GlassPanel } from "../../components/ui/GlassPanel";
 import { Button, GradientButton } from "../../components/ui/Button";
-import { BalanceCardSkeleton, ExpenseRowSkeleton } from "../../components/ui/Skeleton";
+import { Skeleton, BalanceCardSkeleton, ExpenseRowSkeleton } from "../../components/ui/Skeleton";
 import { useAppActions } from "../../app/providers/AppActionProvider";
 import { useAuth } from "../../features/auth/AuthProvider";
 import { groupService } from "../../infrastructure/firebase/groupService";
@@ -37,13 +37,11 @@ interface AggregatedTransaction {
   timestamp: number; // for sorting
 }
 
-const isTest = typeof process !== "undefined" && process.env.NODE_ENV === "test";
-
 export const OverviewPage: React.FC = () => {
   const { user, profile } = useAuth();
   const { openAddExpense } = useAppActions();
 
-  const [isLoading, setIsLoading] = useState(!isTest);
+  const [isLoading, setIsLoading] = useState(true);
   const [groups, setGroups] = useState<UserGroupIndexDocument[]>([]);
   const [expensesMap, setExpensesMap] = useState<Record<string, ExpenseDocument[]>>({});
   const [settlementsMap, setSettlementsMap] = useState<Record<string, SettlementDocument[]>>({});
@@ -52,9 +50,6 @@ export const OverviewPage: React.FC = () => {
 
   // 1. Watch user groups
   useEffect(() => {
-    if (isTest) {
-      return;
-    }
     if (!user) return;
     const unsubscribeGroups = groupService.watchUserGroups((userGroups) => {
       // Keep only active/archived where the user is an active member
@@ -340,14 +335,14 @@ export const OverviewPage: React.FC = () => {
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
           <div className="lg:col-span-2 flex flex-col gap-4">
-            <div className="h-6 w-32 bg-surface-elevated animate-pulse rounded" />
+            <Skeleton className="h-6 w-32" />
             <ExpenseRowSkeleton />
             <ExpenseRowSkeleton />
             <ExpenseRowSkeleton />
           </div>
           <div className="flex flex-col gap-4">
-            <div className="h-6 w-32 bg-surface-elevated animate-pulse rounded" />
-            <div className="h-[200px] bg-surface-elevated animate-pulse rounded-xl" />
+            <Skeleton className="h-6 w-32" />
+            <Skeleton className="h-[200px] rounded-xl" />
           </div>
         </div>
       </PageContainer>

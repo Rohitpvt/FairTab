@@ -6,6 +6,7 @@ import { PageContainer } from "../../components/layout/PageContainer";
 import { GlassPanel } from "../../components/ui/GlassPanel";
 import { Button } from "../../components/ui/Button";
 import { Dialog } from "../../components/ui/Dialogs";
+import { Skeleton } from "../../components/ui/Skeleton";
 import { groupService } from "../../infrastructure/firebase/groupService";
 import { settlementService } from "../../infrastructure/firebase/settlementService";
 import { syncManager } from "../../infrastructure/offline/syncManager";
@@ -66,7 +67,42 @@ export const SettlementDetailPage: React.FC = () => {
   if (isLoading) {
     return (
       <PageContainer title="Settlement Details" description="Loading payment records...">
-        <div className="h-[250px] bg-surface-elevated animate-pulse rounded-xl" />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="md:col-span-2 flex flex-col gap-6">
+            <div className="glass-standard border border-white/10 rounded-2xl p-6 flex flex-col gap-5">
+              <div className="flex justify-between items-center border-b border-white/5 pb-3">
+                <Skeleton className="h-5 w-40" />
+                <Skeleton className="h-4 w-16 rounded" />
+              </div>
+              <Skeleton className="h-16 w-full rounded-xl" />
+              <div className="flex flex-col gap-3">
+                <div className="flex justify-between">
+                  <Skeleton className="h-4 w-28" />
+                  <Skeleton className="h-4 w-32" />
+                </div>
+                <div className="flex justify-between">
+                  <Skeleton className="h-4 w-28" />
+                  <Skeleton className="h-4 w-32" />
+                </div>
+                <div className="flex justify-between">
+                  <Skeleton className="h-4 w-28" />
+                  <Skeleton className="h-4 w-24" />
+                </div>
+                <div className="flex justify-between">
+                  <Skeleton className="h-4 w-28" />
+                  <Skeleton className="h-6 w-28" />
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="flex flex-col gap-6">
+            <div className="glass-standard border border-white/10 rounded-2xl p-5 flex flex-col gap-3">
+              <Skeleton className="h-5 w-32" />
+              <Skeleton className="h-12 w-full rounded-xl" />
+              <Skeleton className="h-12 w-full rounded-xl" />
+            </div>
+          </div>
+        </div>
       </PageContainer>
     );
   }

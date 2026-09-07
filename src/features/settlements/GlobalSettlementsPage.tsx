@@ -4,7 +4,7 @@ import { ArrowLeftRight, Check, ArrowUpRight, Scale } from "lucide-react";
 import { PageContainer } from "../../components/layout/PageContainer";
 import { GlassPanel } from "../../components/ui/GlassPanel";
 import { Button } from "../../components/ui/Button";
-import { BalanceCardSkeleton } from "../../components/ui/Skeleton";
+import { Skeleton, BalanceCardSkeleton, ExpenseRowSkeleton } from "../../components/ui/Skeleton";
 import { useAuth } from "../auth/AuthProvider";
 import { groupService } from "../../infrastructure/firebase/groupService";
 import { expenseService } from "../../infrastructure/firebase/expenseService";
@@ -242,10 +242,22 @@ export const GlobalSettlementsPage: React.FC = () => {
 
   if (isLoading) {
     return (
-      <PageContainer title="Settlements" description="Analyzing ledger balances...">
+      <PageContainer title="Global Settlements" description="Analyzing ledger balances...">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
           <BalanceCardSkeleton />
           <BalanceCardSkeleton />
+        </div>
+        <div className="flex flex-col gap-6">
+          <div className="glass-standard border border-white/10 rounded-2xl p-5 flex flex-col gap-3">
+            <Skeleton className="h-5 w-44" />
+            <ExpenseRowSkeleton />
+            <ExpenseRowSkeleton />
+          </div>
+          <div className="glass-standard border border-white/10 rounded-2xl p-5 flex flex-col gap-3">
+            <Skeleton className="h-5 w-36" />
+            <ExpenseRowSkeleton />
+            <ExpenseRowSkeleton />
+          </div>
         </div>
       </PageContainer>
     );

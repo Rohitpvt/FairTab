@@ -16,6 +16,7 @@ import { receiptStorage } from "../../infrastructure/storage/receiptStorage";
 import { receiptService } from "../../infrastructure/firebase/receiptService";
 import { toast } from "sonner";
 import { Loader2, ArrowLeft, Send, Sparkles } from "lucide-react";
+import { ReceiptScannerSkeleton } from "../../components/ui/Skeleton";
 import { CoolLoader } from "../../components/feedback/CoolLoader";
 
 interface ItemizedLine {
@@ -291,9 +292,7 @@ export const OCRReviewPage: React.FC = () => {
   if (isLoading) {
     return (
       <PageContainer title="Scan Receipt" description="Initializing OCR environment...">
-        <div className="flex items-center justify-center p-12">
-          <CoolLoader size="md" label="Initializing OCR environment..." />
-        </div>
+        <ReceiptScannerSkeleton />
       </PageContainer>
     );
   }

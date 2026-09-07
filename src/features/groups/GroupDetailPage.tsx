@@ -20,7 +20,7 @@ import type { GroupDocument } from "./groupSchema";
 import type { GroupMemberDocument } from "./memberSchema";
 import type { ActivityDocument } from "./activitySchema";
 import { Button } from "../../components/ui/Button";
-import { Skeleton } from "../../components/ui/Skeleton";
+import { Skeleton, BalanceCardSkeleton, ExpenseRowSkeleton, MemberRowSkeleton } from "../../components/ui/Skeleton";
 import {
   canEditSettings,
   canInviteMember,
@@ -174,10 +174,29 @@ export const GroupDetailPage: React.FC = () => {
   if (isLoading) {
     return (
       <PageContainer title="Loading Group..." description="Reading group split logs...">
-        <div className="flex flex-col gap-4">
-          <Skeleton className="h-12 w-full" />
-          <Skeleton className="h-12 w-full" />
-          <Skeleton className="h-12 w-full" />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <BalanceCardSkeleton />
+          <BalanceCardSkeleton />
+          <BalanceCardSkeleton />
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+          <div className="lg:col-span-2 flex flex-col gap-4">
+            <div className="flex justify-between items-center">
+              <Skeleton className="h-6 w-32" />
+              <Skeleton className="h-8 w-24 rounded-lg" />
+            </div>
+            <ExpenseRowSkeleton />
+            <ExpenseRowSkeleton />
+            <ExpenseRowSkeleton />
+          </div>
+          <div className="flex flex-col gap-4">
+            <Skeleton className="h-6 w-28" />
+            <div className="glass-elevated border border-white/5 rounded-2xl p-4 flex flex-col gap-3">
+              <MemberRowSkeleton />
+              <MemberRowSkeleton />
+              <MemberRowSkeleton />
+            </div>
+          </div>
         </div>
       </PageContainer>
     );

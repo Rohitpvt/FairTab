@@ -11,7 +11,7 @@ import ExpenseForm from "./ExpenseForm";
 import type { ExpenseFormData } from "./ExpenseForm";
 import { syncManager } from "../../infrastructure/offline/syncManager";
 import { toast } from "sonner";
-import { Skeleton } from "../../components/ui/Skeleton";
+import { FormCardSkeleton } from "../../components/ui/Skeleton";
 
 export const EditExpenseFlow: React.FC = () => {
   const { groupId, expenseId } = useParams<{ groupId: string; expenseId: string }>();
@@ -36,7 +36,7 @@ export const EditExpenseFlow: React.FC = () => {
       setMembers(m);
     });
 
-    const unsubExpense = expenseService.watchExpense(groupId, expenseId, (exp) => {
+    const unsubExpense = expenseService.watchExpense(groupId, expenseId, (exp: ExpenseDocument | null) => {
       setExpense(exp);
       setIsLoading(false);
     });
@@ -96,11 +96,7 @@ export const EditExpenseFlow: React.FC = () => {
   if (isLoading) {
     return (
       <PageContainer title="Edit Expense" description="Loading transaction ledger...">
-        <div className="flex flex-col gap-4">
-          <Skeleton className="h-10 w-full" />
-          <Skeleton className="h-10 w-full" />
-          <Skeleton className="h-40 w-full" />
-        </div>
+        <FormCardSkeleton />
       </PageContainer>
     );
   }

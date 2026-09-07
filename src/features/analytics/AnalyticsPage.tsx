@@ -22,9 +22,9 @@ import { MemberContributionPanel } from "./MemberContributionPanel";
 import { MonthlyComparisonCard } from "./MonthlyComparisonCard";
 import { ExportAnalyticsDialog } from "./ExportAnalyticsDialog";
 import { Button } from "../../components/ui/Button";
+import { BalanceCardSkeleton, ChartSkeleton } from "../../components/ui/Skeleton";
 import { Download, AlertCircle } from "lucide-react";
 import { useMemberNameResolver } from "../../hooks/useMemberNameResolver";
-import { CoolLoader } from "../../components/feedback/CoolLoader";
 
 export const AnalyticsPage: React.FC = () => {
   const [activeGroups, setActiveGroups] = useState<any[]>([]);
@@ -190,8 +190,19 @@ export const AnalyticsPage: React.FC = () => {
         </div>
 
         {isLoading ? (
-          <div className="flex flex-col items-center justify-center py-16 gap-3">
-            <CoolLoader size="md" label="Compiling transactions..." />
+          <div className="flex flex-col gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <BalanceCardSkeleton />
+              <BalanceCardSkeleton />
+              <BalanceCardSkeleton />
+              <BalanceCardSkeleton />
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <ChartSkeleton />
+              <ChartSkeleton />
+              <ChartSkeleton />
+              <ChartSkeleton />
+            </div>
           </div>
         ) : activeGroups.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 border border-white/5 rounded-xl bg-white/5 text-center">

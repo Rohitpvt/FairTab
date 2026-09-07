@@ -14,7 +14,7 @@ import {
   ArrowRight,
   Sparkles,
 } from "lucide-react";
-import { Skeleton } from "../../components/ui/Skeleton";
+import { ExpenseRowSkeleton } from "../../components/ui/Skeleton";
 import type { GroupMemberDocument } from "../groups/memberSchema";
 import { useMemberNameResolver } from "../../hooks/useMemberNameResolver";
 
@@ -186,8 +186,9 @@ export const ExpenseListPage: React.FC<ExpenseListPageProps> = ({
       {/* Expenses Ledger List */}
       {isLoading ? (
         <div className="flex flex-col gap-2">
-          <Skeleton className="h-16 w-full" />
-          <Skeleton className="h-16 w-full" />
+          <ExpenseRowSkeleton />
+          <ExpenseRowSkeleton />
+          <ExpenseRowSkeleton />
         </div>
       ) : filtered.length === 0 ? (
         <div className="glass-elevated border border-white/5 rounded-2xl py-12 text-center text-xs text-text-muted italic">
