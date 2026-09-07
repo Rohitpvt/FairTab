@@ -258,8 +258,8 @@ export const GroupDetailPage: React.FC = () => {
   recommendations.forEach((rec) => {
     if (rec.toMemberId === userMemberId || rec.toMemberId === currentUserUid) {
       // Someone owes user
-      const otherMem = activeMembers.find((m) => m.id === rec.fromMemberId || m.userId === rec.fromMemberId);
-      const name = otherMem ? resolveName(otherMem) : rec.fromMemberId;
+      const otherMem = members.find((m) => m.id === rec.fromMemberId || m.userId === rec.fromMemberId);
+      const name = otherMem ? resolveName(otherMem) : "Former Member";
       groupTotalOwed += rec.amountMinor;
       groupUserBreakdowns.push({
         id: `${group.id}:${rec.fromMemberId}->${rec.toMemberId}`,
@@ -273,8 +273,8 @@ export const GroupDetailPage: React.FC = () => {
       });
     } else if (rec.fromMemberId === userMemberId || rec.fromMemberId === currentUserUid) {
       // User owes someone
-      const otherMem = activeMembers.find((m) => m.id === rec.toMemberId || m.userId === rec.toMemberId);
-      const name = otherMem ? resolveName(otherMem) : rec.toMemberId;
+      const otherMem = members.find((m) => m.id === rec.toMemberId || m.userId === rec.toMemberId);
+      const name = otherMem ? resolveName(otherMem) : "Former Member";
       groupTotalOwes += rec.amountMinor;
       groupUserBreakdowns.push({
         id: `${group.id}:${rec.fromMemberId}->${rec.toMemberId}`,
