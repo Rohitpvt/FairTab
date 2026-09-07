@@ -118,43 +118,47 @@ export const PersonalDebtSummaryCard: React.FC<PersonalDebtSummaryCardProps> = (
             </div>
           ) : (
             <div className="flex flex-col gap-2">
-              {peopleWhoOweYou.map((item) => (
-                <div
-                  key={item.id}
-                  className="p-3 rounded-xl bg-white/[0.03] border border-white/5 hover:border-success/30 hover:bg-white/[0.05] transition-all flex items-center justify-between gap-3 group"
-                >
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="w-8 h-8 rounded-lg bg-success/10 border border-success/20 flex items-center justify-center text-success font-bold text-xs shrink-0">
-                      {item.otherMemberName.slice(0, 2).toUpperCase() || <User className="h-3.5 w-3.5" />}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-xs sm:text-sm font-semibold text-text-primary truncate">
-                        <span className="text-success font-bold">{item.otherMemberName}</span> owes you
-                      </p>
-                      {!isGroupContext && item.groupName && (
-                        <p className="text-[10px] text-text-muted truncate mt-0.5">
-                          in <span className="text-text-secondary">{item.groupName}</span>
+              {peopleWhoOweYou.map((item) => {
+                const displayName = item.otherMemberName || item.otherMemberId || "Member";
+                const initials = displayName.slice(0, 2).toUpperCase();
+                return (
+                  <div
+                    key={item.id}
+                    className="p-3 rounded-xl bg-white/[0.03] border border-white/5 hover:border-success/30 hover:bg-white/[0.05] transition-all flex items-center justify-between gap-3 group"
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="w-8 h-8 rounded-lg bg-success/10 border border-success/20 flex items-center justify-center text-success font-bold text-xs shrink-0">
+                        {initials || <User className="h-3.5 w-3.5" />}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs sm:text-sm font-semibold text-text-primary truncate">
+                          <span className="text-success font-bold">{displayName}</span> owes you
                         </p>
+                        {!isGroupContext && item.groupName && (
+                          <p className="text-[10px] text-text-muted truncate mt-0.5">
+                            in <span className="text-text-secondary">{item.groupName}</span>
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="text-right shrink-0 flex items-center gap-2">
+                      <span className="text-xs sm:text-sm font-extrabold text-success financial-number">
+                        +{formatCurrency(item.amountMinor, item.currency)}
+                      </span>
+                      {!isGroupContext && (
+                        <Link
+                          to={`/groups/${item.groupId}/settlements`}
+                          className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-white/10 text-text-muted hover:text-text-primary"
+                          title="View Settlements"
+                        >
+                          <ChevronRight className="h-3.5 w-3.5" />
+                        </Link>
                       )}
                     </div>
                   </div>
-
-                  <div className="text-right shrink-0 flex items-center gap-2">
-                    <span className="text-xs sm:text-sm font-extrabold text-success financial-number">
-                      +{formatCurrency(item.amountMinor, item.currency)}
-                    </span>
-                    {!isGroupContext && (
-                      <Link
-                        to={`/groups/${item.groupId}/settlements`}
-                        className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-white/10 text-text-muted hover:text-text-primary"
-                        title="View Settlements"
-                      >
-                        <ChevronRight className="h-3.5 w-3.5" />
-                      </Link>
-                    )}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
@@ -174,43 +178,47 @@ export const PersonalDebtSummaryCard: React.FC<PersonalDebtSummaryCardProps> = (
             </div>
           ) : (
             <div className="flex flex-col gap-2">
-              {peopleYouOwe.map((item) => (
-                <div
-                  key={item.id}
-                  className="p-3 rounded-xl bg-white/[0.03] border border-white/5 hover:border-danger/30 hover:bg-white/[0.05] transition-all flex items-center justify-between gap-3 group"
-                >
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="w-8 h-8 rounded-lg bg-danger/10 border border-danger/20 flex items-center justify-center text-danger font-bold text-xs shrink-0">
-                      {item.otherMemberName.slice(0, 2).toUpperCase() || <User className="h-3.5 w-3.5" />}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-xs sm:text-sm font-semibold text-text-primary truncate">
-                        You owe <span className="text-danger font-bold">{item.otherMemberName}</span>
-                      </p>
-                      {!isGroupContext && item.groupName && (
-                        <p className="text-[10px] text-text-muted truncate mt-0.5">
-                          in <span className="text-text-secondary">{item.groupName}</span>
+              {peopleYouOwe.map((item) => {
+                const displayName = item.otherMemberName || item.otherMemberId || "Member";
+                const initials = displayName.slice(0, 2).toUpperCase();
+                return (
+                  <div
+                    key={item.id}
+                    className="p-3 rounded-xl bg-white/[0.03] border border-white/5 hover:border-danger/30 hover:bg-white/[0.05] transition-all flex items-center justify-between gap-3 group"
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="w-8 h-8 rounded-lg bg-danger/10 border border-danger/20 flex items-center justify-center text-danger font-bold text-xs shrink-0">
+                        {initials || <User className="h-3.5 w-3.5" />}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs sm:text-sm font-semibold text-text-primary truncate">
+                          You owe <span className="text-danger font-bold">{displayName}</span>
                         </p>
+                        {!isGroupContext && item.groupName && (
+                          <p className="text-[10px] text-text-muted truncate mt-0.5">
+                            in <span className="text-text-secondary">{item.groupName}</span>
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="text-right shrink-0 flex items-center gap-2">
+                      <span className="text-xs sm:text-sm font-extrabold text-danger financial-number">
+                        -{formatCurrency(item.amountMinor, item.currency)}
+                      </span>
+                      {!isGroupContext && (
+                        <Link
+                          to={`/groups/${item.groupId}/settlements`}
+                          className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-white/10 text-text-muted hover:text-text-primary"
+                          title="Settle Up"
+                        >
+                          <ChevronRight className="h-3.5 w-3.5" />
+                        </Link>
                       )}
                     </div>
                   </div>
-
-                  <div className="text-right shrink-0 flex items-center gap-2">
-                    <span className="text-xs sm:text-sm font-extrabold text-danger financial-number">
-                      -{formatCurrency(item.amountMinor, item.currency)}
-                    </span>
-                    {!isGroupContext && (
-                      <Link
-                        to={`/groups/${item.groupId}/settlements`}
-                        className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-white/10 text-text-muted hover:text-text-primary"
-                        title="Settle Up"
-                      >
-                        <ChevronRight className="h-3.5 w-3.5" />
-                      </Link>
-                    )}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

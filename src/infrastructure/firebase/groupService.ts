@@ -297,6 +297,7 @@ export const groupService = {
       status: "removed",
       updatedAt: serverTimestamp(),
       updatedBy: currentUser.uid,
+      activityId: activityRef.id,
     });
     batch.update(groupRef, {
       activeMemberCount: increment(-1),
@@ -637,7 +638,7 @@ export const groupService = {
       (snapshot) => {
         const members: GroupMemberDocument[] = [];
         snapshot.forEach((d) => {
-          members.push(d.data() as GroupMemberDocument);
+          members.push({ id: d.id, ...d.data() } as GroupMemberDocument);
         });
         callback(members);
       },
@@ -853,7 +854,7 @@ export const groupService = {
     const snap = await getDocs(q);
     const members: GroupMemberDocument[] = [];
     snap.forEach((doc) => {
-      members.push(doc.data() as GroupMemberDocument);
+      members.push({ id: doc.id, ...doc.data() } as GroupMemberDocument);
     });
     return members;
   },
