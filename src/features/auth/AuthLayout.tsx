@@ -1,5 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
+import { BrandLogo } from "../../components/ui/BrandLogo";
 
 interface AuthLayoutProps {
   children: React.ReactNode;
@@ -22,8 +23,8 @@ export const AuthLayout: React.FC<AuthLayoutProps> = ({ children, title, subtitl
       >
         <div className="text-center mb-6">
           {/* Logo container */}
-          <div className="inline-flex items-center justify-center p-3 rounded-2xl bg-gradient-to-r from-accent-indigo via-accent-violet to-accent-cyan shadow-lg mb-3">
-            <span className="text-xl font-bold tracking-tight text-white select-none">FT</span>
+          <div className="inline-flex items-center justify-center p-3 rounded-2xl bg-white/[0.04] border border-white/10 shadow-xl mb-3 backdrop-blur-md">
+            <BrandLogo size="lg" className="filter drop-shadow-[0_0_12px_rgba(134,59,255,0.5)]" />
           </div>
           <h1 className="text-2xl font-extrabold tracking-tight bg-gradient-to-r from-text-primary to-text-secondary bg-clip-text text-transparent">
             {title}

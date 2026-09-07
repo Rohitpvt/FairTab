@@ -16,6 +16,7 @@ import {
   LogOut,
 } from "lucide-react";
 import { useAuth } from "../../features/auth/AuthProvider";
+import { BrandLogo } from "../ui/BrandLogo";
 
 export interface SidebarProps {
   isCollapsed: boolean;
@@ -47,18 +48,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggleCollapse 
       {/* Brand logo header */}
       <div className="flex items-center px-4 py-4 border-b border-border-color/60 min-h-[72px] overflow-hidden">
         <div className="flex items-center gap-3 min-w-0">
-          <div className="h-9 w-9 rounded-xl bg-gradient-to-tr from-accent-indigo/30 via-accent-violet/20 to-accent-cyan/20 border border-white/10 flex items-center justify-center shrink-0 shadow-md shadow-accent-indigo/20 overflow-hidden p-1.5">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 48 46"
-              className="w-full h-full drop-shadow-[0_0_6px_rgba(134,59,255,0.6)]"
-              aria-hidden="true"
-            >
-              <path
-                fill="#863bff"
-                d="M25.946 44.938c-.664.845-2.021.375-2.021-.698V33.937a2.26 2.26 0 0 0-2.262-2.262H10.287c-.92 0-1.456-1.04-.92-1.788l7.48-10.471c1.07-1.497 0-3.578-1.842-3.578H1.237c-.92 0-1.456-1.04-.92-1.788L10.013.474c.214-.297.556-.474.92-.474h28.894c.92 0 1.456 1.04.92 1.788l-7.48 10.471c-1.07 1.498 0 3.579 1.842 3.579h11.377c.943 0 1.473 1.088.89 1.83L25.947 44.94z"
-              />
-            </svg>
+          <div className="h-9 w-9 rounded-xl bg-white/[0.04] border border-white/10 flex items-center justify-center p-1.5 shrink-0 shadow-lg shadow-accent-indigo/10 backdrop-blur-md">
+            <BrandLogo size="sm" className="h-full w-full object-contain filter drop-shadow-[0_0_8px_rgba(134,59,255,0.4)]" />
           </div>
           <div
             className={`flex flex-col overflow-hidden whitespace-nowrap transition-all duration-300 ease-[cubic-bezier(0.2,0.8,0.2,1)] ${
