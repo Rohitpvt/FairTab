@@ -131,10 +131,23 @@ export function simplifyPreserveRelationships(
   memberIds: string[]
 ): DebtRecommendation[] {
   // Initialize obligation matrix: matrix[u][v] = amount member u owes member v
+  const allParticipantIds = new Set<string>(memberIds);
+  for (const exp of expenses) {
+    if (exp.status !== "active") continue;
+    for (const p of exp.payers) allParticipantIds.add(p.memberId);
+    for (const s of exp.splits) allParticipantIds.add(s.memberId);
+  }
+  for (const set of settlements) {
+    if (set.status !== "active") continue;
+    allParticipantIds.add(set.payerId);
+    allParticipantIds.add(set.receiverId);
+  }
+
+  const effectiveMemberIds = Array.from(allParticipantIds);
   const matrix: Record<string, Record<string, number>> = {};
-  for (const u of memberIds) {
+  for (const u of effectiveMemberIds) {
     matrix[u] = {};
-    for (const v of memberIds) {
+    for (const v of effectiveMemberIds) {
       matrix[u][v] = 0;
     }
   }
@@ -147,7 +160,7 @@ export function simplifyPreserveRelationships(
 
     // Calculate net contribution of each member inside this expense
     const contributionMap: Record<string, number> = {};
-    for (const memberId of memberIds) {
+    for (const memberId of effectiveMemberIds) {
       contributionMap[memberId] = 0;
     }
 
@@ -164,11 +177,11 @@ export function simplifyPreserveRelationships(
     }
 
     // Separate debtors and creditors for this expense
-    const expenseDebtors = memberIds
+    const expenseDebtors = effectiveMemberIds
       .filter((m) => contributionMap[m] < 0)
       .map((m) => ({ memberId: m, debt: Math.abs(contributionMap[m]) }));
 
-    const expenseCreditors = memberIds
+    const expenseCreditors = effectiveMemberIds
       .filter((m) => contributionMap[m] > 0)
       .map((m) => ({ memberId: m, credit: contributionMap[m] }));
 
@@ -177,7 +190,9 @@ export function simplifyPreserveRelationships(
       const splits = splitProportional(debtor.debt, expenseCreditors);
       for (const split of splits) {
         if (split.amountMinor > 0) {
-          matrix[debtor.memberId][split.memberId] += split.amountMinor;
+          if (matrix[debtor.memberId] && matrix[debtor.memberId][split.memberId] !== undefined) {
+            matrix[debtor.memberId][split.memberId] += split.amountMinor;
+          }
         }
       }
     }
@@ -191,19 +206,23 @@ export function simplifyPreserveRelationships(
 
     // Settlement: set.payerId paid set.receiverId set.baseAmountMinor.
     // This reduces what set.payerId owes set.receiverId.
-    matrix[set.payerId][set.receiverId] -= set.baseAmountMinor;
+    if (matrix[set.payerId] && matrix[set.payerId][set.receiverId] !== undefined) {
+      matrix[set.payerId][set.receiverId] -= set.baseAmountMinor;
 
-    // If overpaid, the receiver now owes the payer the surplus
-    if (matrix[set.payerId][set.receiverId] < 0) {
-      const overpaidAmount = Math.abs(matrix[set.payerId][set.receiverId]);
-      matrix[set.receiverId][set.payerId] += overpaidAmount;
-      matrix[set.payerId][set.receiverId] = 0;
+      // If overpaid, the receiver now owes the payer the surplus
+      if (matrix[set.payerId][set.receiverId] < 0) {
+        const overpaidAmount = Math.abs(matrix[set.payerId][set.receiverId]);
+        if (matrix[set.receiverId] && matrix[set.receiverId][set.payerId] !== undefined) {
+          matrix[set.receiverId][set.payerId] += overpaidAmount;
+        }
+        matrix[set.payerId][set.receiverId] = 0;
+      }
     }
   }
 
   // 3. Perform pairwise netting & recommend
   const recommendations: DebtRecommendation[] = [];
-  const sortedIds = [...memberIds].sort();
+  const sortedIds = [...effectiveMemberIds].sort();
 
   for (let i = 0; i < sortedIds.length; i++) {
     for (let j = i + 1; j < sortedIds.length; j++) {
