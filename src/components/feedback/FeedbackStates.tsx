@@ -212,20 +212,24 @@ export const ThemeToggle: React.FC = () => {
   return (
     <button
       onClick={toggleTheme}
-      className="relative p-2 rounded-full hover:bg-white/10 text-text-secondary hover:text-text-primary transition-all duration-300 focus-visible:outline-2 focus-visible:outline-accent-cyan cursor-pointer min-w-[40px] min-h-[40px] flex items-center justify-center active:scale-80 overflow-hidden"
+      type="button"
+      className="liquid-toggle-track focus-visible:outline-2 focus-visible:outline-accent-cyan"
       aria-label={`Switch to ${isDark ? "light" : "dark"} theme`}
+      title={`Switch to ${isDark ? "light" : "dark"} theme`}
     >
-      <div className="relative w-5 h-5 flex items-center justify-center pointer-events-none">
-        <Sun
-          className={`h-5 w-5 absolute transition-all duration-500 ease-[cubic-bezier(0.34,1.2,0.64,1)] ${
-            isDark ? "opacity-100 rotate-0 scale-100 text-amber-300" : "opacity-0 rotate-90 scale-0 text-text-secondary"
-          }`}
-        />
-        <Moon
-          className={`h-5 w-5 absolute transition-all duration-500 ease-[cubic-bezier(0.34,1.2,0.64,1)] ${
-            !isDark ? "opacity-100 rotate-0 scale-100 text-indigo-400" : "opacity-0 -rotate-90 scale-0 text-text-secondary"
-          }`}
-        />
+      {/* Background Track Icons */}
+      <div className="w-full flex items-center justify-between px-1.5 pointer-events-none opacity-40">
+        <Moon className={`h-3 w-3 text-cyan-400 transition-opacity duration-300 ${isDark ? "opacity-0" : "opacity-100"}`} />
+        <Sun className={`h-3.5 w-3.5 text-amber-500 transition-opacity duration-300 ${!isDark ? "opacity-0" : "opacity-100"}`} />
+      </div>
+
+      {/* 3D Liquid Jelly Knob */}
+      <div className="liquid-toggle-knob">
+        {isDark ? (
+          <Moon className="h-3 w-3 text-cyan-200 drop-shadow-[0_0_4px_rgba(56,189,248,0.8)]" />
+        ) : (
+          <Sun className="h-3 w-3 text-white drop-shadow-[0_0_4px_rgba(251,191,36,0.9)]" />
+        )}
       </div>
     </button>
   );
