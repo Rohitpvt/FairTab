@@ -25,9 +25,78 @@
         } catch (_) {}
       })();
     </script>
+    <style>
+      #root:empty {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        background-color: #060810;
+        font-family: Inter, system-ui, -apple-system, sans-serif;
+      }
+      .light #root:empty {
+        background-color: #f8fafc;
+      }
+      .pre-loader-pl {
+        animation: pre-bump 3s linear infinite;
+        width: 64px;
+        height: 64px;
+        display: block;
+      }
+      .pre-loader-ring {
+        stroke: rgba(255, 255, 255, 0.08);
+      }
+      .light .pre-loader-ring {
+        stroke: rgba(0, 0, 0, 0.08);
+      }
+      .pre-loader-worm {
+        animation: pre-worm 3s cubic-bezier(0.42, 0.17, 0.75, 0.83) infinite;
+        stroke-dasharray: 44 1111;
+        stroke-dashoffset: 10;
+        filter: drop-shadow(0 0 6px rgba(6, 182, 212, 0.4));
+      }
+      @keyframes pre-bump {
+        from, 42%, 46%, 51%, 55%, 59%, 63%, 67%, 71%, 74%, 78%, 81%, 85%, 88%, 92%, to { transform: translate(0, 0); }
+        44% { transform: translate(1.33%, 6.75%); }
+        53% { transform: translate(-16.67%, -0.54%); }
+        61% { transform: translate(3.66%, -2.46%); }
+        69% { transform: translate(-0.59%, 15.27%); }
+        76% { transform: translate(-1.92%, -4.68%); }
+        83% { transform: translate(9.38%, 0.96%); }
+        90% { transform: translate(-4.55%, 1.98%); }
+      }
+      @keyframes pre-worm {
+        from { stroke-dashoffset: 10; }
+        25% { stroke-dashoffset: 295; }
+        to { stroke-dashoffset: 1165; }
+      }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; background-color: #060810;">
+        <svg class="pre-loader-pl" viewBox="0 0 128 128" width="64" height="64" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="pre-pl-grad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#06b6d4" />
+              <stop offset="50%" stop-color="#8b5cf6" />
+              <stop offset="100%" stop-color="#6366f1" />
+            </linearGradient>
+          </defs>
+          <circle class="pre-loader-ring" r="56" cx="64" cy="64" fill="none" stroke-width="16" stroke-linecap="round" />
+          <path
+            class="pre-loader-worm"
+            d="M92,15.492S78.194,4.967,66.743,16.887c-17.231,17.938-28.26,96.974-28.26,96.974L119.85,59.892l-99-31.588,57.528,89.832L97.8,19.349,13.636,88.51l89.012,16.015S81.908,38.332,66.1,22.337C50.114,6.156,36,15.492,36,15.492a56,56,0,1,0,56,0Z"
+            fill="none"
+            stroke="url(#pre-pl-grad)"
+            stroke-width="16"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

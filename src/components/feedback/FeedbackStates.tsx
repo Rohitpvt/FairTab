@@ -6,11 +6,13 @@ import {
   FolderOpen,
   Sun,
   Moon,
-  Loader,
   RefreshCw,
   CheckCircle,
 } from "lucide-react";
 import { Button } from "../ui/Button";
+import { CoolLoader } from "./CoolLoader";
+
+export { CoolLoader };
 
 // RoutePending loader
 export const RoutePending: React.FC = () => {
@@ -20,8 +22,8 @@ export const RoutePending: React.FC = () => {
       aria-live="polite"
       className="flex flex-col items-center justify-center min-h-[400px] w-full gap-4 text-text-muted"
     >
-      <Loader className="h-8 w-8 animate-spin text-accent-indigo" />
-      <span className="text-sm font-semibold tracking-wide uppercase">Loading Section...</span>
+      <CoolLoader size="sm" />
+      <span className="text-xs font-semibold tracking-wider uppercase text-text-muted">Loading Section...</span>
     </div>
   );
 };

@@ -1,8 +1,9 @@
 import React from "react";
 import { Navigate, Outlet } from "react-router-dom";
 import { useAuth } from "./AuthProvider";
-import { Loader2, AlertCircle } from "lucide-react";
+import { AlertCircle } from "lucide-react";
 import { Button } from "../../components/ui/Button";
+import { CoolLoader } from "../../components/feedback/CoolLoader";
 
 /**
  * Clean, glassmorphic loading skeleton screen for authentication resolution.
@@ -11,9 +12,9 @@ export const AuthLoadingSkeleton: React.FC = () => {
   return (
     <div className="fixed inset-0 flex flex-col items-center justify-center bg-[#060810] text-text-primary z-50">
       <div className="relative flex flex-col items-center p-8 max-w-sm w-full mx-4 rounded-2xl glass-elevated border border-white/10 shadow-2xl text-center">
-        {/* Animated outer ring */}
-        <div className="relative flex items-center justify-center w-16 h-16 mb-4">
-          <Loader2 className="w-10 h-10 text-accent-cyan animate-spin" />
+        {/* Animated Off-Track Circular Worm Loader */}
+        <div className="relative flex items-center justify-center mb-5">
+          <CoolLoader size="md" />
         </div>
         <h2 className="text-lg font-bold bg-gradient-to-r from-accent-indigo via-accent-violet to-accent-cyan bg-clip-text text-transparent mb-1">
           FairTab
