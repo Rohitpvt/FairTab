@@ -10,7 +10,7 @@ import { groupService } from "../../infrastructure/firebase/groupService";
 import { settlementService } from "../../infrastructure/firebase/settlementService";
 import { syncManager } from "../../infrastructure/offline/syncManager";
 import { auth } from "../../infrastructure/firebase/firebase";
-import { formatCurrency } from "../../utils/format";
+import { formatCurrency, formatTimestamp } from "../../utils/format";
 import type { GroupDocument } from "../groups/groupSchema";
 import type { GroupMemberDocument } from "../groups/memberSchema";
 import type { SettlementDocument, SettlementRevision } from "@fairtab/domain";
@@ -80,9 +80,8 @@ export const SettlementDetailPage: React.FC = () => {
     );
   }
 
-
-
-  const getMemberName = (id: string) => {
+  const getMemberName = (id?: string) => {
+    if (!id) return "Member";
     const m = members.find((member) => member.id === id);
     if (!m) return id;
     return resolveName(m) + (m.kind === "placeholder" ? " (Placeholder)" : "");
@@ -291,7 +290,7 @@ export const SettlementDetailPage: React.FC = () => {
                   <div className="flex justify-between font-semibold text-text-secondary">
                     <span>Revision v{rev.version}</span>
                     <span className="text-text-muted">
-                      {new Date(rev.createdAt.toDate ? rev.createdAt.toDate() : (rev.createdAt as unknown as string)).toLocaleString()}
+                      {formatTimestamp(rev.createdAt, true)}
                     </span>
                   </div>
                   <div className="text-text-muted flex justify-between">

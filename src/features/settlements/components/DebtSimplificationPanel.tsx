@@ -45,20 +45,19 @@ export const DebtSimplificationPanel: React.FC<DebtSimplificationPanelProps> = (
       ? simplifyMinimumTransactions(balances)
       : simplifyPreserveRelationships(expenses, settlements, memberIds);
 
-  const getMemberName = (id: string) => {
+  const getMemberName = (id?: string) => {
+    if (!id) return "Member";
     const m = activeMembers.find((member) => member.id === id);
     if (!m) return id;
     return resolveName(m) + (m.kind === "placeholder" ? " (Placeholder)" : "");
   };
 
-  const getMemberInitials = (id: string) => {
-    const name = getMemberName(id);
-    return name
-      .split(" ")
-      .map((part) => part[0])
-      .join("")
-      .substring(0, 2)
-      .toUpperCase();
+  const getMemberInitials = (id?: string) => {
+    const name = (getMemberName(id) || "M").trim();
+    const parts = name.split(/\s+/).filter(Boolean);
+    if (parts.length === 0) return "M";
+    if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+    return ((parts[0]?.[0] || "") + (parts[1]?.[0] || "")).toUpperCase() || "M";
   };
 
   return (

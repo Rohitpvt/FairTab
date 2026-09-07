@@ -9,7 +9,7 @@ import { groupService } from "../../infrastructure/firebase/groupService";
 import { expenseService } from "../../infrastructure/firebase/expenseService";
 import { settlementService } from "../../infrastructure/firebase/settlementService";
 import { syncManager } from "../../infrastructure/offline/syncManager";
-import { formatCurrency } from "../../utils/format";
+import { formatCurrency, formatTimestamp } from "../../utils/format";
 import { DebtSimplificationPanel } from "./components/DebtSimplificationPanel";
 import type { GroupDocument } from "../groups/groupSchema";
 import type { GroupMemberDocument } from "../groups/memberSchema";
@@ -87,14 +87,12 @@ export const SettlementsPage: React.FC = () => {
     );
   }
 
-
-
-  const getMemberName = (id: string) => {
+  const getMemberName = (id?: string) => {
+    if (!id) return "Member";
     const m = members.find((member) => member.id === id);
     if (!m) return id;
     return resolveName(m) + (m.kind === "placeholder" ? " (Placeholder)" : "");
   };
-
 
   const isArchived = group.status === "archived";
 
@@ -189,7 +187,7 @@ export const SettlementsPage: React.FC = () => {
                             : "Direct Transfer"}
                         </span>
                         <span>•</span>
-                        <span>{new Date(set.createdAt.toDate ? set.createdAt.toDate() : (set.createdAt as unknown as string)).toLocaleDateString()}</span>
+                        <span>{formatTimestamp(set.createdAt)}</span>
                       </div>
                     </div>
                     <div className="text-right flex-shrink-0 flex items-center gap-3">
