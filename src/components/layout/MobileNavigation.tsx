@@ -1,10 +1,9 @@
 import React, { useRef, useState, useEffect } from "react";
 import { NavLink, useLocation } from "react-router-dom";
-import { Home, Compass, Plus, Bell, Menu } from "lucide-react";
+import { Home, Compass, Plus, Bell, Settings } from "lucide-react";
 
 export interface MobileNavigationProps {
   onAddClick: () => void;
-  onMoreClick?: () => void;
 }
 
 const TABS = [
@@ -12,20 +11,20 @@ const TABS = [
   { label: "Groups", path: "/groups", icon: Compass },
   { label: "Add", path: "#", icon: Plus, isAction: true },
   { label: "Activity", path: "/notifications", icon: Bell },
-  { label: "Menu", path: "#menu", icon: Menu, isMenuAction: true },
+  { label: "Profile", path: "/settings", icon: Settings },
 ];
 
-export const MobileNavigation: React.FC<MobileNavigationProps> = ({ onAddClick, onMoreClick }) => {
+export const MobileNavigation: React.FC<MobileNavigationProps> = ({ onAddClick }) => {
   const location = useLocation();
   const navRef = useRef<HTMLElement>(null);
-  const tabRefs = useRef<(HTMLAnchorElement | HTMLButtonElement | null)[]>([]);
+  const tabRefs = useRef<(HTMLAnchorElement | null)[]>([]);
 
   const [lampLeft, setLampLeft] = useState<number | null>(null);
 
   // Update tubelight beam position based on active route
   useEffect(() => {
     const activeIndex = TABS.findIndex(
-      (tab) => !tab.isAction && !tab.isMenuAction && location.pathname.startsWith(tab.path)
+      (tab) => !tab.isAction && location.pathname.startsWith(tab.path)
     );
 
     if (activeIndex !== -1 && tabRefs.current[activeIndex] && navRef.current) {
@@ -92,23 +91,6 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({ onAddClick, 
                   </div>
                 </button>
               </div>
-            );
-          }
-
-          if (tab.isMenuAction) {
-            return (
-              <button
-                key={idx}
-                onClick={onMoreClick}
-                ref={(el) => { tabRefs.current[idx] = el; }}
-                className="relative flex flex-col items-center justify-center py-1 px-2 text-center select-none gap-0.5 min-w-[52px] min-h-[44px] rounded-xl transition-all duration-300 z-10 active:scale-85 text-text-muted hover:text-text-primary opacity-70 hover:opacity-100 cursor-pointer"
-                aria-label="Open full menu"
-              >
-                <Icon className="h-5 w-5 transition-transform duration-200 group-hover:scale-105" />
-                <span className="text-[10px] tracking-tight font-medium">
-                  {tab.label}
-                </span>
-              </button>
             );
           }
 
