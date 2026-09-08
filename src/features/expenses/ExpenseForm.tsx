@@ -84,9 +84,21 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({
   const [title, setTitle] = useState(initialData?.title || "");
   const [category, setCategory] = useState<ExpenseCategory>(initialData?.category || "food");
   const [currency, setCurrency] = useState(initialData?.currency || baseCurrency);
-  const [amountStr, setAmountStr] = useState(
-    initialData?.amountMinor ? (initialData.amountMinor / 100).toFixed(2) : ""
-  );
+  const [amountStr, setAmountStr] = useState(() => {
+    if (initialData?.amountMinor) {
+      return (initialData.amountMinor / 100).toFixed(2);
+    }
+    try {
+      const stored = sessionStorage.getItem("fairtab:prefill_amount");
+      if (stored) {
+        sessionStorage.removeItem("fairtab:prefill_amount");
+        return stored;
+      }
+    } catch {
+      // ignore
+    }
+    return "";
+  });
   const [incurredDate, setIncurredDate] = useState(
     initialData?.incurredAtSeconds
       ? new Date(initialData.incurredAtSeconds * 1000).toISOString().slice(0, 10)

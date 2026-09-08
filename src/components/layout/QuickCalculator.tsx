@@ -152,9 +152,15 @@ export const QuickCalculator: React.FC<QuickCalculatorProps> = ({ isOpen, onOpen
       toast.error("Please enter a valid amount greater than 0.");
       return;
     }
+    // Store prefill amount in sessionStorage so ExpenseForm automatically pre-populates
+    try {
+      sessionStorage.setItem("fairtab:prefill_amount", String(val));
+    } catch {
+      // ignore storage access restrictions if any
+    }
     onOpenChange(false);
     openAddExpense();
-    toast.info(`Ready to add expense of ${val}`);
+    toast.info(`Pre-filled expense amount: ${val}`);
   }, [display, onOpenChange, openAddExpense]);
 
   // Keyboard navigation support
