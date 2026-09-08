@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useState, useEffect, useMemo, useId } from "react";
+import React, { useState, useMemo, useId } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "../../components/ui/Button";
 import {
@@ -79,6 +79,7 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({
   const navigate = useNavigate();
   const formId = useId();
 
+  // Computed effective defaults
   const activeMembers = members.filter((m) => m.status === "active");
   const { resolveName } = useMemberNameResolver(members);
 
@@ -123,34 +124,17 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({
   );
 
   // Participants (subset)
-  const [participantIds, setParticipantIds] = useState<string[]>(
-    initialData?.participantIds || activeMembers.map((m) => m.id)
+  const [customParticipantIds, setCustomParticipantIds] = useState<string[] | null>(
+    initialData?.participantIds || null
   );
+  const participantIds = customParticipantIds ?? activeMembers.map((m) => m.id);
 
-  // Payer selection (single payer by default)
-  const [payerId, setPayerId] = useState<string>(
-    initialData?.payers?.[0]?.memberId || defaultMemberId
+  // Payer selection
+  const [selectedPayerId, setSelectedPayerId] = useState<string | null>(
+    initialData?.payers?.[0]?.memberId || null
   );
-
-  // Sync active members once they load from Firestore
-  useEffect(() => {
-    if (activeMembers.length > 0 && participantIds.length === 0 && !initialData?.participantIds) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setParticipantIds(activeMembers.map((m) => m.id));
-    }
-    if (activeMembers.length > 0 && !payerId && !initialData?.payers?.[0]?.memberId) {
-      setPayerId(defaultMemberId);
-    } else if (
-      activeMembers.length > 0 &&
-      !initialData?.payers?.[0]?.memberId &&
-      currentUserMember &&
-      payerId !== currentUserMember.id &&
-      (!payerId || payerId === activeMembers[0]?.id)
-    ) {
-      // If initialized before members resolved, prioritize logged in user
-      setPayerId(currentUserMember.id);
-    }
-  }, [activeMembers, initialData, participantIds.length, payerId, defaultMemberId, currentUserMember]);
+  const payerId = selectedPayerId ?? defaultMemberId;
+  const setPayerId = (id: string) => setSelectedPayerId(id);
 
   // Split-specific values
   const [exactAmounts, setExactAmounts] = useState<Record<string, string>>({});
@@ -171,9 +155,12 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({
   );
 
   const toggleParticipant = (memberId: string) => {
-    setParticipantIds((prev) =>
-      prev.includes(memberId) ? prev.filter((id) => id !== memberId) : [...prev, memberId]
-    );
+    setCustomParticipantIds((prev) => {
+      const current = prev ?? activeMembers.map((m) => m.id);
+      return current.includes(memberId)
+        ? current.filter((id) => id !== memberId)
+        : [...current, memberId];
+    });
   };
 
   // Compute splits based on method

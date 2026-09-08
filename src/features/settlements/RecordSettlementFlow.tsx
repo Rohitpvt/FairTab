@@ -45,14 +45,12 @@ export const RecordSettlementFlow: React.FC = () => {
   const [settlements, setSettlements] = useState<SettlementDocument[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Form Fields
-  const [payerId, setPayerId] = useState(prefillFrom);
-  const [receiverId, setReceiverId] = useState(prefillTo);
+  // Form Fields with lazy user-based defaults
+  const [selectedPayerId, setSelectedPayerId] = useState<string | null>(prefillFrom || null);
+  const [selectedReceiverId, setSelectedReceiverId] = useState<string | null>(prefillTo || null);
   const [amount, setAmount] = useState(prefillAmount);
   const [currency, setCurrency] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Overpayment State
   const [confirmOverpayment, setConfirmOverpayment] = useState(false);
 
   useEffect(() => {
@@ -86,19 +84,17 @@ export const RecordSettlementFlow: React.FC = () => {
     };
   }, [groupId, currency]);
 
-  // Sync state selectors when loaded
-  useEffect(() => {
-    if (members.length > 0) {
-      const currentUserMember = members.find((m) => m.userId === auth.currentUser?.uid || m.id === auth.currentUser?.uid);
-      const defaultPayerId = currentUserMember?.id || members[0].id;
-      const defaultReceiverId = members.find((m) => m.id !== defaultPayerId)?.id || members[0].id;
+  // Derived effective values
+  const activeMembers = members.filter((m) => m.status === "active");
+  const currentUserMember = activeMembers.find((m) => m.userId === auth.currentUser?.uid || m.id === auth.currentUser?.uid);
+  const defaultPayerId = currentUserMember?.id || activeMembers[0]?.id || "";
+  const defaultReceiverId = activeMembers.find((m) => m.id !== defaultPayerId)?.id || activeMembers[0]?.id || "";
 
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      if (!payerId) setPayerId(defaultPayerId);
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      if (!receiverId) setReceiverId(defaultReceiverId);
-    }
-  }, [members, payerId, receiverId]);
+  const payerId = selectedPayerId || defaultPayerId;
+  const setPayerId = (id: string) => setSelectedPayerId(id);
+
+  const receiverId = selectedReceiverId || defaultReceiverId;
+  const setReceiverId = (id: string) => setSelectedReceiverId(id);
 
   if (isLoading) {
     return (
@@ -118,8 +114,6 @@ export const RecordSettlementFlow: React.FC = () => {
     );
   }
 
-  const activeMembers = members.filter((m) => m.status === "active");
-  const currentUserMember = activeMembers.find((m) => m.userId === auth.currentUser?.uid);
   const currentUserRole = currentUserMember?.role || "viewer";
 
   const payerMember = activeMembers.find((m) => m.id === payerId);
