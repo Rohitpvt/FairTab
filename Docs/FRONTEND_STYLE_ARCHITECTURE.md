@@ -339,21 +339,26 @@ Recommended:
 
 ## 10. Mobile shell
 
-- compact top header;
-- fixed bottom navigation;
-- central Add action;
-- safe-area support;
+- compact top header with brand title, search button, theme toggle, and profile avatar (routing directly to `/settings`);
+- fixed bottom navigation with liquid glassmorphism and tubelight beam indicator;
+- central Add action button;
+- safe-area support (`pb-safe`);
 - bottom padding preventing navigation overlap;
-- bottom sheets instead of desktop-width modals;
+- bottom sheets / slide-over drawers instead of desktop-width modals;
 - sticky primary actions for long forms where appropriate.
 
 Mobile navigation:
 
-- Home
-- Groups
-- Add
-- Activity
-- Profile
+- Home (`/overview`)
+- Groups (`/groups`)
+- Add (`#` modal trigger)
+- Activity (`/notifications`)
+- More (Slide-over drawer for Expenses, Settlements, Analytics, Budgets, Smart Insights, Recurring, and Sign Out)
+
+Top Header navigation:
+- Profile Avatar -> Account Settings (`/settings`)
+- Search Trigger -> Command Palette modal (`Ctrl + K`)
+- Theme Toggle -> Dark/Light mode switch
 
 Breakpoints:
 
@@ -442,7 +447,9 @@ Antigravity must create:
 - AppShell
 - Sidebar
 - MobileNavigation
+- MobileDrawer
 - TopHeader
+- BrandLogo
 - PageContainer
 - GradientButton
 - SecondaryButton

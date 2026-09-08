@@ -22,13 +22,18 @@ Header:
 
 ### Mobile
 Bottom navigation:
-- Home
-- Groups
-- Add
-- Activity
-- Profile
+- Home (`/overview`)
+- Groups (`/groups`)
+- Add (Primary action modal trigger)
+- Activity (`/notifications`)
+- More (Slide-over drawer containing: Expenses, Settlements, Analytics, Budgets, Smart Insights, Recurring, and Sign Out)
 
-Contextual actions use bottom sheets. The add-expense button remains the dominant primary action.
+Top header:
+- Profile Avatar & Name (Direct route to `/settings`)
+- Global Search / Command Palette (`Ctrl + K`)
+- Theme Toggle (Dark / Light)
+
+Contextual actions use bottom sheets and slide-over drawers. The central add-expense button remains the dominant primary action.
 
 ---
 

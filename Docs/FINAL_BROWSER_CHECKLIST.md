@@ -36,6 +36,9 @@ Test datasets:
 - [ ] narrow 320px viewport
 - [ ] common 360/390px viewport
 - [ ] landscape orientation
+- [ ] Mobile bottom navigation (Home, Groups, Add, Activity, More)
+- [ ] Mobile More drawer sheet opens cleanly and navigates to all secondary sections (Expenses, Settlements, Analytics, Budgets, Insights, Recurring, Sign Out)
+- [ ] Top-right profile avatar navigates directly to Settings (`/settings`) on both mobile & desktop
 
 ---
 
