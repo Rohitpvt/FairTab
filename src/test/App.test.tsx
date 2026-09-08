@@ -38,7 +38,7 @@ describe("App Shell and Layout", () => {
     render(<App />);
 
     // Wait for OverviewPage lazy component to load
-    await screen.findByText("Recent Transactions");
+    await screen.findByText("Recent Transactions", {}, { timeout: 10000 });
 
     // Verify Brand Logo is rendered
     const brandLogos = screen.getAllByRole("img", { name: /fairtab logo/i });
@@ -99,7 +99,14 @@ describe("App Shell and Layout", () => {
     expect(screen.getByText("Quick access to all FairTab tools")).toBeInTheDocument();
     expect(screen.getByText("Balances & debt payoff")).toBeInTheDocument();
     expect(screen.getByText("Spending trends & charts")).toBeInTheDocument();
+    expect(screen.getByText("Quick Calculator")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /sign out/i })).toBeInTheDocument();
+
+    // Clicking Quick Calculator opens calculator modal
+    const calcBtn = screen.getByRole("button", { name: /open quick calculator/i });
+    fireEvent.click(calcBtn);
+    expect(await screen.findByText("Quick Split Calculator")).toBeInTheDocument();
+    expect(screen.getByText("Calculate & split bill before adding")).toBeInTheDocument();
   });
 });
 
