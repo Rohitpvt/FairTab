@@ -17,6 +17,7 @@ import {
 import { ExpenseRowSkeleton } from "../../components/ui/Skeleton";
 import type { GroupMemberDocument } from "../groups/memberSchema";
 import { useMemberNameResolver } from "../../hooks/useMemberNameResolver";
+import { useAuth } from "../auth/AuthProvider";
 
 interface ExpenseListPageProps {
   groupId: string;
@@ -31,10 +32,12 @@ export const ExpenseListPage: React.FC<ExpenseListPageProps> = ({
   groupBaseCurrency,
   isArchived,
 }) => {
+  const { user } = useAuth();
   const [expenses, setExpenses] = useState<ExpenseDocument[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
+  const [involvementFilter, setInvolvementFilter] = useState<"me" | "all">("me");
 
   // Foreground outbox sync status
   const [syncStatus, setSyncStatus] = useState({
@@ -66,6 +69,9 @@ export const ExpenseListPage: React.FC<ExpenseListPageProps> = ({
 
   const getMemberName = (id: string) => memberNameMap[id] || id;
 
+  const currentMember = members.find((m) => m.userId === user?.uid || m.id === user?.uid);
+  const userMemberId = currentMember?.id || user?.uid || "";
+
   // Filtered and sorted list (newest first)
   const filtered = expenses
     .filter((e) => {
@@ -73,7 +79,19 @@ export const ExpenseListPage: React.FC<ExpenseListPageProps> = ({
         e.title.toLowerCase().includes(search.toLowerCase()) ||
         getMemberName(e.payers[0]?.memberId || "").toLowerCase().includes(search.toLowerCase());
       const matchesCategory = categoryFilter === "all" || e.category === categoryFilter;
-      return matchesSearch && matchesCategory;
+
+      let matchesInvolvement = true;
+      if (involvementFilter === "me" && (userMemberId || user?.uid)) {
+        const isPayer = e.payers.some(
+          (p) => p.memberId === userMemberId || (user?.uid && p.memberId === user.uid)
+        );
+        const isSplitParticipant = e.splits.some(
+          (s) => s.memberId === userMemberId || (user?.uid && s.memberId === user.uid)
+        );
+        matchesInvolvement = isPayer || isSplitParticipant;
+      }
+
+      return matchesSearch && matchesCategory && matchesInvolvement;
     })
     .sort((a, b) => {
       const timeA =
@@ -153,7 +171,7 @@ export const ExpenseListPage: React.FC<ExpenseListPageProps> = ({
       )}
 
       {/* Filter and Search controls */}
-      <div className="flex gap-2">
+      <div className="flex flex-col sm:flex-row gap-2">
         <div className="relative flex-grow">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-text-muted" />
           <input
@@ -164,23 +182,33 @@ export const ExpenseListPage: React.FC<ExpenseListPageProps> = ({
             className="w-full pl-9 pr-3 py-2 bg-white/[0.02] border border-white/10 rounded-lg text-xs text-text-primary focus:outline-none focus:border-accent-cyan transition-colors"
           />
         </div>
-        <select
-          value={categoryFilter}
-          onChange={(e) => setCategoryFilter(e.target.value)}
-          className="bg-white/[0.02] border border-white/10 rounded-lg px-2.5 py-2 text-xs text-text-secondary focus:outline-none focus:border-accent-cyan transition-colors"
-        >
-          <option value="all">All Categories</option>
-          <option value="food">Food</option>
-          <option value="transport">Transport</option>
-          <option value="shopping">Shopping</option>
-          <option value="housing">Housing</option>
-          <option value="utilities">Utilities</option>
-          <option value="entertainment">Entertainment</option>
-          <option value="health">Health</option>
-          <option value="travel">Travel</option>
-          <option value="education">Education</option>
-          <option value="other">Other</option>
-        </select>
+        <div className="flex gap-2">
+          <select
+            value={involvementFilter}
+            onChange={(e) => setInvolvementFilter(e.target.value as "me" | "all")}
+            className="bg-white/[0.02] border border-white/10 rounded-lg px-2.5 py-2 text-xs text-text-secondary focus:outline-none focus:border-accent-cyan transition-colors"
+          >
+            <option value="me">Involving Me</option>
+            <option value="all">All Expenses</option>
+          </select>
+          <select
+            value={categoryFilter}
+            onChange={(e) => setCategoryFilter(e.target.value)}
+            className="bg-white/[0.02] border border-white/10 rounded-lg px-2.5 py-2 text-xs text-text-secondary focus:outline-none focus:border-accent-cyan transition-colors"
+          >
+            <option value="all">All Categories</option>
+            <option value="food">Food</option>
+            <option value="transport">Transport</option>
+            <option value="shopping">Shopping</option>
+            <option value="housing">Housing</option>
+            <option value="utilities">Utilities</option>
+            <option value="entertainment">Entertainment</option>
+            <option value="health">Health</option>
+            <option value="travel">Travel</option>
+            <option value="education">Education</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
       </div>
 
       {/* Expenses Ledger List */}

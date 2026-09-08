@@ -31,6 +31,7 @@ export const ExpensesPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [groups, setGroups] = useState<UserGroupIndexDocument[]>([]);
   const [expensesMap, setExpensesMap] = useState<Record<string, ExpenseDocument[]>>({});
+  const [membersMap, setMembersMap] = useState<Record<string, { id: string; displayName: string; userId?: string }[]>>({});
   const [memberNames, setMemberNames] = useState<Record<string, string>>({});
 
   // Search & Filter State
@@ -52,7 +53,7 @@ export const ExpensesPage: React.FC = () => {
     };
   }, [user]);
 
-  // 2. Watch expenses for all active user groups dynamically
+  // 2. Watch expenses and members for all active user groups dynamically
   useEffect(() => {
     if (groups.length === 0) {
       return;
@@ -65,6 +66,22 @@ export const ExpensesPage: React.FC = () => {
         setExpensesMap((prev) => ({ ...prev, [g.groupId]: expList }));
       });
       unsubscribes.push(unsubExp);
+
+      const unsubMem = groupService.watchMembers(g.groupId, (memList) => {
+        const activeMembers = memList.filter((m) => m.status === "active");
+        setMembersMap((prev) => ({ ...prev, [g.groupId]: activeMembers }));
+        setMemberNames((prev) => {
+          const next = { ...prev };
+          activeMembers.forEach((m) => {
+            next[`${g.groupId}:${m.id}`] = m.displayName;
+            if (m.userId) {
+              next[`${g.groupId}:${m.userId}`] = m.displayName;
+            }
+          });
+          return next;
+        });
+      });
+      unsubscribes.push(unsubMem);
     });
 
     return () => {
@@ -76,6 +93,10 @@ export const ExpensesPage: React.FC = () => {
   const getMemberName = (groupId: string, memberId: string): string => {
     const key = `${groupId}:${memberId}`;
     if (memberNames[key]) return memberNames[key];
+
+    const groupMembers = membersMap[groupId] || [];
+    const foundMem = groupMembers.find((m) => m.id === memberId || m.userId === memberId);
+    if (foundMem) return foundMem.displayName;
 
     if (memberId === user?.uid) {
       return profile?.displayName || user?.displayName || user?.email || "You";
@@ -106,27 +127,38 @@ export const ExpensesPage: React.FC = () => {
     });
   };
 
-  // 5. Aggregate all expenses across groups
+  // 5. Aggregate all expenses across groups involving current user
   const aggregatedExpenses: AggregatedExpense[] = [];
+  const currentUserId = user?.uid || "";
+
   groups.forEach((g) => {
     const groupExpenses = expensesMap[g.groupId] || [];
+    const groupMembers = membersMap[g.groupId] || [];
+    const userMember = groupMembers.find((m) => m.userId === currentUserId || m.id === currentUserId);
+    const userMemberId = userMember?.id || currentUserId;
+
     groupExpenses.forEach((exp) => {
       if (exp.status === "active") {
-        const seconds = exp.incurredAt?.seconds || exp.createdAt?.seconds || Date.now() / 1000;
-        aggregatedExpenses.push({
-          id: exp.id,
-          groupId: g.groupId,
-          groupName: g.groupName,
-          title: exp.title,
-          amountMinor: exp.amountMinor,
-          currency: exp.currency,
-          date: new Date(seconds * 1000).toLocaleDateString(),
-          category: exp.category,
-          payerName: getMemberName(g.groupId, exp.payers[0]?.memberId || ""),
-          syncStatus: "synced", // default local state maps syncStatus in dynamic list
-          splitSummary: exp.splitMethod === "equal" ? "Equal split" : "Custom split",
-          timestamp: seconds,
-        });
+        const isUserPayer = exp.payers.some((p) => p.memberId === userMemberId || p.memberId === currentUserId);
+        const isUserSplit = exp.splits.some((s) => s.memberId === userMemberId || s.memberId === currentUserId);
+
+        if (isUserPayer || isUserSplit) {
+          const seconds = exp.incurredAt?.seconds || exp.createdAt?.seconds || Date.now() / 1000;
+          aggregatedExpenses.push({
+            id: exp.id,
+            groupId: g.groupId,
+            groupName: g.groupName,
+            title: exp.title,
+            amountMinor: exp.amountMinor,
+            currency: exp.currency,
+            date: new Date(seconds * 1000).toLocaleDateString(),
+            category: exp.category,
+            payerName: getMemberName(g.groupId, exp.payers[0]?.memberId || ""),
+            syncStatus: "synced", // default local state maps syncStatus in dynamic list
+            splitSummary: exp.splitMethod === "equal" ? "Equal split" : "Custom split",
+            timestamp: seconds,
+          });
+        }
       }
     });
   });

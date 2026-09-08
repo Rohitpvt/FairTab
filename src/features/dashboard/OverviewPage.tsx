@@ -235,49 +235,71 @@ export const OverviewPage: React.FC = () => {
     }
   });
 
-  // 5. Aggregate Recent Transactions across all groups (Top 5)
+  // 5. Aggregate Recent Transactions across all groups involving current user (Top 5)
   const allTx: AggregatedTransaction[] = [];
+  const currentUserId = user?.uid || "";
+
   groups.forEach((g) => {
     const groupExpenses = expensesMap[g.groupId] || [];
     const groupSettlements = settlementsMap[g.groupId] || [];
+    const groupMembers = membersMap[g.groupId] || [];
+
+    // Find member record corresponding to current auth user in this group
+    const userMember = groupMembers.find((m) => m.userId === currentUserId || m.id === currentUserId);
+    const userMemberId = userMember?.id || currentUserId;
 
     groupExpenses.forEach((exp) => {
       if (exp.status === "active") {
-        const seconds = exp.incurredAt?.seconds || exp.createdAt?.seconds || Date.now() / 1000;
-        allTx.push({
-          id: exp.id,
-          groupId: g.groupId,
-          groupName: g.groupName,
-          title: exp.title,
-          amountMinor: exp.amountMinor,
-          currency: exp.currency,
-          date: new Date(seconds * 1000).toLocaleDateString(),
-          category: exp.category,
-          payerName: getMemberName(g.groupId, exp.payers[0]?.memberId || ""),
-          syncStatus: "synced",
-          splitSummary: exp.splitMethod === "equal" ? "Equal split" : "Custom split",
-          timestamp: seconds,
-        });
+        // Only include if current user is one of the payers or part of the splits
+        const isUserPayer = exp.payers.some((p) => p.memberId === userMemberId || p.memberId === currentUserId);
+        const isUserSplit = exp.splits.some((s) => s.memberId === userMemberId || s.memberId === currentUserId);
+
+        if (isUserPayer || isUserSplit) {
+          const seconds = exp.incurredAt?.seconds || exp.createdAt?.seconds || Date.now() / 1000;
+          allTx.push({
+            id: exp.id,
+            groupId: g.groupId,
+            groupName: g.groupName,
+            title: exp.title,
+            amountMinor: exp.amountMinor,
+            currency: exp.currency,
+            date: new Date(seconds * 1000).toLocaleDateString(),
+            category: exp.category,
+            payerName: getMemberName(g.groupId, exp.payers[0]?.memberId || ""),
+            syncStatus: "synced",
+            splitSummary: exp.splitMethod === "equal" ? "Equal split" : "Custom split",
+            timestamp: seconds,
+          });
+        }
       }
     });
 
     groupSettlements.forEach((set) => {
       if (set.status === "active") {
-        const seconds = set.createdAt?.seconds || Date.now() / 1000;
-        allTx.push({
-          id: set.id,
-          groupId: g.groupId,
-          groupName: g.groupName,
-          title: "Debt Settlement",
-          amountMinor: set.amountMinor,
-          currency: set.currency,
-          date: new Date(seconds * 1000).toLocaleDateString(),
-          category: "other",
-          payerName: getMemberName(g.groupId, set.payerId),
-          syncStatus: "synced",
-          splitSummary: `Paid to ${getMemberName(g.groupId, set.receiverId)}`,
-          timestamp: seconds,
-        });
+        // Only include if current user is the payer or the receiver of the settlement
+        const isUserInvolved =
+          set.payerId === userMemberId ||
+          set.payerId === currentUserId ||
+          set.receiverId === userMemberId ||
+          set.receiverId === currentUserId;
+
+        if (isUserInvolved) {
+          const seconds = set.createdAt?.seconds || Date.now() / 1000;
+          allTx.push({
+            id: set.id,
+            groupId: g.groupId,
+            groupName: g.groupName,
+            title: "Debt Settlement",
+            amountMinor: set.amountMinor,
+            currency: set.currency,
+            date: new Date(seconds * 1000).toLocaleDateString(),
+            category: "other",
+            payerName: getMemberName(g.groupId, set.payerId),
+            syncStatus: "synced",
+            splitSummary: `Paid to ${getMemberName(g.groupId, set.receiverId)}`,
+            timestamp: seconds,
+          });
+        }
       }
     });
   });

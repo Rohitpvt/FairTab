@@ -15,8 +15,10 @@ import type { GroupDocument } from "../groups/groupSchema";
 import type { GroupMemberDocument } from "../groups/memberSchema";
 import type { ExpenseDocument, SettlementDocument } from "@fairtab/domain";
 import { useMemberNameResolver } from "../../hooks/useMemberNameResolver";
+import { useAuth } from "../auth/AuthProvider";
 
 export const SettlementsPage: React.FC = () => {
+  const { user } = useAuth();
   const { groupId } = useParams<{ groupId: string }>();
   const navigate = useNavigate();
 
@@ -24,6 +26,7 @@ export const SettlementsPage: React.FC = () => {
   const [members, setMembers] = useState<GroupMemberDocument[]>([]);
   const [expenses, setExpenses] = useState<ExpenseDocument[]>([]);
   const [settlements, setSettlements] = useState<SettlementDocument[]>([]);
+  const [settlementFilter, setSettlementFilter] = useState<"me" | "all">("me");
   const [isLoading, setIsLoading] = useState(true);
   const [syncStatus, setSyncStatus] = useState({
     isOnline: navigator.onLine,
@@ -166,20 +169,52 @@ export const SettlementsPage: React.FC = () => {
               </div>
             </GlassPanel>
           )}
-          <div className="flex items-center gap-2 border-b border-white/5 pb-2">
-            <History className="h-5 w-5 text-accent-indigo" />
-            <h3 className="text-sm font-bold text-text-primary uppercase tracking-wider">
-              Settlement History
-            </h3>
+          <div className="flex items-center justify-between border-b border-white/5 pb-2">
+            <div className="flex items-center gap-2">
+              <History className="h-5 w-5 text-accent-indigo" />
+              <h3 className="text-sm font-bold text-text-primary uppercase tracking-wider">
+                Settlement History
+              </h3>
+            </div>
+            <select
+              value={settlementFilter}
+              onChange={(e) => setSettlementFilter(e.target.value as "me" | "all")}
+              className="bg-white/[0.02] border border-white/10 rounded-lg px-2 py-1 text-xs text-text-secondary focus:outline-none focus:border-accent-cyan transition-colors"
+            >
+              <option value="me">Involving Me</option>
+              <option value="all">All Settlements</option>
+            </select>
           </div>
 
           <div className="flex flex-col gap-3 max-h-[500px] overflow-y-auto pr-1">
-            {settlements.length === 0 ? (
-              <div className="p-6 text-center bg-white/5 border border-white/5 rounded-xl">
-                <p className="text-xs text-text-muted">No settlements recorded yet.</p>
-              </div>
-            ) : (
-              settlements.map((set) => (
+            {(() => {
+              const currentMember = members.find((m) => m.userId === user?.uid || m.id === user?.uid);
+              const userMemberId = currentMember?.id || user?.uid || "";
+
+              const displayedSettlements = settlements.filter((set) => {
+                if (settlementFilter === "me" && (userMemberId || user?.uid)) {
+                  return (
+                    set.payerId === userMemberId ||
+                    set.receiverId === userMemberId ||
+                    (user?.uid && (set.payerId === user.uid || set.receiverId === user.uid))
+                  );
+                }
+                return true;
+              });
+
+              if (displayedSettlements.length === 0) {
+                return (
+                  <div className="p-6 text-center bg-white/5 border border-white/5 rounded-xl">
+                    <p className="text-xs text-text-muted">
+                      {settlementFilter === "me"
+                        ? "No settlements involving you recorded yet."
+                        : "No settlements recorded yet."}
+                    </p>
+                  </div>
+                );
+              }
+
+              return displayedSettlements.map((set) => (
                 <Link
                   key={set.id}
                   to={`/groups/${groupId}/settlements/${set.id}`}
@@ -223,8 +258,8 @@ export const SettlementsPage: React.FC = () => {
                     </div>
                   </GlassPanel>
                 </Link>
-              )))
-            }
+              ));
+            })()}
           </div>
         </div>
       </div>
