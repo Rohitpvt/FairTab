@@ -89,9 +89,14 @@ export const RecordSettlementFlow: React.FC = () => {
   // Sync state selectors when loaded
   useEffect(() => {
     if (members.length > 0) {
+      const currentUserMember = members.find((m) => m.userId === auth.currentUser?.uid || m.id === auth.currentUser?.uid);
+      const defaultPayerId = currentUserMember?.id || members[0].id;
+      const defaultReceiverId = members.find((m) => m.id !== defaultPayerId)?.id || members[0].id;
+
       // eslint-disable-next-line react-hooks/set-state-in-effect
-      if (!payerId) setPayerId(members[0].id);
-      if (!receiverId) setReceiverId(members.length > 1 ? members[1].id : members[0].id);
+      if (!payerId) setPayerId(defaultPayerId);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      if (!receiverId) setReceiverId(defaultReceiverId);
     }
   }, [members, payerId, receiverId]);
 

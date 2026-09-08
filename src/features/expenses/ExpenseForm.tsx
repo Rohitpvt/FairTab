@@ -21,6 +21,7 @@ import type {
 } from "@fairtab/domain";
 import type { GroupMemberDocument } from "../groups/memberSchema";
 import { useMemberNameResolver } from "../../hooks/useMemberNameResolver";
+import { useAuth } from "../auth/AuthProvider";
 
 const CATEGORIES: { value: ExpenseCategory; label: string }[] = [
   { value: "food", label: "Food & Drinks" },
@@ -74,11 +75,17 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({
   submitLabel,
   isSubmitting,
 }) => {
+  const { user } = useAuth();
   const navigate = useNavigate();
   const formId = useId();
 
   const activeMembers = members.filter((m) => m.status === "active");
   const { resolveName } = useMemberNameResolver(members);
+
+  const currentUserMember = activeMembers.find(
+    (m) => m.userId === user?.uid || m.id === user?.uid
+  );
+  const defaultMemberId = currentUserMember?.id || activeMembers[0]?.id || "";
 
   // Form state
   const [title, setTitle] = useState(initialData?.title || "");
@@ -122,7 +129,7 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({
 
   // Payer selection (single payer by default)
   const [payerId, setPayerId] = useState<string>(
-    initialData?.payers?.[0]?.memberId || activeMembers[0]?.id || ""
+    initialData?.payers?.[0]?.memberId || defaultMemberId
   );
 
   // Sync active members once they load from Firestore
@@ -132,9 +139,18 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({
       setParticipantIds(activeMembers.map((m) => m.id));
     }
     if (activeMembers.length > 0 && !payerId && !initialData?.payers?.[0]?.memberId) {
-      setPayerId(activeMembers[0].id);
+      setPayerId(defaultMemberId);
+    } else if (
+      activeMembers.length > 0 &&
+      !initialData?.payers?.[0]?.memberId &&
+      currentUserMember &&
+      payerId !== currentUserMember.id &&
+      (!payerId || payerId === activeMembers[0]?.id)
+    ) {
+      // If initialized before members resolved, prioritize logged in user
+      setPayerId(currentUserMember.id);
     }
-  }, [activeMembers, initialData, participantIds.length, payerId]);
+  }, [activeMembers, initialData, participantIds.length, payerId, defaultMemberId, currentUserMember]);
 
   // Split-specific values
   const [exactAmounts, setExactAmounts] = useState<Record<string, string>>({});
