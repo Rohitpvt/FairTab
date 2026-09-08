@@ -109,8 +109,8 @@ describe("App Shell and Layout", () => {
     // Clicking Quick Calculator opens calculator modal
     const calcBtn = screen.getByRole("button", { name: /open quick calculator/i });
     fireEvent.click(calcBtn);
-    expect(await screen.findByText("Quick Split Calculator")).toBeInTheDocument();
-    expect(screen.getByText("Calculate & split bill before adding")).toBeInTheDocument();
+    expect(await screen.findByText("Quick Split & FX Calculator")).toBeInTheDocument();
+    expect(screen.getByText("Split bills & convert live currencies")).toBeInTheDocument();
   });
 });
 

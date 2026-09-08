@@ -12,10 +12,18 @@ import {
   Users,
   Copy,
   Check,
+  ArrowLeftRight,
+  TrendingUp,
 } from "lucide-react";
 import { useAppActions } from "../../app/providers/AppActionProvider";
 import { triggerHaptic } from "../../utils/haptics";
 import { toast } from "sonner";
+import { CURRENCIES } from "../../utils/currencies";
+import {
+  fetchLiveExchangeRates,
+  convertCurrencyAmount,
+  type ExchangeRatesData,
+} from "../../services/currencyService";
 
 export interface QuickCalculatorProps {
   isOpen: boolean;
@@ -28,6 +36,33 @@ export const QuickCalculator: React.FC<QuickCalculatorProps> = ({ isOpen, onOpen
   const [equation, setEquation] = useState("");
   const [splitCount, setSplitCount] = useState<number | null>(null);
   const [copied, setCopied] = useState(false);
+
+  // Currency conversion state
+  const [fromCurrency, setFromCurrency] = useState("USD");
+  const [toCurrency, setToCurrency] = useState("INR");
+  const [exchangeRates, setExchangeRates] = useState<ExchangeRatesData | null>(null);
+  const [isLoadingRates, setIsLoadingRates] = useState(false);
+
+  // Fetch live exchange rates on mount / open
+  useEffect(() => {
+    if (!isOpen) return;
+    let isSubscribed = true;
+
+    fetchLiveExchangeRates()
+      .then((data) => {
+        if (isSubscribed) {
+          setExchangeRates(data);
+          setIsLoadingRates(false);
+        }
+      })
+      .catch(() => {
+        if (isSubscribed) setIsLoadingRates(false);
+      });
+
+    return () => {
+      isSubscribed = false;
+    };
+  }, [isOpen]);
 
   // Safe mathematical expression evaluator for basic arithmetic operations (+, -, *, /)
   const evaluateExpression = (expr: string): number => {
@@ -146,6 +181,30 @@ export const QuickCalculator: React.FC<QuickCalculatorProps> = ({ isOpen, onOpen
     setDisplay(String(perPerson));
   }, [display]);
 
+  // Currency Conversion Action (converts current display into target currency)
+  const handleApplyConversion = useCallback(() => {
+    triggerHaptic("success");
+    const current = parseFloat(display) || 0;
+    if (current <= 0) return;
+    const converted = convertCurrencyAmount(
+      current,
+      fromCurrency,
+      toCurrency,
+      exchangeRates?.rates
+    );
+    setEquation(`${fromCurrency} ${current} → ${toCurrency} =`);
+    setDisplay(String(converted));
+    // Also flip source to target for chaining calculations
+    setFromCurrency(toCurrency);
+    toast.success(`Converted ${fromCurrency} ${current} to ${toCurrency} ${converted}`);
+  }, [display, fromCurrency, toCurrency, exchangeRates]);
+
+  const handleSwapCurrencies = useCallback(() => {
+    triggerHaptic("selection");
+    setFromCurrency(toCurrency);
+    setToCurrency(fromCurrency);
+  }, [fromCurrency, toCurrency]);
+
   const handleCopy = useCallback(() => {
     triggerHaptic("success");
     const val = parseFloat(display) || 0;
@@ -172,6 +231,20 @@ export const QuickCalculator: React.FC<QuickCalculatorProps> = ({ isOpen, onOpen
     openAddExpense();
     toast.info(`Pre-filled expense amount: ${val}`);
   }, [display, onOpenChange, openAddExpense]);
+
+  // Compute live real-time rate for 1 unit
+  const currentUnitRate = exchangeRates
+    ? convertCurrencyAmount(1, fromCurrency, toCurrency, exchangeRates.rates)
+    : 1;
+
+  // Compute live converted value preview for current display
+  const currentDisplayNum = parseFloat(display) || 0;
+  const liveConvertedValue = currentDisplayNum > 0 && exchangeRates
+    ? convertCurrencyAmount(currentDisplayNum, fromCurrency, toCurrency, exchangeRates.rates)
+    : null;
+
+  const toCurrencySymbol = CURRENCIES.find((c) => c.code === toCurrency)?.symbol || toCurrency;
+  const fromCurrencySymbol = CURRENCIES.find((c) => c.code === fromCurrency)?.symbol || fromCurrency;
 
   // Keyboard navigation support
   useEffect(() => {
@@ -206,7 +279,7 @@ export const QuickCalculator: React.FC<QuickCalculatorProps> = ({ isOpen, onOpen
         <RadixDialog.Overlay className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 transition-all duration-300" />
         <RadixDialog.Content
           aria-describedby={undefined}
-          className="fixed bottom-0 sm:bottom-auto sm:top-1/2 sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 w-full max-w-[380px] rounded-t-3xl sm:rounded-3xl border border-white/15 bg-surface-primary/95 backdrop-blur-2xl text-text-primary shadow-2xl p-5 z-50 focus:outline-none flex flex-col gap-4 max-h-[92vh] overflow-y-auto"
+          className="fixed bottom-0 sm:bottom-auto sm:top-1/2 sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 w-full max-w-[390px] rounded-t-3xl sm:rounded-3xl border border-white/15 bg-surface-primary/95 backdrop-blur-2xl text-text-primary shadow-2xl p-5 z-50 focus:outline-none flex flex-col gap-3.5 max-h-[94vh] overflow-y-auto"
         >
           {/* Header */}
           <div className="flex items-center justify-between border-b border-white/10 pb-3">
@@ -216,9 +289,9 @@ export const QuickCalculator: React.FC<QuickCalculatorProps> = ({ isOpen, onOpen
               </div>
               <div>
                 <RadixDialog.Title className="text-base font-bold text-text-primary">
-                  Quick Split Calculator
+                  Quick Split & FX Calculator
                 </RadixDialog.Title>
-                <p className="text-[11px] text-text-muted">Calculate & split bill before adding</p>
+                <p className="text-[11px] text-text-muted">Split bills & convert live currencies</p>
               </div>
             </div>
             <RadixDialog.Close asChild>
@@ -231,11 +304,77 @@ export const QuickCalculator: React.FC<QuickCalculatorProps> = ({ isOpen, onOpen
             </RadixDialog.Close>
           </div>
 
-          {/* Display screen */}
-          <div className="rounded-2xl bg-black/40 border border-white/10 p-4 flex flex-col items-end justify-between min-h-[90px] shadow-inner relative overflow-hidden">
-            <div className="text-xs text-text-muted font-mono tracking-wider truncate w-full text-right h-4">
-              {equation || (splitCount ? `Divided for ${splitCount} people` : "")}
+          {/* Currency Switcher Bar */}
+          <div className="flex items-center justify-between px-2.5 py-1.5 rounded-xl bg-white/[0.04] border border-white/10 text-xs">
+            <div className="flex items-center gap-1.5">
+              <select
+                aria-label="From Currency"
+                value={fromCurrency}
+                onChange={(e) => setFromCurrency(e.target.value)}
+                className="bg-surface-secondary text-white text-xs font-semibold rounded-lg px-2 py-1 border border-white/15 focus:outline-none focus:border-accent-cyan cursor-pointer"
+              >
+                {CURRENCIES.map((c) => (
+                  <option key={c.code} value={c.code} className="bg-surface-primary text-white">
+                    {c.code} ({c.symbol})
+                  </option>
+                ))}
+              </select>
+
+              <button
+                type="button"
+                onClick={handleSwapCurrencies}
+                className="p-1 rounded-md text-text-muted hover:text-accent-cyan hover:bg-white/10 active:scale-90 transition-all cursor-pointer"
+                title="Swap currencies"
+                aria-label="Swap currencies"
+              >
+                <ArrowLeftRight className="h-3.5 w-3.5" />
+              </button>
+
+              <select
+                aria-label="To Currency"
+                value={toCurrency}
+                onChange={(e) => setToCurrency(e.target.value)}
+                className="bg-surface-secondary text-white text-xs font-semibold rounded-lg px-2 py-1 border border-white/15 focus:outline-none focus:border-accent-cyan cursor-pointer"
+              >
+                {CURRENCIES.map((c) => (
+                  <option key={c.code} value={c.code} className="bg-surface-primary text-white">
+                    {c.code} ({c.symbol})
+                  </option>
+                ))}
+              </select>
             </div>
+
+            {/* Live rate & convert CTA */}
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] text-text-muted font-mono flex items-center gap-1" title="Real-time exchange rate">
+                <TrendingUp className="h-3 w-3 text-emerald-400" />
+                {isLoadingRates ? "..." : `1 ${fromCurrency} ≈ ${currentUnitRate} ${toCurrency}`}
+              </span>
+
+              {fromCurrency !== toCurrency && currentDisplayNum > 0 && (
+                <button
+                  type="button"
+                  onClick={handleApplyConversion}
+                  className="px-2 py-0.5 text-[11px] font-bold rounded-md bg-accent-cyan/20 text-accent-cyan hover:bg-accent-cyan/30 border border-accent-cyan/30 active:scale-95 transition-all cursor-pointer"
+                  title="Apply conversion to screen"
+                >
+                  Convert
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Display screen */}
+          <div className="rounded-2xl bg-black/40 border border-white/10 p-4 flex flex-col items-end justify-between min-h-[92px] shadow-inner relative overflow-hidden">
+            <div className="text-xs text-text-muted font-mono tracking-wider truncate w-full flex justify-between items-center h-4">
+              <span className="text-[11px] font-semibold text-accent-cyan/80">
+                {fromCurrencySymbol} {fromCurrency}
+              </span>
+              <span className="truncate pl-2">
+                {equation || (splitCount ? `Divided for ${splitCount} people` : "")}
+              </span>
+            </div>
+
             <div className="flex items-baseline justify-between w-full mt-1">
               <button
                 onClick={handleCopy}
@@ -245,9 +384,16 @@ export const QuickCalculator: React.FC<QuickCalculatorProps> = ({ isOpen, onOpen
               >
                 {copied ? <Check className="h-4 w-4 text-emerald-400" /> : <Copy className="h-4 w-4" />}
               </button>
-              <span className="text-3xl font-extrabold tracking-tight font-mono text-white tabular-nums truncate pl-2">
-                {display}
-              </span>
+              <div className="flex flex-col items-end truncate pl-2">
+                <span className="text-3xl font-extrabold tracking-tight font-mono text-white tabular-nums truncate">
+                  {display}
+                </span>
+                {fromCurrency !== toCurrency && liveConvertedValue !== null && (
+                  <span className="text-[11px] font-mono text-emerald-400 font-semibold tracking-tight">
+                    ≈ {toCurrencySymbol} {liveConvertedValue.toLocaleString()} {toCurrency}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
 
@@ -402,7 +548,7 @@ export const QuickCalculator: React.FC<QuickCalculatorProps> = ({ isOpen, onOpen
               className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-accent-indigo to-accent-cyan hover:opacity-90 text-white font-bold text-sm shadow-lg shadow-accent-indigo/20 flex items-center justify-center gap-2 active:scale-98 transition-all cursor-pointer"
             >
               <Plus className="h-4 w-4" />
-              <span>Use in New Expense ({display})</span>
+              <span>Use in New Expense ({fromCurrencySymbol}{display})</span>
             </button>
           </div>
         </RadixDialog.Content>
@@ -412,3 +558,4 @@ export const QuickCalculator: React.FC<QuickCalculatorProps> = ({ isOpen, onOpen
 };
 
 export default QuickCalculator;
+
