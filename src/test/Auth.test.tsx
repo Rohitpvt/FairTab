@@ -49,7 +49,8 @@ describe("Authentication Schemas Validation", () => {
         email: "jane@example.com",
         password: "password123",
         confirmPassword: "differentpassword",
-        rememberDevice: false
+        rememberDevice: false,
+        acceptTerms: true
       });
       expect(result.success).toBe(false);
       if (!result.success) {
@@ -62,7 +63,9 @@ describe("Authentication Schemas Validation", () => {
         displayName: "",
         email: "jane@example.com",
         password: "password123",
-        confirmPassword: "password123"
+        confirmPassword: "password123",
+        rememberDevice: false,
+        acceptTerms: true
       });
       expect(resultEmpty.success).toBe(false);
 
@@ -70,9 +73,38 @@ describe("Authentication Schemas Validation", () => {
         displayName: "a".repeat(60),
         email: "jane@example.com",
         password: "password123",
-        confirmPassword: "password123"
+        confirmPassword: "password123",
+        rememberDevice: false,
+        acceptTerms: true
       });
       expect(resultLong.success).toBe(false);
+    });
+
+    test("should reject if terms are not accepted", () => {
+      const result = registerSchema.safeParse({
+        displayName: "Jane Doe",
+        email: "jane@example.com",
+        password: "password123",
+        confirmPassword: "password123",
+        rememberDevice: false,
+        acceptTerms: false
+      });
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error.issues[0].message).toBe("You must agree to the Terms of Service and Privacy Policy.");
+      }
+    });
+
+    test("should accept valid registration input", () => {
+      const result = registerSchema.safeParse({
+        displayName: "Jane Doe",
+        email: "jane@example.com",
+        password: "password123",
+        confirmPassword: "password123",
+        rememberDevice: true,
+        acceptTerms: true
+      });
+      expect(result.success).toBe(true);
     });
   });
 
