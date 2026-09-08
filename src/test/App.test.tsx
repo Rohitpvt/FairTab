@@ -86,6 +86,29 @@ describe("App Shell and Layout", () => {
     // Mobile tabs should be in the document
     expect(screen.getAllByRole("link", { name: /home/i })[0]).toBeInTheDocument();
     expect(screen.getByLabelText("Add new expense")).toBeInTheDocument();
+    expect(screen.getByLabelText("Open full menu")).toBeInTheDocument();
+  });
+
+  test("opens mobile drawer menu and accesses other sections", async () => {
+    render(<App />);
+    await screen.findByText("Recent Transactions");
+
+    // Open menu via bottom navigation menu button
+    const menuBtn = screen.getByLabelText("Open full menu");
+    fireEvent.click(menuBtn);
+
+    // Verify sections and descriptions from drawer are visible
+    expect(screen.getByText("Balances & debt payoff")).toBeInTheDocument();
+    expect(screen.getByText("Spending trends & charts")).toBeInTheDocument();
+    expect(screen.getByText("Category limits & alerts")).toBeInTheDocument();
+    expect(screen.getByText("Smart AI recommendations")).toBeInTheDocument();
+
+    // Click on Settlements link in drawer
+    const settlementsLink = screen.getAllByRole("link", { name: /settlements/i })[0];
+    fireEvent.click(settlementsLink);
+
+    // Verify header title changes
+    expect(await screen.findByText("Debt Settlements", {}, { timeout: 5000 })).toBeInTheDocument();
   });
 });
 

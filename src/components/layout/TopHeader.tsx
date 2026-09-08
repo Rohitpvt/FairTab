@@ -1,5 +1,5 @@
 import React from "react";
-import { Search } from "lucide-react";
+import { Search, Menu } from "lucide-react";
 import { SyncIndicator, ThemeToggle } from "../feedback/FeedbackStates";
 import { MemberAvatar } from "../ui/Avatar";
 import { useAuth } from "../../features/auth/AuthProvider";
@@ -7,9 +7,10 @@ import { useAuth } from "../../features/auth/AuthProvider";
 export interface TopHeaderProps {
   title: string;
   onSearchClick: () => void;
+  onMenuClick?: () => void;
 }
 
-export const TopHeader: React.FC<TopHeaderProps> = ({ title, onSearchClick }) => {
+export const TopHeader: React.FC<TopHeaderProps> = ({ title, onSearchClick, onMenuClick }) => {
   const { user, profile } = useAuth();
   const name = profile?.displayName || user?.displayName || user?.email || "User";
   const avatarUrl = profile?.photoURL || user?.photoURL || "";
@@ -32,8 +33,17 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ title, onSearchClick }) =>
         <div className="liquid-glare-spot" />
       </div>
 
-      {/* Page / Context title */}
-      <div className="flex items-center gap-3 relative z-10">
+      {/* Page / Context title & Mobile Menu Button */}
+      <div className="flex items-center gap-2.5 sm:gap-3 relative z-10">
+        {onMenuClick && (
+          <button
+            onClick={onMenuClick}
+            className="md:hidden p-2 -ml-1 rounded-xl text-text-secondary hover:text-text-primary hover:bg-white/[0.06] active:scale-95 transition-all duration-200 border border-white/10 flex items-center justify-center cursor-pointer min-w-[38px] min-h-[38px]"
+            aria-label="Open navigation menu"
+          >
+            <Menu className="h-5 w-5 text-text-primary" />
+          </button>
+        )}
         <h2 className="text-sm sm:text-base font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-accent-indigo via-accent-violet to-accent-cyan uppercase tracking-wider md:hidden">
           FairTab
         </h2>

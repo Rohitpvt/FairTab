@@ -4,6 +4,7 @@ import { Toaster, toast } from "sonner";
 import { Sidebar } from "./Sidebar";
 import { TopHeader } from "./TopHeader";
 import { MobileNavigation } from "./MobileNavigation";
+import { MobileDrawer } from "./MobileDrawer";
 import { OfflineBanner } from "../feedback/FeedbackStates";
 import { PwaUpdatePrompt } from "../feedback/PwaUpdatePrompt";
 import { ErrorBoundary } from "../feedback/ErrorBoundary";
@@ -122,6 +123,7 @@ const AddExpenseDialog: React.FC = () => {
 export const AppShell: React.FC = () => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
   
   const { isAddExpenseOpen } = useAppState();
   const { openAddExpense } = useAppActions();
@@ -184,7 +186,11 @@ export const AppShell: React.FC = () => {
         {/* Main layout container */}
         <div className="flex-1 flex flex-col min-w-0 pb-[80px] md:pb-0">
           {/* Top Header details */}
-          <TopHeader title={getHeaderTitle()} onSearchClick={() => setIsSearchOpen(true)} />
+          <TopHeader
+            title={getHeaderTitle()}
+            onSearchClick={() => setIsSearchOpen(true)}
+            onMenuClick={() => setIsMobileDrawerOpen(true)}
+          />
 
           {/* Dynamic page content slot */}
           <main className="flex-grow overflow-x-hidden">
@@ -196,7 +202,16 @@ export const AppShell: React.FC = () => {
       </div>
 
       {/* Mobile Navigation bar */}
-      <MobileNavigation onAddClick={openAddExpense} />
+      <MobileNavigation
+        onAddClick={openAddExpense}
+        onMoreClick={() => setIsMobileDrawerOpen(true)}
+      />
+
+      {/* Full Mobile Navigation Drawer */}
+      <MobileDrawer
+        isOpen={isMobileDrawerOpen}
+        onOpenChange={setIsMobileDrawerOpen}
+      />
 
       {/* Isolated Mock Add Expense Dialog */}
       {isAddExpenseOpen && <AddExpenseDialog />}
