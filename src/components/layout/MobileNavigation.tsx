@@ -27,7 +27,7 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
 
   const [lampLeft, setLampLeft] = useState<number | null>(null);
 
-  // Check if current route is part of drawer items (expenses, settlements, analytics, budgets, insights, recurring, settings)
+  // Check if current route is part of drawer items (expenses, settlements, analytics, budgets, insights, recurring)
   const isDrawerRoute = [
     "/expenses",
     "/settlements",
@@ -35,7 +35,6 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
     "/budgets",
     "/insights",
     "/recurring",
-    "/settings",
   ].some((p) => location.pathname.startsWith(p));
 
   // Update tubelight beam position based on active route or more menu open state

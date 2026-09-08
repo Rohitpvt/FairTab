@@ -11,7 +11,6 @@ import {
   X,
   ChevronRight,
   LogOut,
-  Settings,
 } from "lucide-react";
 import { useAuth } from "../../features/auth/AuthProvider";
 import { BrandLogo } from "../ui/BrandLogo";
@@ -66,13 +65,6 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({ isOpen, onOpenChange
       icon: Repeat,
       description: "Subscriptions & scheduled bills",
       badgeColor: "text-sky-400",
-    },
-    {
-      label: "Settings",
-      path: "/settings",
-      icon: Settings,
-      description: "Profile, preferences & trusted devices",
-      badgeColor: "text-text-muted",
     },
   ];
 
