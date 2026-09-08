@@ -1,7 +1,9 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import { Search } from "lucide-react";
 import { SyncIndicator, ThemeToggle } from "../feedback/FeedbackStates";
-import { ProfileMenu } from "./ProfileMenu";
+import { MemberAvatar } from "../ui/Avatar";
+import { useAuth } from "../../features/auth/AuthProvider";
 
 export interface TopHeaderProps {
   title: string;
@@ -9,6 +11,10 @@ export interface TopHeaderProps {
 }
 
 export const TopHeader: React.FC<TopHeaderProps> = ({ title, onSearchClick }) => {
+  const { user, profile } = useAuth();
+  const name = profile?.displayName || user?.displayName || user?.email || "User";
+  const avatarUrl = profile?.photoURL || user?.photoURL || "";
+
   const handleMouseMove = (e: React.MouseEvent<HTMLElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - rect.left;
@@ -64,8 +70,18 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ title, onSearchClick }) =>
         {/* Theme Toggle */}
         <ThemeToggle />
 
-        {/* User Profile Menu */}
-        <ProfileMenu />
+        {/* User Profile Avatar / Link to Settings */}
+        <Link
+          to="/settings"
+          className="flex items-center gap-2 pl-1 rounded-full hover:opacity-80 active:scale-95 transition-all duration-200 cursor-pointer focus-visible:outline-2 focus-visible:outline-accent-cyan"
+          aria-label="Go to Account Settings"
+          title="Account Settings"
+        >
+          <MemberAvatar name={name} avatarUrl={avatarUrl} size="sm" />
+          <span className="text-xs font-semibold text-text-secondary hidden lg:inline max-w-[120px] truncate">
+            {name}
+          </span>
+        </Link>
       </div>
     </header>
   );

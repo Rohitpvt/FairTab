@@ -1,7 +1,6 @@
 import React, { useRef, useState, useEffect } from "react";
 import { NavLink, useLocation } from "react-router-dom";
-import { Home, Compass, Plus, Bell } from "lucide-react";
-import { MobileMenuDrawer } from "./MobileMenuDrawer";
+import { Home, Compass, Plus, Bell, Settings } from "lucide-react";
 
 export interface MobileNavigationProps {
   onAddClick: () => void;
@@ -12,7 +11,7 @@ const TABS = [
   { label: "Groups", path: "/groups", icon: Compass },
   { label: "Add", path: "#", icon: Plus, isAction: true },
   { label: "Activity", path: "/notifications", icon: Bell },
-  { label: "Menu", path: "#menu", isMenu: true },
+  { label: "Profile", path: "/settings", icon: Settings },
 ];
 
 export const MobileNavigation: React.FC<MobileNavigationProps> = ({ onAddClick }) => {
@@ -25,7 +24,7 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({ onAddClick }
   // Update tubelight beam position based on active route
   useEffect(() => {
     const activeIndex = TABS.findIndex(
-      (tab) => !tab.isAction && !tab.isMenu && location.pathname.startsWith(tab.path)
+      (tab) => !tab.isAction && location.pathname.startsWith(tab.path)
     );
 
     if (activeIndex !== -1 && tabRefs.current[activeIndex] && navRef.current) {
@@ -35,16 +34,12 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({ onAddClick }
       const relativeLeft = tabRect.left - navRect.left + tabRect.width / 2;
       setLampLeft(relativeLeft);
     } else {
-      // If on an action/menu or route without a direct bottom tab (e.g., settings/analytics), don't light up or position on home only if on home
-      if (location.pathname === "/" || location.pathname === "/overview") {
-        if (tabRefs.current[0] && navRef.current) {
-          const tabEl = tabRefs.current[0];
-          const navRect = navRef.current.getBoundingClientRect();
-          const tabRect = tabEl.getBoundingClientRect();
-          setLampLeft(tabRect.left - navRect.left + tabRect.width / 2);
-        }
-      } else {
-        setLampLeft(null);
+      // Default position if no exact match (e.g. initial render on overview)
+      if (tabRefs.current[0] && navRef.current) {
+        const tabEl = tabRefs.current[0];
+        const navRect = navRef.current.getBoundingClientRect();
+        const tabRect = tabEl.getBoundingClientRect();
+        setLampLeft(tabRect.left - navRect.left + tabRect.width / 2);
       }
     }
   }, [location.pathname]);
@@ -99,14 +94,6 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({ onAddClick }
             );
           }
 
-          if (tab.isMenu) {
-            return (
-              <div key={idx} className="flex items-center justify-center min-w-[52px] min-h-[44px]">
-                <MobileMenuDrawer />
-              </div>
-            );
-          }
-
           return (
             <NavLink
               key={tab.path}
@@ -122,13 +109,11 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({ onAddClick }
             >
               {({ isActive }) => (
                 <>
-                  {Icon && (
-                    <Icon
-                      className={`h-5 w-5 transition-all duration-300 ${
-                        isActive ? "scale-110 drop-shadow-[0_0_8px_hsl(var(--accent-cyan)/0.6)] opacity-100" : ""
-                      }`}
-                    />
-                  )}
+                  <Icon
+                    className={`h-5 w-5 transition-all duration-300 ${
+                      isActive ? "scale-110 drop-shadow-[0_0_8px_hsl(var(--accent-cyan)/0.6)] opacity-100" : ""
+                    }`}
+                  />
                   <span className={`text-[10px] tracking-tight transition-all duration-300 ${isActive ? "font-bold text-text-primary" : "font-medium"}`}>
                     {tab.label}
                   </span>
