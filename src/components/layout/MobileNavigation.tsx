@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect } from "react";
 import { NavLink, useLocation } from "react-router-dom";
-import { Home, Compass, Plus, Bell, Settings } from "lucide-react";
+import { Home, Compass, Plus, Bell, Menu } from "lucide-react";
 
 export interface MobileNavigationProps {
   onAddClick: () => void;
@@ -11,7 +11,7 @@ const TABS = [
   { label: "Groups", path: "/groups", icon: Compass },
   { label: "Add", path: "#", icon: Plus, isAction: true },
   { label: "Activity", path: "/notifications", icon: Bell },
-  { label: "Profile", path: "/settings", icon: Settings },
+  { label: "Menu", path: "#menu", icon: Menu },
 ];
 
 export const MobileNavigation: React.FC<MobileNavigationProps> = ({ onAddClick }) => {
