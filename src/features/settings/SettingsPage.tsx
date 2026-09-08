@@ -478,6 +478,30 @@ export const SettingsPage: React.FC = () => {
               <span className="font-semibold text-text-secondary">Device:</span> {trustedDevice ? "Trusted Device (IndexedDB Cache)" : "Temporary Session (Memory Cache)"}
             </div>
           </div>
+
+          {/* Legal, Privacy & Compliance Disclosures */}
+          <GlassPanel variant="standard" className="flex flex-col gap-3">
+            <h3 className="text-xs font-bold text-text-primary uppercase tracking-wider">
+              Legal &amp; Policies
+            </h3>
+            <p className="text-[10px] text-text-muted leading-relaxed">
+              FairTab complies with global data sovereignty standards. Zero tracking, zero ad cookies, strict data minimization.
+            </p>
+            <div className="flex flex-col gap-1.5 pt-1 border-t border-white/5 text-xs">
+              <a href="#/privacy" className="text-accent-cyan hover:underline font-medium py-1">
+                Privacy Policy
+              </a>
+              <a href="#/terms" className="text-accent-cyan hover:underline font-medium py-1">
+                Terms of Service
+              </a>
+              <a href="#/cookies" className="text-accent-cyan hover:underline font-medium py-1">
+                Cookie &amp; Storage Policy
+              </a>
+              <a href="#/refund" className="text-accent-cyan hover:underline font-medium py-1">
+                Refund &amp; Settlement Policy
+              </a>
+            </div>
+          </GlassPanel>
         </div>
       </div>
 

@@ -17,7 +17,10 @@ export const registerSchema = zod
     confirmPassword: zod
       .string()
       .min(1, "Confirm password is required."),
-    rememberDevice: zod.boolean()
+    rememberDevice: zod.boolean(),
+    acceptTerms: zod.boolean().refine((val) => val === true, {
+      message: "You must agree to the Terms of Service and Privacy Policy."
+    })
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords do not match.",

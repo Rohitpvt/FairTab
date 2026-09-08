@@ -31,7 +31,8 @@ export const RegisterForm: React.FC = () => {
       email: "",
       password: "",
       confirmPassword: "",
-      rememberDevice: false
+      rememberDevice: false,
+      acceptTerms: false as unknown as true,
     }
   });
 
@@ -210,6 +211,38 @@ export const RegisterForm: React.FC = () => {
             <p className="text-text-muted mt-0.5">
               Enable this only on a private or trusted device. Cached account data may remain available after the browser closes.
             </p>
+          </div>
+        </div>
+
+        {/* Terms of Service and Privacy Policy Consent */}
+        <div className="flex items-start gap-2.5 py-1 border-t border-white/5 pt-3">
+          <input
+            id="reg-accept-terms"
+            type="checkbox"
+            className={`w-4 h-4 bg-surface-primary border rounded focus:ring-accent-cyan accent-accent-cyan mt-0.5 cursor-pointer ${
+              errors.acceptTerms ? "border-danger ring-1 ring-danger" : "border-white/10"
+            }`}
+            aria-invalid={errors.acceptTerms ? "true" : "false"}
+            aria-describedby={errors.acceptTerms ? "reg-terms-error" : undefined}
+            {...register("acceptTerms")}
+          />
+          <div className="flex flex-col text-xs leading-normal">
+            <label htmlFor="reg-accept-terms" className="text-text-secondary cursor-pointer">
+              I agree to the{" "}
+              <Link to="/terms" target="_blank" rel="noopener noreferrer" className="text-accent-cyan hover:underline font-semibold">
+                Terms of Service
+              </Link>{" "}
+              and{" "}
+              <Link to="/privacy" target="_blank" rel="noopener noreferrer" className="text-accent-cyan hover:underline font-semibold">
+                Privacy Policy
+              </Link>
+              . *
+            </label>
+            {errors.acceptTerms && (
+              <span id="reg-terms-error" className="text-xs text-danger font-medium mt-0.5">
+                {errors.acceptTerms.message}
+              </span>
+            )}
           </div>
         </div>
 

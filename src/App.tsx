@@ -28,6 +28,12 @@ const SettingsPage = lazy(() => import("./features/settings/SettingsPage"));
 const NotFoundPage = lazy(() => import("./features/error/NotFoundPage"));
 const SmartInsightsPage = lazy(() => import("./features/insights/SmartInsightsPage").then(m => ({ default: m.SmartInsightsPage })));
 
+// Lazy-loaded legal pages
+const PrivacyPolicyPage = lazy(() => import("./features/legal/PrivacyPolicyPage"));
+const TermsPage = lazy(() => import("./features/legal/TermsPage"));
+const CookiePolicyPage = lazy(() => import("./features/legal/CookiePolicyPage"));
+const RefundPolicyPage = lazy(() => import("./features/legal/RefundPolicyPage"));
+
 // Lazy-loaded auth pages
 const LoginPage = lazy(() => import("./features/auth/LoginPage"));
 const RegisterPage = lazy(() => import("./features/auth/RegisterPage"));
@@ -44,6 +50,7 @@ import {
   OnboardingRoute
 } from "./features/auth/RouteGuards";
 import { EmulatorIndicator } from "./components/ui/EmulatorIndicator";
+import { CookieConsentBanner } from "./components/legal/CookieConsentBanner";
 
 export function App() {
   return (
@@ -113,6 +120,40 @@ export function App() {
               element={
                 <Suspense fallback={<RoutePending />}>
                   <InvitationAcceptPage />
+                </Suspense>
+              }
+            />
+
+            {/* Public Legal & Compliance Routes */}
+            <Route
+              path="privacy"
+              element={
+                <Suspense fallback={<RoutePending />}>
+                  <PrivacyPolicyPage />
+                </Suspense>
+              }
+            />
+            <Route
+              path="terms"
+              element={
+                <Suspense fallback={<RoutePending />}>
+                  <TermsPage />
+                </Suspense>
+              }
+            />
+            <Route
+              path="cookies"
+              element={
+                <Suspense fallback={<RoutePending />}>
+                  <CookiePolicyPage />
+                </Suspense>
+              }
+            />
+            <Route
+              path="refund"
+              element={
+                <Suspense fallback={<RoutePending />}>
+                  <RefundPolicyPage />
                 </Suspense>
               }
             />
@@ -318,6 +359,7 @@ export function App() {
             </Route>
           </Routes>
           <EmulatorIndicator />
+          <CookieConsentBanner />
         </AuthProvider>
       </AppActionProvider>
     </HashRouter>

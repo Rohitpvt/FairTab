@@ -35,6 +35,25 @@ export const AuthLayout: React.FC<AuthLayoutProps> = ({ children, title, subtitl
         </div>
 
         {children}
+
+        {/* Legal & Compliance Footer Links */}
+        <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[11px] text-text-muted mt-6 pt-4 border-t border-white/5">
+          <a href="#/privacy" className="hover:text-text-primary transition-colors focus-visible:outline-2 focus-visible:outline-accent-cyan rounded p-0.5">
+            Privacy
+          </a>
+          <span>•</span>
+          <a href="#/terms" className="hover:text-text-primary transition-colors focus-visible:outline-2 focus-visible:outline-accent-cyan rounded p-0.5">
+            Terms
+          </a>
+          <span>•</span>
+          <a href="#/cookies" className="hover:text-text-primary transition-colors focus-visible:outline-2 focus-visible:outline-accent-cyan rounded p-0.5">
+            Cookies
+          </a>
+          <span>•</span>
+          <a href="#/refund" className="hover:text-text-primary transition-colors focus-visible:outline-2 focus-visible:outline-accent-cyan rounded p-0.5">
+            Refunds
+          </a>
+        </div>
       </motion.div>
     </div>
   );

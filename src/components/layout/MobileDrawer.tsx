@@ -187,6 +187,41 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({ isOpen, onOpenChange
               <ChevronRight className="h-4 w-4 shrink-0 opacity-40 group-hover:opacity-100 transition-opacity text-amber-400" />
             </button>
 
+            {/* Legal Links in Mobile Drawer */}
+            <div className="flex items-center justify-center gap-3 pt-2 text-[11px] text-text-muted">
+              <a
+                href="#/privacy"
+                onClick={() => onOpenChange(false)}
+                className="hover:text-text-primary transition-colors py-1"
+              >
+                Privacy
+              </a>
+              <span>•</span>
+              <a
+                href="#/terms"
+                onClick={() => onOpenChange(false)}
+                className="hover:text-text-primary transition-colors py-1"
+              >
+                Terms
+              </a>
+              <span>•</span>
+              <a
+                href="#/cookies"
+                onClick={() => onOpenChange(false)}
+                className="hover:text-text-primary transition-colors py-1"
+              >
+                Cookies
+              </a>
+              <span>•</span>
+              <a
+                href="#/refund"
+                onClick={() => onOpenChange(false)}
+                className="hover:text-text-primary transition-colors py-1"
+              >
+                Refunds
+              </a>
+            </div>
+
             {/* Bottom Actions: Sign Out */}
             <div className="pt-2 mt-1 border-t border-white/10">
               <button
