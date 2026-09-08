@@ -56,6 +56,10 @@ describe("App Shell and Layout", () => {
     const toggleBtn = screen.getByLabelText("Collapse sidebar");
     expect(toggleBtn).toBeInTheDocument();
 
+    // Verify desktop calculator button is in sidebar
+    const desktopCalcBtn = screen.getByRole("button", { name: "Open Quick Calculator" });
+    expect(desktopCalcBtn).toBeInTheDocument();
+
     // Toggle collapse
     fireEvent.click(toggleBtn);
 

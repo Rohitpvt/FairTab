@@ -5,6 +5,7 @@ import { Sidebar } from "./Sidebar";
 import { TopHeader } from "./TopHeader";
 import { MobileNavigation } from "./MobileNavigation";
 import { MobileDrawer } from "./MobileDrawer";
+import { QuickCalculator } from "./QuickCalculator";
 import { OfflineBanner } from "../feedback/FeedbackStates";
 import { PwaUpdatePrompt } from "../feedback/PwaUpdatePrompt";
 import { ErrorBoundary } from "../feedback/ErrorBoundary";
@@ -124,6 +125,7 @@ export const AppShell: React.FC = () => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
+  const [isCalculatorOpen, setIsCalculatorOpen] = useState(false);
   
   const { isAddExpenseOpen } = useAppState();
   const { openAddExpense } = useAppActions();
@@ -174,6 +176,7 @@ export const AppShell: React.FC = () => {
         isOpen={isSearchOpen}
         onOpenChange={setIsSearchOpen}
         onNavigate={navigate}
+        onOpenCalculator={() => setIsCalculatorOpen(true)}
       />
 
       <div className="flex flex-1 w-full min-h-0">
@@ -181,6 +184,7 @@ export const AppShell: React.FC = () => {
         <Sidebar
           isCollapsed={isSidebarCollapsed}
           onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+          onOpenCalculator={() => setIsCalculatorOpen(true)}
         />
 
         {/* Main layout container */}
@@ -208,6 +212,12 @@ export const AppShell: React.FC = () => {
       <MobileDrawer
         isOpen={isMobileDrawerOpen}
         onOpenChange={setIsMobileDrawerOpen}
+      />
+
+      {/* Desktop & Mobile Quick Split Calculator */}
+      <QuickCalculator
+        isOpen={isCalculatorOpen}
+        onOpenChange={setIsCalculatorOpen}
       />
 
       {/* Isolated Mock Add Expense Dialog */}

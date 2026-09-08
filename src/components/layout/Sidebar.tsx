@@ -14,6 +14,7 @@ import {
   Wallet,
   Sparkles,
   LogOut,
+  Calculator,
 } from "lucide-react";
 import { useAuth } from "../../features/auth/AuthProvider";
 import { BrandLogo } from "../ui/BrandLogo";
@@ -21,9 +22,14 @@ import { BrandLogo } from "../ui/BrandLogo";
 export interface SidebarProps {
   isCollapsed: boolean;
   onToggleCollapse: () => void;
+  onOpenCalculator?: () => void;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggleCollapse }) => {
+export const Sidebar: React.FC<SidebarProps> = ({
+  isCollapsed,
+  onToggleCollapse,
+  onOpenCalculator,
+}) => {
   const { signOut } = useAuth();
 
   const menuItems = [
@@ -94,8 +100,29 @@ export const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggleCollapse 
         })}
       </nav>
 
-      {/* Bottom Actions: Sign Out & Collapse Trigger */}
+      {/* Bottom Actions: Quick Calculator, Sign Out & Collapse Trigger */}
       <div className="p-3 border-t border-border-color/60 flex flex-col gap-1 bg-surface-primary/30">
+        {/* Quick Calculator Button */}
+        {onOpenCalculator && (
+          <button
+            onClick={onOpenCalculator}
+            className={`flex items-center px-3 py-2.5 rounded-xl text-sm font-medium text-amber-400/90 hover:text-amber-300 hover:bg-amber-400/10 active:scale-[0.98] transition-all duration-200 cursor-pointer group ${
+              isCollapsed ? "justify-center" : "gap-3"
+            }`}
+            title={isCollapsed ? "Quick Calculator" : undefined}
+            aria-label="Open Quick Calculator"
+          >
+            <Calculator className="h-5 w-5 shrink-0 transition-transform duration-200 group-hover:scale-110" />
+            <span
+              className={`overflow-hidden whitespace-nowrap transition-all duration-300 ease-[cubic-bezier(0.2,0.8,0.2,1)] ${
+                isCollapsed ? "max-w-0 opacity-0" : "max-w-[180px] opacity-100"
+              }`}
+            >
+              Calculator
+            </span>
+          </button>
+        )}
+
         {/* Sign Out Button */}
         <button
           onClick={() => signOut()}
