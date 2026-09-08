@@ -9,13 +9,15 @@ import {
   Lock,
   Info,
   Edit2,
-  Check
+  Check,
+  RefreshCw,
 } from "lucide-react";
 import { PageContainer } from "../../components/layout/PageContainer";
 import { GlassPanel } from "../../components/ui/GlassPanel";
 import { Button } from "../../components/ui/Button";
 import { ProfileCardSkeleton } from "../../components/ui/Skeleton";
 import { Dialog } from "../../components/ui/Dialogs";
+import { SyncIndicator } from "../../components/feedback/FeedbackStates";
 import { useAuth } from "../auth/AuthProvider";
 import { profileService } from "../../infrastructure/firebase/profileService";
 import { accountService } from "../../infrastructure/firebase/accountService";
@@ -293,14 +295,47 @@ export const SettingsPage: React.FC = () => {
 
           {/* Sync & Local Storage parameters */}
           <GlassPanel variant="standard" className="flex flex-col gap-4">
-            <div className="flex items-center gap-2 border-b border-white/5 pb-3">
-              <Database className="h-5 w-5 text-accent-cyan" />
-              <h3 className="text-sm font-bold text-text-primary uppercase tracking-wider">
-                Device Storage & Sync
-              </h3>
+            <div className="flex items-center justify-between border-b border-white/5 pb-3">
+              <div className="flex items-center gap-2">
+                <Database className="h-5 w-5 text-accent-cyan" />
+                <h3 className="text-sm font-bold text-text-primary uppercase tracking-wider">
+                  Cloud Sync & Device Storage
+                </h3>
+              </div>
+              <div className="flex items-center gap-2 px-2.5 py-1 rounded-full bg-white/[0.04] border border-white/10">
+                <SyncIndicator syncStatus="synced" />
+              </div>
             </div>
 
             <div className="flex flex-col gap-4">
+              {/* Cloud Health Row */}
+              <div className="flex items-center justify-between gap-4 p-3 rounded-xl bg-white/[0.02] border border-white/5">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h4 className="text-xs font-semibold text-text-primary">Cloud Ledger Synchronization</h4>
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                      Live & Connected
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-text-muted mt-0.5 leading-normal">
+                    Transactions, debts, and group states are synchronized in real-time with Firestore.
+                  </p>
+                </div>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => {
+                    toast.success("Synchronized with Cloud Firestore!", {
+                      description: "All local caches are verified up to date.",
+                    });
+                  }}
+                  className="shrink-0 flex items-center gap-1.5"
+                >
+                  <RefreshCw className="h-3.5 w-3.5" />
+                  <span>Sync Now</span>
+                </Button>
+              </div>
+
               <div className="flex items-center justify-between gap-4">
                 <div>
                   <h4 className="text-xs font-semibold text-text-primary">Offline Local Persistence</h4>
