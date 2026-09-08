@@ -1,17 +1,17 @@
 :root {
-  /* Default Theme: Dark Mode values */
-  --bg-base: 224 38% 5%;
-  --bg-deep: 225 35% 7%;
-  --surface-primary: 224 32% 10%;
-  --surface-secondary: 222 29% 13%;
-  --surface-elevated: 222 26% 16%;
-  --surface-hover: 221 24% 19%;
-  --border-color: 222 20% 18%;
+  /* Default Theme: Dark Mode values - Deep OLED Obsidian Palette */
+  --bg-base: 220 20% 2%;        /* Deepest Pitch/Obsidian #030407 */
+  --bg-deep: 220 18% 3.5%;      /* Ultra-deep abyss layer #06080b */
+  --surface-primary: 220 16% 5.5%; /* Pitch card surface #0b0e12 */
+  --surface-secondary: 220 14% 8%; /* Secondary surface #10141a */
+  --surface-elevated: 220 12% 11%; /* Floating elevated card #171b22 */
+  --surface-hover: 220 12% 14%;    /* Hover state #1e232c */
+  --border-color: 220 10% 14%;     /* Sleek subtle crisp border #1f232a */
 
-  --text-primary: 220 33% 97%;
-  --text-secondary: 220 18% 72%;
-  --text-muted: 221 13% 51%;
-  --text-disabled: 220 10% 38%;
+  --text-primary: 220 33% 98%;
+  --text-secondary: 220 14% 75%;
+  --text-muted: 220 10% 52%;
+  --text-disabled: 220 8% 32%;
 
   --accent-indigo: 246 100% 71%;
   --accent-violet: 271 91% 65%;
