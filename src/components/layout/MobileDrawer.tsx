@@ -16,6 +16,7 @@ import {
 import { useAuth } from "../../features/auth/AuthProvider";
 import { BrandLogo } from "../ui/BrandLogo";
 import { QuickCalculator } from "./QuickCalculator";
+import { triggerHaptic } from "../../utils/haptics";
 
 export interface MobileDrawerProps {
   isOpen: boolean;
@@ -116,7 +117,10 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({ isOpen, onOpenChange
                 <NavLink
                   key={item.path}
                   to={item.path}
-                  onClick={() => onOpenChange(false)}
+                  onClick={() => {
+                    triggerHaptic("selection");
+                    onOpenChange(false);
+                  }}
                   className={({ isActive }) =>
                     `flex items-center gap-3.5 px-3.5 py-3 rounded-2xl transition-all duration-200 group cursor-pointer border ${
                       isActive
@@ -157,6 +161,7 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({ isOpen, onOpenChange
             <button
               type="button"
               onClick={() => {
+                triggerHaptic("medium");
                 onOpenChange(false);
                 setIsCalculatorOpen(true);
               }}

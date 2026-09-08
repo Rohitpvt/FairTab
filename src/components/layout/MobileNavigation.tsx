@@ -2,6 +2,8 @@ import React, { useRef, useState, useEffect } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { Home, Compass, Plus, Bell, Menu } from "lucide-react";
 
+import { triggerHaptic } from "../../utils/haptics";
+
 export interface MobileNavigationProps {
   onAddClick: () => void;
   onMoreClick: () => void;
@@ -104,7 +106,10 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
             return (
               <div key={idx} className="flex items-center justify-center min-w-[52px] min-h-[44px]">
                 <button
-                  onClick={onAddClick}
+                  onClick={() => {
+                    triggerHaptic("medium");
+                    onAddClick();
+                  }}
                   className="flex items-center justify-center cursor-pointer select-none z-20 group"
                   aria-label="Add new expense"
                 >
@@ -122,7 +127,10 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
               <button
                 key={idx}
                 type="button"
-                onClick={onMoreClick}
+                onClick={() => {
+                  triggerHaptic("light");
+                  onMoreClick();
+                }}
                 ref={(el) => { tabRefs.current[idx] = el; }}
                 className={`relative flex flex-col items-center justify-center py-1 px-2 text-center select-none gap-0.5 min-w-[52px] min-h-[44px] rounded-xl transition-all duration-300 z-10 active:scale-85 cursor-pointer ${
                   isMenuHighlight
@@ -147,6 +155,7 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
             <NavLink
               key={tab.path}
               to={tab.path}
+              onClick={() => triggerHaptic("selection")}
               ref={(el) => { tabRefs.current[idx] = el; }}
               className={({ isActive }) =>
                 `relative flex flex-col items-center justify-center py-1 px-2 text-center select-none gap-0.5 min-w-[52px] min-h-[44px] rounded-xl transition-all duration-300 z-10 active:scale-85 ${

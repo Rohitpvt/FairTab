@@ -14,6 +14,7 @@ import {
   Check,
 } from "lucide-react";
 import { useAppActions } from "../../app/providers/AppActionProvider";
+import { triggerHaptic } from "../../utils/haptics";
 import { toast } from "sonner";
 
 export interface QuickCalculatorProps {
@@ -69,6 +70,7 @@ export const QuickCalculator: React.FC<QuickCalculatorProps> = ({ isOpen, onOpen
   };
 
   const handleDigit = useCallback((digit: string) => {
+    triggerHaptic("selection");
     setSplitCount(null);
     setDisplay((prev) => {
       if (prev === "0" && digit !== ".") return digit;
@@ -79,6 +81,7 @@ export const QuickCalculator: React.FC<QuickCalculatorProps> = ({ isOpen, onOpen
   }, []);
 
   const handleOperator = useCallback((op: string) => {
+    triggerHaptic("light");
     setSplitCount(null);
     setEquation((prevEq) => {
       const currentVal = parseFloat(display) || 0;
@@ -94,6 +97,7 @@ export const QuickCalculator: React.FC<QuickCalculatorProps> = ({ isOpen, onOpen
 
   const handleEqual = useCallback(() => {
     if (!equation) return;
+    triggerHaptic("medium");
     try {
       const currentVal = parseFloat(display) || 0;
       const result = evaluateExpression(equation + currentVal);
@@ -107,12 +111,14 @@ export const QuickCalculator: React.FC<QuickCalculatorProps> = ({ isOpen, onOpen
   }, [display, equation]);
 
   const handleClear = useCallback(() => {
+    triggerHaptic("light");
     setDisplay("0");
     setEquation("");
     setSplitCount(null);
   }, []);
 
   const handleBackspace = useCallback(() => {
+    triggerHaptic("selection");
     setSplitCount(null);
     setDisplay((prev) => {
       if (prev.length <= 1 || prev === "Error") return "0";
@@ -121,6 +127,7 @@ export const QuickCalculator: React.FC<QuickCalculatorProps> = ({ isOpen, onOpen
   }, []);
 
   const handleTip = useCallback((percentage: number) => {
+    triggerHaptic("medium");
     const current = parseFloat(display) || 0;
     if (current <= 0) return;
     const withTip = Number((current * (1 + percentage / 100)).toFixed(2));
@@ -130,6 +137,7 @@ export const QuickCalculator: React.FC<QuickCalculatorProps> = ({ isOpen, onOpen
   }, [display]);
 
   const handleSplit = useCallback((people: number) => {
+    triggerHaptic("medium");
     const current = parseFloat(display) || 0;
     if (current <= 0) return;
     const perPerson = Number((current / people).toFixed(2));
@@ -139,6 +147,7 @@ export const QuickCalculator: React.FC<QuickCalculatorProps> = ({ isOpen, onOpen
   }, [display]);
 
   const handleCopy = useCallback(() => {
+    triggerHaptic("success");
     const val = parseFloat(display) || 0;
     navigator.clipboard.writeText(String(val));
     setCopied(true);
@@ -147,6 +156,7 @@ export const QuickCalculator: React.FC<QuickCalculatorProps> = ({ isOpen, onOpen
   }, [display]);
 
   const handleSendToExpense = useCallback(() => {
+    triggerHaptic("success");
     const val = parseFloat(display) || 0;
     if (val <= 0) {
       toast.error("Please enter a valid amount greater than 0.");
