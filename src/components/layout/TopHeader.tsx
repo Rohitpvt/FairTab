@@ -1,7 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { Search } from "lucide-react";
-import { SyncIndicator, ThemeToggle } from "../feedback/FeedbackStates";
+import { ThemeToggle } from "../feedback/FeedbackStates";
 import { MemberAvatar } from "../ui/Avatar";
 import { useAuth } from "../../features/auth/AuthProvider";
 
@@ -58,14 +58,6 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ title, onSearchClick }) =>
             Ctrl K
           </kbd>
         </button>
-
-        {/* Divider */}
-        <div className="hidden sm:block w-px h-5 bg-white/10 mx-0.5" />
-
-        {/* Sync Indicator */}
-        <div className="px-1.5 py-1 rounded-full bg-white/[0.02]">
-          <SyncIndicator syncStatus="synced" />
-        </div>
 
         {/* Theme Toggle */}
         <ThemeToggle />
