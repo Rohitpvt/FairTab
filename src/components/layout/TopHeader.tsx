@@ -1,8 +1,7 @@
 import React from "react";
 import { Search } from "lucide-react";
 import { SyncIndicator, ThemeToggle } from "../feedback/FeedbackStates";
-import { MemberAvatar } from "../ui/Avatar";
-import { useAuth } from "../../features/auth/AuthProvider";
+import { ProfileMenu } from "./ProfileMenu";
 
 export interface TopHeaderProps {
   title: string;
@@ -10,10 +9,6 @@ export interface TopHeaderProps {
 }
 
 export const TopHeader: React.FC<TopHeaderProps> = ({ title, onSearchClick }) => {
-  const { user, profile } = useAuth();
-  const name = profile?.displayName || user?.displayName || user?.email || "User";
-  const avatarUrl = profile?.photoURL || user?.photoURL || "";
-
   const handleMouseMove = (e: React.MouseEvent<HTMLElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - rect.left;
@@ -69,13 +64,8 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ title, onSearchClick }) =>
         {/* Theme Toggle */}
         <ThemeToggle />
 
-        {/* User Profile Avatar */}
-        <div className="flex items-center gap-2 pl-1">
-          <MemberAvatar name={name} avatarUrl={avatarUrl} size="sm" />
-          <span className="text-xs font-semibold text-text-secondary hidden lg:inline max-w-[120px] truncate">
-            {name}
-          </span>
-        </div>
+        {/* User Profile Menu */}
+        <ProfileMenu />
       </div>
     </header>
   );
