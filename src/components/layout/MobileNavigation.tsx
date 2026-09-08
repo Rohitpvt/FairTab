@@ -1,9 +1,11 @@
 import React, { useRef, useState, useEffect } from "react";
 import { NavLink, useLocation } from "react-router-dom";
-import { Home, Compass, Plus, Bell, Settings } from "lucide-react";
+import { Home, Compass, Plus, Bell, Menu } from "lucide-react";
 
 export interface MobileNavigationProps {
   onAddClick: () => void;
+  onMoreClick: () => void;
+  isMoreOpen?: boolean;
 }
 
 const TABS = [
@@ -11,38 +13,59 @@ const TABS = [
   { label: "Groups", path: "/groups", icon: Compass },
   { label: "Add", path: "#", icon: Plus, isAction: true },
   { label: "Activity", path: "/notifications", icon: Bell },
-  { label: "Profile", path: "/settings", icon: Settings },
+  { label: "More", path: "#more", icon: Menu, isMenuAction: true },
 ];
 
-export const MobileNavigation: React.FC<MobileNavigationProps> = ({ onAddClick }) => {
+export const MobileNavigation: React.FC<MobileNavigationProps> = ({
+  onAddClick,
+  onMoreClick,
+  isMoreOpen = false,
+}) => {
   const location = useLocation();
   const navRef = useRef<HTMLElement>(null);
-  const tabRefs = useRef<(HTMLAnchorElement | null)[]>([]);
+  const tabRefs = useRef<(HTMLAnchorElement | HTMLButtonElement | null)[]>([]);
 
   const [lampLeft, setLampLeft] = useState<number | null>(null);
 
-  // Update tubelight beam position based on active route
+  // Check if current route is part of drawer items (expenses, settlements, analytics, budgets, insights, recurring, settings)
+  const isDrawerRoute = [
+    "/expenses",
+    "/settlements",
+    "/analytics",
+    "/budgets",
+    "/insights",
+    "/recurring",
+    "/settings",
+  ].some((p) => location.pathname.startsWith(p));
+
+  // Update tubelight beam position based on active route or more menu open state
   useEffect(() => {
-    const activeIndex = TABS.findIndex(
-      (tab) => !tab.isAction && location.pathname.startsWith(tab.path)
+    let activeIndex = TABS.findIndex(
+      (tab) => !tab.isAction && !tab.isMenuAction && location.pathname.startsWith(tab.path)
     );
 
-    if (activeIndex !== -1 && tabRefs.current[activeIndex] && navRef.current) {
+    if (activeIndex === -1 && (isMoreOpen || isDrawerRoute)) {
+      activeIndex = TABS.findIndex((tab) => tab.isMenuAction);
+    }
+
+    if (activeIndex !== -1 && navRef.current) {
       const tabEl = tabRefs.current[activeIndex];
-      const navRect = navRef.current.getBoundingClientRect();
-      const tabRect = tabEl.getBoundingClientRect();
-      const relativeLeft = tabRect.left - navRect.left + tabRect.width / 2;
-      setLampLeft(relativeLeft);
+      if (tabEl) {
+        const navRect = navRef.current.getBoundingClientRect();
+        const tabRect = tabEl.getBoundingClientRect();
+        const relativeLeft = tabRect.left - navRect.left + tabRect.width / 2;
+        setLampLeft(relativeLeft);
+      }
     } else {
       // Default position if no exact match (e.g. initial render on overview)
-      if (tabRefs.current[0] && navRef.current) {
-        const tabEl = tabRefs.current[0];
+      const tabEl = tabRefs.current[0];
+      if (tabEl && navRef.current) {
         const navRect = navRef.current.getBoundingClientRect();
         const tabRect = tabEl.getBoundingClientRect();
         setLampLeft(tabRect.left - navRect.left + tabRect.width / 2);
       }
     }
-  }, [location.pathname]);
+  }, [location.pathname, isMoreOpen, isDrawerRoute]);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLElement>) => {
     if (!navRef.current) return;
@@ -91,6 +114,33 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({ onAddClick }
                   </div>
                 </button>
               </div>
+            );
+          }
+
+          if (tab.isMenuAction) {
+            const isMenuHighlight = isMoreOpen || isDrawerRoute;
+            return (
+              <button
+                key={idx}
+                type="button"
+                onClick={onMoreClick}
+                ref={(el) => { tabRefs.current[idx] = el; }}
+                className={`relative flex flex-col items-center justify-center py-1 px-2 text-center select-none gap-0.5 min-w-[52px] min-h-[44px] rounded-xl transition-all duration-300 z-10 active:scale-85 cursor-pointer ${
+                  isMenuHighlight
+                    ? "text-accent-cyan font-bold"
+                    : "text-text-muted hover:text-text-primary opacity-60 hover:opacity-100"
+                }`}
+                aria-label="Open more features menu"
+              >
+                <Icon
+                  className={`h-5 w-5 transition-all duration-300 ${
+                    isMenuHighlight ? "scale-110 drop-shadow-[0_0_8px_hsl(var(--accent-cyan)/0.6)] opacity-100" : ""
+                  }`}
+                />
+                <span className={`text-[10px] tracking-tight transition-all duration-300 ${isMenuHighlight ? "font-bold text-text-primary" : "font-medium"}`}>
+                  {tab.label}
+                </span>
+              </button>
             );
           }
 

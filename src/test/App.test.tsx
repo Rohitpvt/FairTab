@@ -79,13 +79,27 @@ describe("App Shell and Layout", () => {
     expect(groupsTitle).toBeInTheDocument();
   });
 
-  test("displays mobile navigation tabs", async () => {
+  test("displays mobile navigation tabs and opens more menu drawer", async () => {
     render(<App />);
     await screen.findByText("Recent Transactions");
 
     // Mobile tabs should be in the document
     expect(screen.getAllByRole("link", { name: /home/i })[0]).toBeInTheDocument();
     expect(screen.getByLabelText("Add new expense")).toBeInTheDocument();
+    
+    // More tab button should be present
+    const moreBtn = screen.getByLabelText("Open more features menu");
+    expect(moreBtn).toBeInTheDocument();
+
+    // Clicking More should open the bottom sheet drawer
+    fireEvent.click(moreBtn);
+
+    // Verify sections inside the drawer are visible
+    expect(await screen.findByText("More Features")).toBeInTheDocument();
+    expect(screen.getByText("Quick access to all FairTab tools")).toBeInTheDocument();
+    expect(screen.getByText("Balances & debt payoff")).toBeInTheDocument();
+    expect(screen.getByText("Spending trends & charts")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /sign out/i })).toBeInTheDocument();
   });
 });
 

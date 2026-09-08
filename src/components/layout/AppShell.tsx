@@ -4,6 +4,7 @@ import { Toaster, toast } from "sonner";
 import { Sidebar } from "./Sidebar";
 import { TopHeader } from "./TopHeader";
 import { MobileNavigation } from "./MobileNavigation";
+import { MobileDrawer } from "./MobileDrawer";
 import { OfflineBanner } from "../feedback/FeedbackStates";
 import { PwaUpdatePrompt } from "../feedback/PwaUpdatePrompt";
 import { ErrorBoundary } from "../feedback/ErrorBoundary";
@@ -122,6 +123,7 @@ const AddExpenseDialog: React.FC = () => {
 export const AppShell: React.FC = () => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
   
   const { isAddExpenseOpen } = useAppState();
   const { openAddExpense } = useAppActions();
@@ -196,7 +198,17 @@ export const AppShell: React.FC = () => {
       </div>
 
       {/* Mobile Navigation bar */}
-      <MobileNavigation onAddClick={openAddExpense} />
+      <MobileNavigation
+        onAddClick={openAddExpense}
+        onMoreClick={() => setIsMobileDrawerOpen(true)}
+        isMoreOpen={isMobileDrawerOpen}
+      />
+
+      {/* Mobile More Features Drawer */}
+      <MobileDrawer
+        isOpen={isMobileDrawerOpen}
+        onOpenChange={setIsMobileDrawerOpen}
+      />
 
       {/* Isolated Mock Add Expense Dialog */}
       {isAddExpenseOpen && <AddExpenseDialog />}
