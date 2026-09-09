@@ -146,6 +146,31 @@ async function postRequest<TInput = unknown, TOutput = unknown>(
     token = (auth as any).mockToken || "mock-token";
   }
 
+  const win = typeof window !== "undefined" ? (window as unknown as { Capacitor?: { isNativePlatform?: () => boolean; Plugins?: { CapacitorHttp?: { post: (options: { url: string; headers: Record<string, string>; data: unknown }) => Promise<{ status: number; data: unknown }> } } } }) : undefined;
+  const isNative = typeof win?.Capacitor?.isNativePlatform === "function" && win.Capacitor.isNativePlatform();
+
+  if (isNative && win?.Capacitor?.Plugins?.CapacitorHttp) {
+    const httpPlugin = win.Capacitor.Plugins.CapacitorHttp;
+    const response = await httpPlugin.post({
+      url: `${getBaseUrl()}${path}`,
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+      data,
+    });
+
+    if (response.status < 200 || response.status >= 300) {
+      const errBody = (response.data as { message?: string; code?: string; details?: unknown }) || {};
+      const error = new Error(errBody.message || "API request failed") as ApiError;
+      error.code = errBody.code || "unknown";
+      error.details = errBody.details || null;
+      throw error;
+    }
+
+    return response.data as TOutput;
+  }
+
   const response = await fetch(`${getBaseUrl()}${path}`, {
     method: "POST",
     headers: {

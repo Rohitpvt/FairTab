@@ -33,23 +33,29 @@ export const DebtSimplificationPanel: React.FC<DebtSimplificationPanelProps> = (
   const [strategy, setStrategy] = useState<"min_tx" | "preserve_rel">("min_tx");
   const [showExplanation, setShowExplanation] = useState(false);
 
-  const activeMembers = members.filter((m) => m.status === "active");
-  const memberIds = activeMembers.map((m) => m.id);
+  const allMemberIds = Array.from(
+    new Set([
+      ...members.map((m) => m.id),
+      ...expenses.flatMap((e) => [...e.payers.map((p) => p.memberId), ...e.splits.map((s) => s.memberId)]),
+      ...settlements.flatMap((s) => [s.payerId, s.receiverId]),
+    ])
+  );
 
   // 1. Calculate base balances
-  const balances = calculateBalances(expenses, settlements, memberIds);
+  const balances = calculateBalances(expenses, settlements, allMemberIds);
 
   // 2. Run recommendations based on chosen strategy
   const recommendations =
     strategy === "min_tx"
       ? simplifyMinimumTransactions(balances)
-      : simplifyPreserveRelationships(expenses, settlements, memberIds);
+      : simplifyPreserveRelationships(expenses, settlements, allMemberIds);
 
   const getMemberName = (id?: string) => {
     if (!id) return "Member";
-    const m = activeMembers.find((member) => member.id === id);
+    const m = members.find((member) => member.id === id);
     if (!m) return id;
-    return resolveName(m) + (m.kind === "placeholder" ? " (Placeholder)" : "");
+    const isFormer = m.status === "removed" || m.status === "left";
+    return resolveName(m) + (m.kind === "placeholder" ? " (Placeholder)" : isFormer ? " (Former)" : "");
   };
 
   const getMemberInitials = (id?: string) => {

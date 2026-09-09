@@ -121,7 +121,8 @@ export const SettlementDetailPage: React.FC = () => {
     if (!id) return "Member";
     const m = members.find((member) => member.id === id);
     if (!m) return id;
-    return resolveName(m) + (m.kind === "placeholder" ? " (Placeholder)" : "");
+    const isFormer = m.status === "removed" || m.status === "left";
+    return resolveName(m) + (m.kind === "placeholder" ? " (Placeholder)" : isFormer ? " (Former)" : "");
   };
 
   const activeMembers = members.filter((m) => m.status === "active");

@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Link, useNavigate } from "react-router-dom";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, AlertCircle } from "lucide-react";
 import { authService } from "../../infrastructure/firebase/authService";
 import { useAuth } from "./AuthProvider";
 import { Button } from "../../components/ui/Button";
@@ -72,6 +72,16 @@ export const LoginForm: React.FC = () => {
       <div aria-live="assertive" className="sr-only" role="alert">
         {liveError || ""}
       </div>
+
+      {submitError && (
+        <div
+          role="alert"
+          className="p-3.5 bg-danger/10 border border-danger/25 text-danger rounded-xl text-xs flex items-start gap-2.5 animate-fadeIn"
+        >
+          <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+          <span className="font-medium leading-relaxed">{submitError}</span>
+        </div>
+      )}
 
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4 text-left">
         {/* Email Field */}

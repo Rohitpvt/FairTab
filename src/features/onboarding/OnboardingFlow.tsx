@@ -52,7 +52,7 @@ export const OnboardingFlow: React.FC = () => {
   const stepsCount = 5;
 
   return (
-    <div className="flex min-h-screen text-text-primary app-background items-center justify-center p-4">
+    <div className="flex min-h-screen text-text-primary app-background items-center justify-center p-4 pt-[max(env(safe-area-inset-top),24px)] pb-8">
       <div className="w-full max-w-lg glass-elevated border border-white/10 rounded-2xl p-6 md:p-8 shadow-2xl relative">
         
         {/* Step indicator bar */}

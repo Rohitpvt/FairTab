@@ -5,12 +5,14 @@ import {
   sendPasswordResetEmail,
   sendEmailVerification as firebaseSendEmailVerification,
   signInWithPopup,
+  signInWithCredential,
   GoogleAuthProvider,
   setPersistence,
   browserLocalPersistence,
   browserSessionPersistence
 } from "firebase/auth";
 import type { User, UserCredential } from "firebase/auth";
+import { buildPublicAppLink } from "../../utils/urlHelper";
 import { auth } from "./firebase";
 
 async function applyPersistence(rememberDevice?: boolean) {
@@ -87,11 +89,30 @@ export const authService = {
   },
 
   /**
-   * Google OAuth sign-in flow
+   * Google OAuth sign-in flow (Supports both Web popup and Mobile Native Google Play Services)
    */
   async signInWithGoogle(rememberDevice?: boolean): Promise<UserCredential> {
     try {
       await applyPersistence(rememberDevice);
+
+      // Check if running inside native Android/iOS Capacitor webview
+      const win = typeof window !== "undefined" ? (window as unknown as { Capacitor?: { isNativePlatform?: () => boolean; Plugins?: { GoogleAuth?: { signIn: () => Promise<{ authentication: { idToken: string } }>; initialize?: () => Promise<void> } } } }) : undefined;
+      const isNative = typeof win?.Capacitor?.isNativePlatform === "function" && win.Capacitor.isNativePlatform();
+
+      if (isNative && win?.Capacitor?.Plugins?.GoogleAuth) {
+        const GoogleAuth = win.Capacitor.Plugins.GoogleAuth;
+        if (typeof GoogleAuth.initialize === "function") {
+          try {
+            await GoogleAuth.initialize();
+          } catch {
+            // ignore if already initialized
+          }
+        }
+        const googleUser = await GoogleAuth.signIn();
+        const credential = GoogleAuthProvider.credential(googleUser.authentication.idToken);
+        return await signInWithCredential(auth, credential);
+      }
+
       const provider = new GoogleAuthProvider();
       // Configure custom parameters if necessary
       provider.setCustomParameters({ prompt: "select_account" });
@@ -108,7 +129,7 @@ export const authService = {
   async sendVerificationEmail(user: User): Promise<void> {
     try {
       await firebaseSendEmailVerification(user, {
-        url: `${window.location.origin}${window.location.pathname}#/overview`,
+        url: buildPublicAppLink("/overview"),
       });
     } catch (error: unknown) {
       const code = isFirebaseError(error) ? error.code : "unknown";
@@ -122,7 +143,7 @@ export const authService = {
   async sendPasswordReset(email: string): Promise<void> {
     try {
       await sendPasswordResetEmail(auth, email, {
-        url: `${window.location.origin}${window.location.pathname}#/auth/login`,
+        url: buildPublicAppLink("/auth/login"),
       });
     } catch (error: unknown) {
       const code = isFirebaseError(error) ? error.code : "unknown";

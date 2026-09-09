@@ -7,6 +7,7 @@ import type { InvitationDocument } from "./invitationSchema";
 import { Button } from "../../components/ui/Button";
 import { Skeleton } from "../../components/ui/Skeleton";
 import { EmptyState } from "../../components/feedback/FeedbackStates";
+import { buildPublicAppLink } from "../../utils/urlHelper";
 import { toast } from "sonner";
 
 export const InvitationListPage: React.FC = () => {
@@ -62,7 +63,7 @@ export const InvitationListPage: React.FC = () => {
   };
 
   const handleCopyLink = (inviteId: string) => {
-    const url = `${window.location.origin}${window.location.pathname}#/invitations/${inviteId}`;
+    const url = buildPublicAppLink(`/invitations/${inviteId}`);
     navigator.clipboard.writeText(url);
     toast.success("Invitation link copied to clipboard!");
   };

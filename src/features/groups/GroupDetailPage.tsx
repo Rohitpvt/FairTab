@@ -244,9 +244,16 @@ export const GroupDetailPage: React.FC = () => {
 
   // Group-level balance & individual debt calculation for the logged-in user
   const activeMembers = members.filter((m) => m.status === "active");
-  const memberIds = activeMembers.map((m) => m.id);
+  const formerMembers = members.filter((m) => m.status === "removed" || m.status === "left");
+  const allMemberIds = Array.from(
+    new Set([
+      ...members.map((m) => m.id),
+      ...expenses.flatMap((e) => [...e.payers.map((p) => p.memberId), ...e.splits.map((s) => s.memberId)]),
+      ...settlements.flatMap((s) => [s.payerId, s.receiverId]),
+    ])
+  );
   const activeExpenses = expenses.filter((e) => e.status !== "voided");
-  const balances = calculateBalances(activeExpenses, settlements, memberIds);
+  const balances = calculateBalances(activeExpenses, settlements, allMemberIds);
 
   const userMember = currentMember;
   const userMemberId = userMember?.id || currentUserUid || "";
@@ -257,7 +264,7 @@ export const GroupDetailPage: React.FC = () => {
   // Use group strategy or default
   const recommendations =
     group.settlementStrategy === "preserve_relationships"
-      ? simplifyPreserveRelationships(activeExpenses, settlements, memberIds)
+      ? simplifyPreserveRelationships(activeExpenses, settlements, allMemberIds)
       : simplifyMinimumTransactions(balances);
 
   const groupUserBreakdowns: {
@@ -278,7 +285,10 @@ export const GroupDetailPage: React.FC = () => {
     if (rec.toMemberId === userMemberId || rec.toMemberId === currentUserUid) {
       // Someone owes user
       const otherMem = members.find((m) => m.id === rec.fromMemberId || m.userId === rec.fromMemberId);
-      const name = otherMem ? resolveName(otherMem) : "Former Member";
+      const isFormer = otherMem && (otherMem.status === "removed" || otherMem.status === "left");
+      const name = otherMem
+        ? `${resolveName(otherMem)}${isFormer ? " (Former)" : ""}`
+        : "Former Member";
       groupTotalOwed += rec.amountMinor;
       groupUserBreakdowns.push({
         id: `${group.id}:${rec.fromMemberId}->${rec.toMemberId}`,
@@ -293,7 +303,10 @@ export const GroupDetailPage: React.FC = () => {
     } else if (rec.fromMemberId === userMemberId || rec.fromMemberId === currentUserUid) {
       // User owes someone
       const otherMem = members.find((m) => m.id === rec.toMemberId || m.userId === rec.toMemberId);
-      const name = otherMem ? resolveName(otherMem) : "Former Member";
+      const isFormer = otherMem && (otherMem.status === "removed" || otherMem.status === "left");
+      const name = otherMem
+        ? `${resolveName(otherMem)}${isFormer ? " (Former)" : ""}`
+        : "Former Member";
       groupTotalOwes += rec.amountMinor;
       groupUserBreakdowns.push({
         id: `${group.id}:${rec.fromMemberId}->${rec.toMemberId}`,
@@ -459,7 +472,7 @@ export const GroupDetailPage: React.FC = () => {
           </div>
 
           <div className="flex flex-col gap-3">
-            {members.map((member) => {
+            {activeMembers.map((member) => {
               const isSelf = member.userId === currentUserUid;
               const isOwnerTarget = member.role === "owner";
               return (
@@ -519,6 +532,33 @@ export const GroupDetailPage: React.FC = () => {
                 </div>
               );
             })}
+
+            {/* Former / Inactive Members */}
+            {formerMembers.length > 0 && (
+              <div className="mt-2 pt-3 border-t border-white/5 flex flex-col gap-2">
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-text-muted">
+                  Former Members ({formerMembers.length})
+                </span>
+                {formerMembers.map((member) => (
+                  <div
+                    key={member.id}
+                    className="flex items-center justify-between p-2.5 bg-white/[0.01] border border-white/5 rounded-xl opacity-75"
+                  >
+                    <div className="flex flex-col gap-0.5 text-left">
+                      <span className="text-sm font-medium text-text-secondary">
+                        {resolveName(member)}
+                      </span>
+                      <span className="text-[10px] text-text-muted capitalize">
+                        {member.status === "left" ? "Left Group" : "Removed"}
+                      </span>
+                    </div>
+                    <span className="text-[10px] bg-white/5 border border-white/10 px-1.5 py-0.5 rounded text-text-muted font-medium">
+                      Former
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>

@@ -4,6 +4,7 @@ import { Copy, Check, ShieldAlert } from "lucide-react";
 import { Dialog } from "../../components/ui/Dialogs";
 import { Button } from "../../components/ui/Button";
 import { fairtabApi } from "../../infrastructure/api/fairtabApi";
+import { buildPublicAppLink } from "../../utils/urlHelper";
 import { toast } from "sonner";
 
 interface InviteMemberDialogProps {
@@ -46,7 +47,7 @@ export const InviteMemberDialog: React.FC<InviteMemberDialogProps> = ({
         email,
         role: emailRole,
       });
-      const url = `${window.location.origin}${window.location.pathname}#/invite/${res.token}`;
+      const url = buildPublicAppLink(`/invite/${res.token}`);
       setGeneratedLink(url);
       setGeneratedLinkId(res.invitationId);
       toast.success(`Invitation successfully sent to ${email}!`);
@@ -66,7 +67,7 @@ export const InviteMemberDialog: React.FC<InviteMemberDialogProps> = ({
         groupId,
         role: globalRole,
       });
-      const link = `${window.location.origin}${window.location.pathname}#/join/${res.token}`;
+      const link = buildPublicAppLink(`/join/${res.token}`);
       setGeneratedLink(link);
       setGeneratedLinkId(res.linkId);
       toast.success("Global invite link created successfully!");

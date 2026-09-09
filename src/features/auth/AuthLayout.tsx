@@ -10,7 +10,7 @@ interface AuthLayoutProps {
 
 export const AuthLayout: React.FC<AuthLayoutProps> = ({ children, title, subtitle }) => {
   return (
-    <div className="flex min-h-screen text-text-primary app-background items-center justify-center p-4 selection:bg-accent-cyan/30">
+    <div className="flex min-h-screen text-text-primary app-background items-center justify-center p-4 pt-[max(env(safe-area-inset-top),24px)] pb-8 selection:bg-accent-cyan/30">
       {/* Background gradients */}
       <div className="absolute top-[10%] left-[10%] w-72 h-72 bg-accent-indigo/10 rounded-full blur-3xl" />
       <div className="absolute bottom-[10%] right-[10%] w-72 h-72 bg-accent-cyan/10 rounded-full blur-3xl" />

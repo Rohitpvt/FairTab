@@ -634,7 +634,7 @@ export const groupService = {
    */
   watchMembers(groupId: string, callback: (members: GroupMemberDocument[]) => void) {
     return onSnapshot(
-      query(collection(db, `groups/${groupId}/members`), where("status", "==", "active")),
+      collection(db, `groups/${groupId}/members`),
       (snapshot) => {
         const members: GroupMemberDocument[] = [];
         snapshot.forEach((d) => {
