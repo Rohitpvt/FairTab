@@ -139,34 +139,56 @@ export const ExpenseListPage: React.FC<ExpenseListPageProps> = ({
 
       {/* Sync Status Indicators Card */}
       {(syncStatus.pendingCount > 0 || syncStatus.failedCount > 0 || syncStatus.isSyncing) && (
-        <div className="glass-subtle border border-white/5 rounded-xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            {syncStatus.isSyncing ? (
-              <RefreshCw className="h-4 w-4 text-accent-cyan animate-spin" />
-            ) : syncStatus.failedCount > 0 ? (
-              <AlertTriangle className="h-4 w-4 text-danger animate-pulse" />
-            ) : (
-              <Clock className="h-4 w-4 text-warning" />
-            )}
-            <div className="text-xs">
-              <span className="font-bold text-text-primary">Foreground outbox sync</span>
-              <p className="text-text-muted mt-0.5">
-                {syncStatus.isSyncing && "Processing queue... "}
-                {syncStatus.pendingCount > 0 && `${syncStatus.pendingCount} pending updates. `}
-                {syncStatus.failedCount > 0 && `${syncStatus.failedCount} uploads failed.`}
-              </p>
+        <div className="glass-subtle border border-white/5 rounded-xl p-4 flex flex-col gap-3">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              {syncStatus.isSyncing ? (
+                <RefreshCw className="h-4 w-4 text-accent-cyan animate-spin flex-shrink-0" />
+              ) : syncStatus.failedCount > 0 ? (
+                <AlertTriangle className="h-4 w-4 text-danger animate-pulse flex-shrink-0" />
+              ) : (
+                <Clock className="h-4 w-4 text-warning flex-shrink-0" />
+              )}
+              <div className="text-xs">
+                <span className="font-bold text-text-primary">Foreground outbox sync</span>
+                <p className="text-text-muted mt-0.5">
+                  {syncStatus.isSyncing && "Processing offline queue... "}
+                  {syncStatus.pendingCount > 0 && `${syncStatus.pendingCount} pending update(s). `}
+                  {syncStatus.failedCount > 0 && (
+                    <span className="text-danger font-medium">
+                      {syncStatus.failedCount} upload(s) failed or rejected.
+                    </span>
+                  )}
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-2 self-end sm:self-auto">
+              {syncStatus.failedCount > 0 && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={async () => {
+                    await syncManager.clearFailedOperations(groupId);
+                  }}
+                  className="text-xs text-text-muted hover:text-danger hover:bg-danger/10 border border-white/10"
+                >
+                  Dismiss Failed
+                </Button>
+              )}
+              {(syncStatus.failedCount > 0 || syncStatus.pendingCount > 0) && syncStatus.isOnline && (
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => syncManager.forceRetryAll(groupId)}
+                  className="text-xs flex gap-1"
+                  disabled={syncStatus.isSyncing}
+                >
+                  <RefreshCw className={`h-3 w-3 ${syncStatus.isSyncing ? "animate-spin" : ""}`} /> Retry Sync
+                </Button>
+              )}
             </div>
           </div>
-          {syncStatus.failedCount > 0 && syncStatus.isOnline && (
-            <Button
-              size="sm"
-              variant="secondary"
-              onClick={() => syncManager.triggerSync()}
-              className="text-xs flex gap-1"
-            >
-              <RefreshCw className="h-3 w-3" /> Retry Sync
-            </Button>
-          )}
         </div>
       )}
 

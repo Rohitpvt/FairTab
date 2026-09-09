@@ -204,17 +204,119 @@ class ForegroundSyncManager {
   }
 
   /**
+   * Get current outbox items state including error messages
+   */
+  public async getOutboxState() {
+    const currentUid = auth.currentUser?.uid || "anonymous";
+    const ops = await offlineDb.expenseOutbox
+      .where("uid")
+      .equals(currentUid)
+      .toArray();
+    const receipts = await offlineDb.receiptDrafts
+      .where("uid")
+      .equals(currentUid)
+      .toArray();
+
+    return {
+      operations: ops,
+      receipts,
+      failedOps: ops.filter((op) => op.status === "failed"),
+      failedReceipts: receipts.filter((r) => r.status === "failed"),
+    };
+  }
+
+  /**
+   * Clear permanently failed or invalid outbox operations
+   */
+  public async clearFailedOperations(groupId?: string): Promise<number> {
+    const currentUid = auth.currentUser?.uid || "anonymous";
+    let opsQuery = offlineDb.expenseOutbox
+      .where("uid")
+      .equals(currentUid);
+    
+    const allOps = await opsQuery.toArray();
+    const failedOps = allOps.filter(
+      (op) => op.status === "failed" && (!groupId || op.groupId === groupId)
+    );
+
+    for (const op of failedOps) {
+      await offlineDb.expenseOutbox.delete(op.clientOperationId);
+    }
+
+    const receipts = await offlineDb.receiptDrafts
+      .where("uid")
+      .equals(currentUid)
+      .toArray();
+    const failedReceipts = receipts.filter(
+      (r) => r.status === "failed" && (!groupId || r.groupId === groupId)
+    );
+
+    for (const r of failedReceipts) {
+      await offlineDb.receiptDrafts.delete(r.id);
+    }
+
+    await this.notifyListeners();
+    return failedOps.length + failedReceipts.length;
+  }
+
+  /**
+   * Manually force retry all failed and pending items immediately (resetting retry counts)
+   */
+  public async forceRetryAll(groupId?: string): Promise<void> {
+    const currentUid = auth.currentUser?.uid || "anonymous";
+    const ops = await offlineDb.expenseOutbox
+      .where("uid")
+      .equals(currentUid)
+      .toArray();
+
+    for (const op of ops) {
+      if (!groupId || op.groupId === groupId) {
+        await offlineDb.expenseOutbox.update(op.clientOperationId, {
+          status: "pending",
+          attempts: 0,
+          lastAttemptAt: undefined,
+        });
+      }
+    }
+
+    const receipts = await offlineDb.receiptDrafts
+      .where("uid")
+      .equals(currentUid)
+      .toArray();
+
+    for (const r of receipts) {
+      if (!groupId || r.groupId === groupId) {
+        await offlineDb.receiptDrafts.update(r.id, {
+          status: "queued",
+          errorMessage: undefined,
+        });
+      }
+    }
+
+    await this.notifyListeners();
+    this.triggerSync(true);
+  }
+
+  /**
    * Trigger the foreground synchronization run
    */
-  public triggerSync() {
+  public triggerSync(forceImmediate: boolean = false) {
     if (this.syncTimeout) {
       clearTimeout(this.syncTimeout);
+    }
+
+    if (forceImmediate) {
+      this.syncTimeout = null;
+      if (this.isOnlineState && !this.isSyncingState) {
+        this.processOutboxQueue(true);
+      }
+      return;
     }
 
     this.syncTimeout = setTimeout(() => {
       this.syncTimeout = null;
       if (this.isOnlineState && !this.isSyncingState) {
-        this.processOutboxQueue();
+        this.processOutboxQueue(false);
       }
     }, 100); // Debounce trigger by 100ms
   }
@@ -222,23 +324,23 @@ class ForegroundSyncManager {
   /**
    * Processes the outbox queue using Web Locks API to prevent multiple tab contention
    */
-  private async processOutboxQueue() {
+  private async processOutboxQueue(forceImmediate: boolean = false) {
     if (!navigator.locks) {
       // Fallback if browser doesn't support Web Locks (rare in modern browsers)
-      await this.runSyncLoop();
+      await this.runSyncLoop(forceImmediate);
       return;
     }
 
     try {
       await navigator.locks.request("fairtab:outbox-sync", async () => {
-        await this.runSyncLoop();
+        await this.runSyncLoop(forceImmediate);
       });
     } catch (err) {
       console.error("Failed to acquire Web Lock for outbox sync", err);
     }
   }
 
-  private async runSyncLoop() {
+  private async runSyncLoop(forceImmediate: boolean = false) {
     this.isSyncingState = true;
     this.notifyListeners();
 
@@ -260,10 +362,10 @@ class ForegroundSyncManager {
 
         const eligibleOps = ops.filter((op) => {
           if (op.status === "processing") return false;
-          if (op.status === "failed" && op.attempts >= 10) return false; // Max transient retries capped
+          if (!forceImmediate && op.status === "failed" && op.attempts >= 10) return false; // Max transient retries capped
           
-          // Exponential backoff check
-          if (op.lastAttemptAt && op.attempts > 0) {
+          // Exponential backoff check unless forceImmediate is true
+          if (!forceImmediate && op.lastAttemptAt && op.attempts > 0) {
             const delay = Math.min(30000, 1000 * Math.pow(2, op.attempts)); // capped at 30s
             if (Date.now() - op.lastAttemptAt < delay) {
               return false; // still in backoff period
