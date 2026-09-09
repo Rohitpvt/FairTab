@@ -6,6 +6,16 @@
 
 ## Change Log
 
+### [2026-09-09] - Descending Debt & Balance Sort Order
+- **Scope**: `UI / Logic`
+- **Files Changed**:
+  - `src/components/dashboard/PersonalDebtSummaryCard.tsx` (Sorted "Owed to you" and "You owe" arrays descending by total amount, and sub-group breakdowns descending by amount)
+  - `src/features/expenses/BalanceProjectionCard.tsx` (Sorted group members descending by net balance)
+  - `src/features/settlements/components/DebtSimplificationPanel.tsx` (Sorted debt optimization recommendations descending by amount)
+  - `src/features/settlements/GlobalSettlementsPage.tsx` (Sorted global suggested settlements descending by amount)
+- **Sync Status**: `Synced to Android` (Compiled bundle synced via `sync-web-assets.js` and Capacitor public assets updated)
+
+
 ### [2026-09-09] - Exact Split Zero-Amount Member Filtering & Outbox Validation Fix
 - **Scope**: `Logic / Bug Fix`
 - **Files Changed**:

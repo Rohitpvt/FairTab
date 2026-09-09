@@ -37,7 +37,11 @@ export const PersonalDebtSummaryCard: React.FC<PersonalDebtSummaryCardProps> = (
   // Aggregate multi-group breakdowns by person when not in a single group context
   const aggregatedPeopleWhoOweYou = React.useMemo(() => {
     const rawList = breakdowns.filter((b) => b.type === "owed_to_user" && b.amountMinor > 0);
-    if (isGroupContext) return rawList.map((item) => ({ ...item, totalAmountMinor: item.amountMinor, groupItems: [item] }));
+    if (isGroupContext) {
+      return rawList
+        .map((item) => ({ ...item, totalAmountMinor: item.amountMinor, groupItems: [item] }))
+        .sort((a, b) => b.totalAmountMinor - a.totalAmountMinor);
+    }
 
     const personMap = new Map<string, {
       id: string;
@@ -66,12 +70,23 @@ export const PersonalDebtSummaryCard: React.FC<PersonalDebtSummaryCardProps> = (
       }
     });
 
-    return Array.from(personMap.values());
+    const result = Array.from(personMap.values());
+    // Sort descending by highest total amount owed to user
+    result.sort((a, b) => b.totalAmountMinor - a.totalAmountMinor);
+    // Sort sub-group breakdowns descending by amount
+    result.forEach((person) => {
+      person.groupItems.sort((a, b) => b.amountMinor - a.amountMinor);
+    });
+    return result;
   }, [breakdowns, isGroupContext]);
 
   const aggregatedPeopleYouOwe = React.useMemo(() => {
     const rawList = breakdowns.filter((b) => b.type === "user_owes" && b.amountMinor > 0);
-    if (isGroupContext) return rawList.map((item) => ({ ...item, totalAmountMinor: item.amountMinor, groupItems: [item] }));
+    if (isGroupContext) {
+      return rawList
+        .map((item) => ({ ...item, totalAmountMinor: item.amountMinor, groupItems: [item] }))
+        .sort((a, b) => b.totalAmountMinor - a.totalAmountMinor);
+    }
 
     const personMap = new Map<string, {
       id: string;
@@ -100,7 +115,14 @@ export const PersonalDebtSummaryCard: React.FC<PersonalDebtSummaryCardProps> = (
       }
     });
 
-    return Array.from(personMap.values());
+    const result = Array.from(personMap.values());
+    // Sort descending by highest total amount user owes
+    result.sort((a, b) => b.totalAmountMinor - a.totalAmountMinor);
+    // Sort sub-group breakdowns descending by amount
+    result.forEach((person) => {
+      person.groupItems.sort((a, b) => b.amountMinor - a.amountMinor);
+    });
+    return result;
   }, [breakdowns, isGroupContext]);
 
   const isNetPositive = totalNetMinor > 0;

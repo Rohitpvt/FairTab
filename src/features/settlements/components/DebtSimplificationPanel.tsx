@@ -45,10 +45,12 @@ export const DebtSimplificationPanel: React.FC<DebtSimplificationPanelProps> = (
   const balances = calculateBalances(expenses, settlements, allMemberIds);
 
   // 2. Run recommendations based on chosen strategy
-  const recommendations =
+  const rawRecommendations =
     strategy === "min_tx"
       ? simplifyMinimumTransactions(balances)
       : simplifyPreserveRelationships(expenses, settlements, allMemberIds);
+
+  const recommendations = [...rawRecommendations].sort((a, b) => b.amountMinor - a.amountMinor);
 
   const getMemberName = (id?: string) => {
     if (!id) return "Member";

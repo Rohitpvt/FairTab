@@ -36,6 +36,14 @@ export const BalanceProjectionCard: React.FC<BalanceProjectionCardProps> = ({
     }).format(amount);
   };
 
+  const sortedMembers = React.useMemo(() => {
+    return [...members].sort((a, b) => {
+      const balA = balances[a.id] || 0;
+      const balB = balances[b.id] || 0;
+      return balB - balA;
+    });
+  }, [members, balances]);
+
   return (
     <div className="glass-elevated border border-white/10 rounded-2xl p-6 text-left">
       <h3 className="text-base font-bold text-text-primary flex items-center gap-2 mb-4">
@@ -44,7 +52,7 @@ export const BalanceProjectionCard: React.FC<BalanceProjectionCardProps> = ({
       </h3>
 
       <div className="flex flex-col gap-3">
-        {members.map((member) => {
+        {sortedMembers.map((member) => {
           const balance = balances[member.id] || 0;
           const isPositive = balance > 0;
           const isNegative = balance < 0;

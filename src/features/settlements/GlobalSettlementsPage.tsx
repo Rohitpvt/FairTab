@@ -226,6 +226,9 @@ export const GlobalSettlementsPage: React.FC = () => {
       });
     });
 
+    // Sort global suggested settlements by amount descending
+    globalSuggestedSettlements.sort((a, b) => b.amountMinor - a.amountMinor);
+
     // Sort recent settlements by date descending
     recentSettlementsList.sort((a, b) => {
       const tsA = a.createdAt?.seconds || 0;
