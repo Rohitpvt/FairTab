@@ -1,0 +1,29 @@
+# FairTab Master (Web) Change Log & Sync Tracker
+
+> **Purpose**: Authoritative log of all modifications made to the master web project (`FairTab`). Used to cross-reference and synchronize changes to the Android App folder (`Android Studio/FairTab Playstore App`).
+
+---
+
+## Change Log
+
+### [2026-09-09] - Split Engine Math Parity & Outbox Recovery
+- **Scope**: `Logic / Bug Fix`
+- **Files Changed**:
+  - `src/features/expenses/ExpenseForm.tsx` (Migrated client split calculations to `@fairtab/domain` split functions: `splitEqual`, `splitExact`, `splitPercentage`, `splitShares` for exact cloud parity)
+  - `src/infrastructure/offline/syncManager.ts` (Added unconditional Dexie outbox purge in `clearFailedOperations`)
+  - `src/features/groups/GroupDetailPage.tsx` (Added "Dismiss Failed" action and clear failure reasons)
+  - `src/features/expenses/ExpenseListPage.tsx` (Added "Dismiss Failed" action and clear failure reasons)
+  - `src/features/dashboard/PersonalDebtSummaryCard.tsx` (Implemented multi-group per-person balance aggregation on Overview Dashboard)
+- **Sync Status**: `Synced to Android` (97/97 files compiled, bundle copied, Capacitor assets synced, verified on physical device `J7DEGIFIT86X5XCQ`)
+
+---
+
+## Log Template for Future Entries
+```markdown
+### [YYYY-MM-DD] - <Brief Title>
+- **Scope**: `UI / Logic / Feature / Bug Fix`
+- **Files Changed**:
+  - `<path/to/file1>` (<Brief description of changes>)
+  - `<path/to/file2>` (<Brief description of changes>)
+- **Sync Status**: `Synced to Android / Pending Sync / Native Only` (<Details or notes>)
+```
