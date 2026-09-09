@@ -46,12 +46,30 @@ export const ExpenseListPage: React.FC<ExpenseListPageProps> = ({
     pendingCount: 0,
     failedCount: 0,
   });
+  const [failedOpsList, setFailedOpsList] = useState<Array<{ id: string; error?: string; title?: string }>>([]);
 
   useEffect(() => {
+    const refreshFailedOps = async () => {
+      try {
+        const state = await syncManager.getOutboxState();
+        const failed = state.failedOps.map((op) => ({
+          id: op.clientOperationId,
+          error: op.errorMessage,
+          title: op.payload?.title || op.type,
+        }));
+        setFailedOpsList(failed);
+      } catch (err) {
+        console.error("Failed to load outbox state", err);
+      }
+    };
+
     // Listen to sync manager state
     const unsubSync = syncManager.registerListener((status) => {
       setSyncStatus(status);
+      refreshFailedOps();
     });
+
+    refreshFailedOps();
 
     // Listen to expenses subcollection
     const unsubExpenses = expenseService.watchExpenses(groupId, (data) => {
@@ -160,6 +178,11 @@ export const ExpenseListPage: React.FC<ExpenseListPageProps> = ({
                     </span>
                   )}
                 </p>
+                {failedOpsList.length > 0 && failedOpsList[0].error && (
+                  <p className="text-[11px] text-danger/80 mt-1 font-mono bg-danger/10 border border-danger/20 rounded px-2 py-1 max-w-xl break-words">
+                    Reason: {failedOpsList[0].error}
+                  </p>
+                )}
               </div>
             </div>
             
