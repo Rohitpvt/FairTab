@@ -6,6 +6,12 @@
 
 ## Change Log
 
+### [2026-09-09] - Fix Multi-Group Money Amount Right-Alignment
+- **Scope**: `UI / Bug Fix`
+- **Files Changed**:
+  - `src/components/dashboard/PersonalDebtSummaryCard.tsx` (Removed asymmetric `pr-2` padding from multi-group breakdown container and added `financial-number` tabular numbers so sub-group amounts align in a perfect vertical line with the card headers)
+- **Sync Status**: `Synced to Android` (Compiled bundle synced via `sync-web-assets.js` and Capacitor public assets updated)
+
 ### [2026-09-09] - Split Engine Math Parity & Outbox Recovery
 - **Scope**: `Logic / Bug Fix`
 - **Files Changed**:
@@ -13,7 +19,7 @@
   - `src/infrastructure/offline/syncManager.ts` (Added unconditional Dexie outbox purge in `clearFailedOperations`)
   - `src/features/groups/GroupDetailPage.tsx` (Added "Dismiss Failed" action and clear failure reasons)
   - `src/features/expenses/ExpenseListPage.tsx` (Added "Dismiss Failed" action and clear failure reasons)
-  - `src/features/dashboard/PersonalDebtSummaryCard.tsx` (Implemented multi-group per-person balance aggregation on Overview Dashboard)
+  - `src/components/dashboard/PersonalDebtSummaryCard.tsx` (Implemented multi-group per-person balance aggregation on Overview Dashboard)
 - **Sync Status**: `Synced to Android` (97/97 files compiled, bundle copied, Capacitor assets synced, verified on physical device `J7DEGIFIT86X5XCQ`)
 
 ---

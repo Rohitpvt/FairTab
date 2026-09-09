@@ -229,13 +229,13 @@ export const PersonalDebtSummaryCard: React.FC<PersonalDebtSummaryCardProps> = (
 
                     {/* If across multiple groups, list each group's balance */}
                     {!isGroupContext && item.groupItems.length > 1 && (
-                      <div className="pl-10.5 pr-2 pt-1.5 border-t border-white/5 flex flex-col gap-1 text-[11px]">
+                      <div className="pl-10.5 pt-1.5 border-t border-white/5 flex flex-col gap-1 text-[11px]">
                         {item.groupItems.map((gi) => (
                           <div key={gi.id} className="flex justify-between items-center text-text-muted hover:text-text-secondary">
                             <Link to={`/groups/${gi.groupId}`} className="hover:underline truncate max-w-[160px]">
                               {gi.groupName}
                             </Link>
-                            <span className="font-semibold text-success">
+                            <span className="font-semibold text-success financial-number">
                               +{formatCurrency(gi.amountMinor, gi.currency)}
                             </span>
                           </div>
@@ -309,13 +309,13 @@ export const PersonalDebtSummaryCard: React.FC<PersonalDebtSummaryCardProps> = (
 
                     {/* If across multiple groups, list each group's balance */}
                     {!isGroupContext && item.groupItems.length > 1 && (
-                      <div className="pl-10.5 pr-2 pt-1.5 border-t border-white/5 flex flex-col gap-1 text-[11px]">
+                      <div className="pl-10.5 pt-1.5 border-t border-white/5 flex flex-col gap-1 text-[11px]">
                         {item.groupItems.map((gi) => (
                           <div key={gi.id} className="flex justify-between items-center text-text-muted hover:text-text-secondary">
                             <Link to={`/groups/${gi.groupId}`} className="hover:underline truncate max-w-[160px]">
                               {gi.groupName}
                             </Link>
-                            <span className="font-semibold text-danger">
+                            <span className="font-semibold text-danger financial-number">
                               -{formatCurrency(gi.amountMinor, gi.currency)}
                             </span>
                           </div>
