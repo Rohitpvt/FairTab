@@ -229,15 +229,24 @@ export const PersonalDebtSummaryCard: React.FC<PersonalDebtSummaryCardProps> = (
 
                     {/* If across multiple groups, list each group's balance */}
                     {!isGroupContext && item.groupItems.length > 1 && (
-                      <div className="pl-10.5 pt-1.5 border-t border-white/5 flex flex-col gap-1 text-[11px]">
+                      <div className="pl-10.5 pt-1.5 border-t border-white/5 flex flex-col gap-1.5 text-[11px]">
                         {item.groupItems.map((gi) => (
-                          <div key={gi.id} className="flex justify-between items-center text-text-muted hover:text-text-secondary">
-                            <Link to={`/groups/${gi.groupId}`} className="hover:underline truncate max-w-[160px]">
+                          <div key={gi.id} className="flex justify-between items-center text-text-muted hover:text-text-secondary group/row">
+                            <Link to={`/groups/${gi.groupId}`} className="hover:underline hover:text-accent-cyan truncate max-w-[160px]">
                               {gi.groupName}
                             </Link>
-                            <span className="font-semibold text-success financial-number">
-                              +{formatCurrency(gi.amountMinor, gi.currency)}
-                            </span>
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-semibold text-success financial-number">
+                                +{formatCurrency(gi.amountMinor, gi.currency)}
+                              </span>
+                              <Link
+                                to={`/groups/${gi.groupId}/settlements`}
+                                className="p-0.5 rounded hover:bg-white/10 text-text-muted hover:text-text-primary transition-colors"
+                                title={`View Settlements in ${gi.groupName}`}
+                              >
+                                <ChevronRight className="h-3 w-3" />
+                              </Link>
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -309,15 +318,24 @@ export const PersonalDebtSummaryCard: React.FC<PersonalDebtSummaryCardProps> = (
 
                     {/* If across multiple groups, list each group's balance */}
                     {!isGroupContext && item.groupItems.length > 1 && (
-                      <div className="pl-10.5 pt-1.5 border-t border-white/5 flex flex-col gap-1 text-[11px]">
+                      <div className="pl-10.5 pt-1.5 border-t border-white/5 flex flex-col gap-1.5 text-[11px]">
                         {item.groupItems.map((gi) => (
-                          <div key={gi.id} className="flex justify-between items-center text-text-muted hover:text-text-secondary">
-                            <Link to={`/groups/${gi.groupId}`} className="hover:underline truncate max-w-[160px]">
+                          <div key={gi.id} className="flex justify-between items-center text-text-muted hover:text-text-secondary group/row">
+                            <Link to={`/groups/${gi.groupId}`} className="hover:underline hover:text-accent-cyan truncate max-w-[160px]">
                               {gi.groupName}
                             </Link>
-                            <span className="font-semibold text-danger financial-number">
-                              -{formatCurrency(gi.amountMinor, gi.currency)}
-                            </span>
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-semibold text-danger financial-number">
+                                -{formatCurrency(gi.amountMinor, gi.currency)}
+                              </span>
+                              <Link
+                                to={`/groups/${gi.groupId}/settlements`}
+                                className="p-0.5 rounded hover:bg-white/10 text-text-muted hover:text-text-primary transition-colors"
+                                title={`Settle Up in ${gi.groupName}`}
+                              >
+                                <ChevronRight className="h-3 w-3" />
+                              </Link>
+                            </div>
                           </div>
                         ))}
                       </div>

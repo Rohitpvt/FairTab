@@ -6,6 +6,12 @@
 
 ## Change Log
 
+### [2026-09-09] - Multi-Group Settlement Navigation & Link Accessibility
+- **Scope**: `UI / Feature / Bug Fix`
+- **Files Changed**:
+  - `src/components/dashboard/PersonalDebtSummaryCard.tsx` (Added direct group-specific settlement links/chevrons next to each group row in multi-group breakdowns so users can navigate to settlements directly for multi-group debts)
+- **Sync Status**: `Synced to Android` (Compiled bundle synced via `sync-web-assets.js` and Capacitor public assets updated)
+
 ### [2026-09-09] - Fix Multi-Group Money Amount Right-Alignment
 - **Scope**: `UI / Bug Fix`
 - **Files Changed**:
