@@ -230,7 +230,7 @@ class ForegroundSyncManager {
    */
   public async clearFailedOperations(groupId?: string): Promise<number> {
     const currentUid = auth.currentUser?.uid || "anonymous";
-    let opsQuery = offlineDb.expenseOutbox
+    const opsQuery = offlineDb.expenseOutbox
       .where("uid")
       .equals(currentUid);
     
