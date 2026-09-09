@@ -6,6 +6,13 @@
 
 ## Change Log
 
+### [2026-09-09] - Instant Onboarding & Disabled Email Verification Gate
+- **Scope**: `Logic / Config / Auth`
+- **Files Changed**:
+  - `.env`, `.env.production` (Set `VITE_REQUIRE_EMAIL_VERIFICATION=false` allowing unlimited free user signups without SMS/email OTP rate limits)
+  - `src/features/auth/RegisterForm.tsx` (Conditionally bypass `sendVerificationEmail` when verification is disabled, showing direct welcome toast and transitioning immediately to onboarding / dashboard)
+- **Sync Status**: `Synced to Android` (Tested and verified live on Pixel 8 Pro emulator)
+
 ### [2026-09-09] - Descending Debt & Balance Sort Order
 - **Scope**: `UI / Logic`
 - **Files Changed**:

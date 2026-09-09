@@ -50,13 +50,16 @@ export const RegisterForm: React.FC = () => {
       // 2. Create profile document idempotently
       await bootstrapProfile(credential.user, data.displayName);
 
-      // 3. Send verification email
-      await authService.sendVerificationEmail(credential.user);
-
-      toast.success("Successfully registered! A verification email has been sent.");
-      
-      // 4. Redirect to verification screen
-      navigate("/auth/verify-email");
+      const requireVerification = import.meta.env.VITE_REQUIRE_EMAIL_VERIFICATION === "true";
+      if (requireVerification) {
+        // Send verification email
+        await authService.sendVerificationEmail(credential.user);
+        toast.success("Successfully registered! A verification email has been sent.");
+        navigate("/auth/verify-email");
+      } else {
+        toast.success("Welcome to FairTab!");
+        navigate("/dashboard");
+      }
     } catch (err: unknown) {
       try {
         sessionStorage.removeItem("fairtab:pending-remember");
