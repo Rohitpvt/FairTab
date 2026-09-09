@@ -230,25 +230,24 @@ class ForegroundSyncManager {
    */
   public async clearFailedOperations(groupId?: string): Promise<number> {
     const currentUid = auth.currentUser?.uid || "anonymous";
-    const opsQuery = offlineDb.expenseOutbox
-      .where("uid")
-      .equals(currentUid);
-    
-    const allOps = await opsQuery.toArray();
+    const allOps = await offlineDb.expenseOutbox.toArray();
     const failedOps = allOps.filter(
-      (op) => op.status === "failed" && (!groupId || op.groupId === groupId)
+      (op) =>
+        op.status === "failed" &&
+        (!groupId || op.groupId === groupId) &&
+        (op.uid === currentUid || op.uid === "anonymous" || !op.uid)
     );
 
     for (const op of failedOps) {
       await offlineDb.expenseOutbox.delete(op.clientOperationId);
     }
 
-    const receipts = await offlineDb.receiptDrafts
-      .where("uid")
-      .equals(currentUid)
-      .toArray();
+    const receipts = await offlineDb.receiptDrafts.toArray();
     const failedReceipts = receipts.filter(
-      (r) => r.status === "failed" && (!groupId || r.groupId === groupId)
+      (r) =>
+        r.status === "failed" &&
+        (!groupId || r.groupId === groupId) &&
+        (r.uid === currentUid || r.uid === "anonymous" || !r.uid)
     );
 
     for (const r of failedReceipts) {
