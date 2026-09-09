@@ -14,6 +14,7 @@ import {
   ArrowRight,
   Sparkles,
 } from "lucide-react";
+import { toast } from "sonner";
 import { ExpenseRowSkeleton } from "../../components/ui/Skeleton";
 import type { GroupMemberDocument } from "../groups/memberSchema";
 import { useMemberNameResolver } from "../../hooks/useMemberNameResolver";
@@ -192,7 +193,10 @@ export const ExpenseListPage: React.FC<ExpenseListPageProps> = ({
                   size="sm"
                   variant="ghost"
                   onClick={async () => {
-                    await syncManager.clearFailedOperations(groupId);
+                    await syncManager.clearFailedOperations();
+                    setSyncStatus((prev) => ({ ...prev, failedCount: 0 }));
+                    setFailedOpsList([]);
+                    toast.success("Cleared failed sync operations.");
                   }}
                   className="text-xs text-text-muted hover:text-danger hover:bg-danger/10 border border-white/10"
                 >

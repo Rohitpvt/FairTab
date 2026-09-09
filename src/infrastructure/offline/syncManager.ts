@@ -207,15 +207,8 @@ class ForegroundSyncManager {
    * Get current outbox items state including error messages
    */
   public async getOutboxState() {
-    const currentUid = auth.currentUser?.uid || "anonymous";
-    const ops = await offlineDb.expenseOutbox
-      .where("uid")
-      .equals(currentUid)
-      .toArray();
-    const receipts = await offlineDb.receiptDrafts
-      .where("uid")
-      .equals(currentUid)
-      .toArray();
+    const ops = await offlineDb.expenseOutbox.toArray();
+    const receipts = await offlineDb.receiptDrafts.toArray();
 
     return {
       operations: ops,
