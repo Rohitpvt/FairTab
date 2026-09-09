@@ -12,7 +12,14 @@ import {
   Hash,
   ArrowLeftRight,
 } from "lucide-react";
-import { CURRENCIES, formatMinorUnit } from "@fairtab/domain";
+import {
+  CURRENCIES,
+  formatMinorUnit,
+  splitEqual,
+  splitExact,
+  splitPercentage,
+  splitShares,
+} from "@fairtab/domain";
 import type {
   ExpenseCategory,
   SplitMethod,
@@ -163,71 +170,64 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({
     });
   };
 
-  // Compute splits based on method
+  // Compute splits based on method using domain algorithms
   const computeSplits = (): ExpenseSplit[] => {
     const count = participantMembers.length;
     if (count === 0 || amountMinor === 0) return [];
 
     const fxNum = parseFloat(fxRate) || 1;
+    const participantIdsList = participantMembers.map((m) => m.id);
 
     if (splitMethod === "equal") {
-      const base = Math.floor(amountMinor / count);
-      const remainder = amountMinor - base * count;
-      // Sort by memberId for deterministic residual distribution
-      const sorted = [...participantMembers].sort((a, b) => a.id.localeCompare(b.id));
-      return sorted.map((m, i) => ({
-        memberId: m.id,
-        amountMinor: base + (i < remainder ? 1 : 0),
-        baseAmountMinor: Math.round((base + (i < remainder ? 1 : 0)) * fxNum),
+      const results = splitEqual(amountMinor, participantIdsList);
+      return results.map((r) => ({
+        memberId: r.memberId,
+        amountMinor: r.amountMinor,
+        baseAmountMinor: Math.round(r.amountMinor * fxNum),
       }));
     }
 
     if (splitMethod === "exact") {
-      return participantMembers
-        .map((m) => {
-          const val = parseFloat(exactAmounts[m.id] || "0");
-          const minor = Math.round(val * 100);
-          return {
-            memberId: m.id,
-            amountMinor: minor,
-            baseAmountMinor: Math.round(minor * fxNum),
-          };
-        })
-        .filter((s) => s.amountMinor > 0);
+      const allocations: Record<string, number> = {};
+      participantMembers.forEach((m) => {
+        const val = parseFloat(exactAmounts[m.id] || "0");
+        allocations[m.id] = Math.round(val * 100);
+      });
+      const results = splitExact(amountMinor, allocations);
+      return results.map((r) => ({
+        memberId: r.memberId,
+        amountMinor: r.amountMinor,
+        baseAmountMinor: Math.round(r.amountMinor * fxNum),
+      }));
     }
 
     if (splitMethod === "percentage") {
-      return participantMembers
-        .map((m) => {
-          const pct = parseFloat(percentages[m.id] || "0");
-          const minor = Math.round((amountMinor * pct) / 100);
-          return {
-            memberId: m.id,
-            amountMinor: minor,
-            baseAmountMinor: Math.round(minor * fxNum),
-            percentageBps: Math.round(pct * 100),
-          };
-        })
-        .filter((s) => s.amountMinor > 0);
+      const bpsMap: Record<string, number> = {};
+      participantMembers.forEach((m) => {
+        const pct = parseFloat(percentages[m.id] || "0");
+        bpsMap[m.id] = Math.round(pct * 100);
+      });
+      const results = splitPercentage(amountMinor, bpsMap, participantIdsList);
+      return results.map((r) => ({
+        memberId: r.memberId,
+        amountMinor: r.amountMinor,
+        baseAmountMinor: Math.round(r.amountMinor * fxNum),
+        percentageBps: bpsMap[r.memberId] || 0,
+      }));
     }
 
     if (splitMethod === "shares") {
-      const totalShares = participantMembers.reduce(
-        (sum, m) => sum + (parseInt(shareValues[m.id] || "1", 10) || 1),
-        0
-      );
-      return participantMembers
-        .map((m) => {
-          const sh = parseInt(shareValues[m.id] || "1", 10) || 1;
-          const minor = Math.round((amountMinor * sh) / totalShares);
-          return {
-            memberId: m.id,
-            amountMinor: minor,
-            baseAmountMinor: Math.round(minor * fxNum),
-            shares: sh,
-          };
-        })
-        .filter((s) => s.amountMinor > 0);
+      const sharesMap: Record<string, number> = {};
+      participantMembers.forEach((m) => {
+        sharesMap[m.id] = parseInt(shareValues[m.id] || "1", 10) || 1;
+      });
+      const results = splitShares(amountMinor, sharesMap, participantIdsList);
+      return results.map((r) => ({
+        memberId: r.memberId,
+        amountMinor: r.amountMinor,
+        baseAmountMinor: Math.round(r.amountMinor * fxNum),
+        shares: sharesMap[r.memberId] || 1,
+      }));
     }
 
     return [];
