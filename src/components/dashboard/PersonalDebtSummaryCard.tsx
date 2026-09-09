@@ -34,8 +34,74 @@ export const PersonalDebtSummaryCard: React.FC<PersonalDebtSummaryCardProps> = (
   className = "",
   isGroupContext = false,
 }) => {
-  const peopleWhoOweYou = breakdowns.filter((b) => b.type === "owed_to_user" && b.amountMinor > 0);
-  const peopleYouOwe = breakdowns.filter((b) => b.type === "user_owes" && b.amountMinor > 0);
+  // Aggregate multi-group breakdowns by person when not in a single group context
+  const aggregatedPeopleWhoOweYou = React.useMemo(() => {
+    const rawList = breakdowns.filter((b) => b.type === "owed_to_user" && b.amountMinor > 0);
+    if (isGroupContext) return rawList.map((item) => ({ ...item, totalAmountMinor: item.amountMinor, groupItems: [item] }));
+
+    const personMap = new Map<string, {
+      id: string;
+      otherMemberId: string;
+      otherMemberName: string;
+      totalAmountMinor: number;
+      currency: string;
+      groupItems: IndividualDebtBreakdown[];
+    }>();
+
+    rawList.forEach((item) => {
+      const nameKey = (item.otherMemberName || item.otherMemberId).trim().toLowerCase();
+      const existing = personMap.get(nameKey);
+      if (existing) {
+        existing.totalAmountMinor += item.amountMinor;
+        existing.groupItems.push(item);
+      } else {
+        personMap.set(nameKey, {
+          id: item.id,
+          otherMemberId: item.otherMemberId,
+          otherMemberName: item.otherMemberName,
+          totalAmountMinor: item.amountMinor,
+          currency: item.currency,
+          groupItems: [item],
+        });
+      }
+    });
+
+    return Array.from(personMap.values());
+  }, [breakdowns, isGroupContext]);
+
+  const aggregatedPeopleYouOwe = React.useMemo(() => {
+    const rawList = breakdowns.filter((b) => b.type === "user_owes" && b.amountMinor > 0);
+    if (isGroupContext) return rawList.map((item) => ({ ...item, totalAmountMinor: item.amountMinor, groupItems: [item] }));
+
+    const personMap = new Map<string, {
+      id: string;
+      otherMemberId: string;
+      otherMemberName: string;
+      totalAmountMinor: number;
+      currency: string;
+      groupItems: IndividualDebtBreakdown[];
+    }>();
+
+    rawList.forEach((item) => {
+      const nameKey = (item.otherMemberName || item.otherMemberId).trim().toLowerCase();
+      const existing = personMap.get(nameKey);
+      if (existing) {
+        existing.totalAmountMinor += item.amountMinor;
+        existing.groupItems.push(item);
+      } else {
+        personMap.set(nameKey, {
+          id: item.id,
+          otherMemberId: item.otherMemberId,
+          otherMemberName: item.otherMemberName,
+          totalAmountMinor: item.amountMinor,
+          currency: item.currency,
+          groupItems: [item],
+        });
+      }
+    });
+
+    return Array.from(personMap.values());
+  }, [breakdowns, isGroupContext]);
 
   const isNetPositive = totalNetMinor > 0;
   const isNetNegative = totalNetMinor < 0;
@@ -108,54 +174,74 @@ export const PersonalDebtSummaryCard: React.FC<PersonalDebtSummaryCardProps> = (
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold uppercase tracking-wider text-success flex items-center gap-1.5">
               <ArrowUpRight className="h-3.5 w-3.5" />
-              Owed to you ({peopleWhoOweYou.length})
+              Owed to you ({aggregatedPeopleWhoOweYou.length})
             </span>
           </div>
 
-          {peopleWhoOweYou.length === 0 ? (
+          {aggregatedPeopleWhoOweYou.length === 0 ? (
             <div className="p-3.5 rounded-xl bg-white/[0.02] border border-white/5 text-xs text-text-muted">
               No one owes you right now.
             </div>
           ) : (
             <div className="flex flex-col gap-2">
-              {peopleWhoOweYou.map((item) => {
+              {aggregatedPeopleWhoOweYou.map((item) => {
                 const displayName = item.otherMemberName || item.otherMemberId || "Member";
                 const initials = displayName.slice(0, 2).toUpperCase();
                 return (
                   <div
                     key={item.id}
-                    className="p-3 rounded-xl bg-white/[0.03] border border-white/5 hover:border-success/30 hover:bg-white/[0.05] transition-all flex items-center justify-between gap-3 group"
+                    className="p-3 rounded-xl bg-white/[0.03] border border-white/5 hover:border-success/30 hover:bg-white/[0.05] transition-all flex flex-col gap-2 group"
                   >
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <div className="w-8 h-8 rounded-lg bg-success/10 border border-success/20 flex items-center justify-center text-success font-bold text-xs shrink-0">
-                        {initials || <User className="h-3.5 w-3.5" />}
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-xs sm:text-sm font-semibold text-text-primary truncate">
-                          <span className="text-success font-bold">{displayName}</span> owes you
-                        </p>
-                        {!isGroupContext && item.groupName && (
-                          <p className="text-[10px] text-text-muted truncate mt-0.5">
-                            in <span className="text-text-secondary">{item.groupName}</span>
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="w-8 h-8 rounded-lg bg-success/10 border border-success/20 flex items-center justify-center text-success font-bold text-xs shrink-0">
+                          {initials || <User className="h-3.5 w-3.5" />}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-xs sm:text-sm font-semibold text-text-primary truncate">
+                            <span className="text-success font-bold">{displayName}</span> owes you
                           </p>
+                          {!isGroupContext && (
+                            <p className="text-[10px] text-text-muted truncate mt-0.5">
+                              {item.groupItems.length > 1
+                                ? `across ${item.groupItems.length} groups`
+                                : `in ${item.groupItems[0]?.groupName || "group"}`}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="text-right shrink-0 flex items-center gap-2">
+                        <span className="text-xs sm:text-sm font-extrabold text-success financial-number">
+                          +{formatCurrency(item.totalAmountMinor, item.currency)}
+                        </span>
+                        {!isGroupContext && item.groupItems.length === 1 && (
+                          <Link
+                            to={`/groups/${item.groupItems[0].groupId}/settlements`}
+                            className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-white/10 text-text-muted hover:text-text-primary"
+                            title="View Settlements"
+                          >
+                            <ChevronRight className="h-3.5 w-3.5" />
+                          </Link>
                         )}
                       </div>
                     </div>
 
-                    <div className="text-right shrink-0 flex items-center gap-2">
-                      <span className="text-xs sm:text-sm font-extrabold text-success financial-number">
-                        +{formatCurrency(item.amountMinor, item.currency)}
-                      </span>
-                      {!isGroupContext && (
-                        <Link
-                          to={`/groups/${item.groupId}/settlements`}
-                          className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-white/10 text-text-muted hover:text-text-primary"
-                          title="View Settlements"
-                        >
-                          <ChevronRight className="h-3.5 w-3.5" />
-                        </Link>
-                      )}
-                    </div>
+                    {/* If across multiple groups, list each group's balance */}
+                    {!isGroupContext && item.groupItems.length > 1 && (
+                      <div className="pl-10.5 pr-2 pt-1.5 border-t border-white/5 flex flex-col gap-1 text-[11px]">
+                        {item.groupItems.map((gi) => (
+                          <div key={gi.id} className="flex justify-between items-center text-text-muted hover:text-text-secondary">
+                            <Link to={`/groups/${gi.groupId}`} className="hover:underline truncate max-w-[160px]">
+                              {gi.groupName}
+                            </Link>
+                            <span className="font-semibold text-success">
+                              +{formatCurrency(gi.amountMinor, gi.currency)}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 );
               })}
@@ -168,54 +254,74 @@ export const PersonalDebtSummaryCard: React.FC<PersonalDebtSummaryCardProps> = (
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold uppercase tracking-wider text-danger flex items-center gap-1.5">
               <ArrowDownLeft className="h-3.5 w-3.5" />
-              You owe ({peopleYouOwe.length})
+              You owe ({aggregatedPeopleYouOwe.length})
             </span>
           </div>
 
-          {peopleYouOwe.length === 0 ? (
+          {aggregatedPeopleYouOwe.length === 0 ? (
             <div className="p-3.5 rounded-xl bg-white/[0.02] border border-white/5 text-xs text-text-muted">
               You don&apos;t owe anyone right now.
             </div>
           ) : (
             <div className="flex flex-col gap-2">
-              {peopleYouOwe.map((item) => {
+              {aggregatedPeopleYouOwe.map((item) => {
                 const displayName = item.otherMemberName || item.otherMemberId || "Member";
                 const initials = displayName.slice(0, 2).toUpperCase();
                 return (
                   <div
                     key={item.id}
-                    className="p-3 rounded-xl bg-white/[0.03] border border-white/5 hover:border-danger/30 hover:bg-white/[0.05] transition-all flex items-center justify-between gap-3 group"
+                    className="p-3 rounded-xl bg-white/[0.03] border border-white/5 hover:border-danger/30 hover:bg-white/[0.05] transition-all flex flex-col gap-2 group"
                   >
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <div className="w-8 h-8 rounded-lg bg-danger/10 border border-danger/20 flex items-center justify-center text-danger font-bold text-xs shrink-0">
-                        {initials || <User className="h-3.5 w-3.5" />}
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-xs sm:text-sm font-semibold text-text-primary truncate">
-                          You owe <span className="text-danger font-bold">{displayName}</span>
-                        </p>
-                        {!isGroupContext && item.groupName && (
-                          <p className="text-[10px] text-text-muted truncate mt-0.5">
-                            in <span className="text-text-secondary">{item.groupName}</span>
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="w-8 h-8 rounded-lg bg-danger/10 border border-danger/20 flex items-center justify-center text-danger font-bold text-xs shrink-0">
+                          {initials || <User className="h-3.5 w-3.5" />}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-xs sm:text-sm font-semibold text-text-primary truncate">
+                            You owe <span className="text-danger font-bold">{displayName}</span>
                           </p>
+                          {!isGroupContext && (
+                            <p className="text-[10px] text-text-muted truncate mt-0.5">
+                              {item.groupItems.length > 1
+                                ? `across ${item.groupItems.length} groups`
+                                : `in ${item.groupItems[0]?.groupName || "group"}`}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="text-right shrink-0 flex items-center gap-2">
+                        <span className="text-xs sm:text-sm font-extrabold text-danger financial-number">
+                          -{formatCurrency(item.totalAmountMinor, item.currency)}
+                        </span>
+                        {!isGroupContext && item.groupItems.length === 1 && (
+                          <Link
+                            to={`/groups/${item.groupItems[0].groupId}/settlements`}
+                            className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-white/10 text-text-muted hover:text-text-primary"
+                            title="Settle Up"
+                          >
+                            <ChevronRight className="h-3.5 w-3.5" />
+                          </Link>
                         )}
                       </div>
                     </div>
 
-                    <div className="text-right shrink-0 flex items-center gap-2">
-                      <span className="text-xs sm:text-sm font-extrabold text-danger financial-number">
-                        -{formatCurrency(item.amountMinor, item.currency)}
-                      </span>
-                      {!isGroupContext && (
-                        <Link
-                          to={`/groups/${item.groupId}/settlements`}
-                          className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-white/10 text-text-muted hover:text-text-primary"
-                          title="Settle Up"
-                        >
-                          <ChevronRight className="h-3.5 w-3.5" />
-                        </Link>
-                      )}
-                    </div>
+                    {/* If across multiple groups, list each group's balance */}
+                    {!isGroupContext && item.groupItems.length > 1 && (
+                      <div className="pl-10.5 pr-2 pt-1.5 border-t border-white/5 flex flex-col gap-1 text-[11px]">
+                        {item.groupItems.map((gi) => (
+                          <div key={gi.id} className="flex justify-between items-center text-text-muted hover:text-text-secondary">
+                            <Link to={`/groups/${gi.groupId}`} className="hover:underline truncate max-w-[160px]">
+                              {gi.groupName}
+                            </Link>
+                            <span className="font-semibold text-danger">
+                              -{formatCurrency(gi.amountMinor, gi.currency)}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 );
               })}
