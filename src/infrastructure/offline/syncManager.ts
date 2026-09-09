@@ -348,39 +348,34 @@ class ForegroundSyncManager {
       // Sync offline receipt uploads first
       await this.syncReceiptDrafts();
 
-      let runAgain = true;
-      while (runAgain && this.isOnlineState) {
-        // Fetch operations in pending or failed state (that are not in backoff delay) for the current user
-        const currentUid = auth.currentUser?.uid || "anonymous";
-        const ops = await offlineDb.expenseOutbox
-          .where("uid")
-          .equals(currentUid)
-          .toArray();
+      // Fetch operations in pending or failed state for the current user
+      const currentUid = auth.currentUser?.uid || "anonymous";
+      const ops = await offlineDb.expenseOutbox
+        .where("uid")
+        .equals(currentUid)
+        .toArray();
+      
+      // Sort chronologically by createdAt to guarantee execution ordering
+      ops.sort((a, b) => a.createdAt - b.createdAt);
+
+      const eligibleOps = ops.filter((op) => {
+        if (op.status === "processing") return false;
+        if (!forceImmediate && op.status === "failed") return false; // Failed ops require explicit manual retry
+        if (!forceImmediate && op.attempts >= 5) return false; // Cap retry attempts
         
-        // Sort chronologically by createdAt to guarantee execution ordering
-        ops.sort((a, b) => a.createdAt - b.createdAt);
-
-        const eligibleOps = ops.filter((op) => {
-          if (op.status === "processing") return false;
-          if (!forceImmediate && op.status === "failed" && op.attempts >= 10) return false; // Max transient retries capped
-          
-          // Exponential backoff check unless forceImmediate is true
-          if (!forceImmediate && op.lastAttemptAt && op.attempts > 0) {
-            const delay = Math.min(30000, 1000 * Math.pow(2, op.attempts)); // capped at 30s
-            if (Date.now() - op.lastAttemptAt < delay) {
-              return false; // still in backoff period
-            }
+        // Exponential backoff check unless forceImmediate is true
+        if (!forceImmediate && op.lastAttemptAt && op.attempts > 0) {
+          const delay = Math.min(30000, 2000 * Math.pow(2, op.attempts)); // capped at 30s
+          if (Date.now() - op.lastAttemptAt < delay) {
+            return false; // still in backoff period
           }
-          return true;
-        });
-
-        if (eligibleOps.length === 0) {
-          runAgain = false;
-          break;
         }
+        return true;
+      });
 
-        // Process the first eligible operation
-        const op = eligibleOps[0];
+      // Process eligible operations sequentially for this batch run
+      for (const op of eligibleOps) {
+        if (!this.isOnlineState) break;
         await this.syncOperation(op);
       }
     } finally {
@@ -422,7 +417,13 @@ class ForegroundSyncManager {
         : null;
 
     if (!apiCall) {
-      throw new Error(`Unknown outbox operation type: ${op.type}`);
+      // Permanent error: unknown operation
+      await offlineDb.expenseOutbox.update(op.clientOperationId, {
+        status: "failed",
+        errorMessage: `Unknown outbox operation type: ${op.type}`,
+        lastAttemptAt: Date.now(),
+      });
+      return;
     }
 
     try {
@@ -443,13 +444,12 @@ class ForegroundSyncManager {
       console.error(`Sync failed for operation ${op.clientOperationId}:`, err);
 
       const isPermanentError = this.checkIfPermanentError(err);
-
       const updatedAttempts = op.attempts + 1;
       const errorMessage = err.message || String(err);
       const errorDetails = err.details || null;
 
-      if (isPermanentError) {
-        // Permanent failure: mark status as "failed", do not retry
+      if (isPermanentError || updatedAttempts >= 5) {
+        // Mark as failed so it stops attempting in background loops
         await offlineDb.expenseOutbox.update(op.clientOperationId, {
           status: "failed",
           attempts: updatedAttempts,
@@ -458,7 +458,7 @@ class ForegroundSyncManager {
           errorDetails,
         });
       } else {
-        // Transient error (network issue): set status back to pending, increment attempts for backoff
+        // Transient network error: set back to pending with backoff
         await offlineDb.expenseOutbox.update(op.clientOperationId, {
           status: "pending",
           attempts: updatedAttempts,
@@ -483,8 +483,9 @@ class ForegroundSyncManager {
     if (code.startsWith("functions/")) {
       code = code.replace("functions/", "");
     }
-    // Permanent firebase callable errors:
-    // permission-denied, invalid-argument, not-found, already-exists (if payload mismatch), failed-precondition, out-of-range, unauthenticated, aborted
+    const msg = (err.message || "").toLowerCase();
+
+    // Permanent HTTP / Firebase errors:
     const permanentCodes = [
       "permission-denied",
       "invalid-argument",
@@ -494,9 +495,21 @@ class ForegroundSyncManager {
       "out-of-range",
       "unauthenticated",
       "aborted",
+      "bad_request",
+      "unauthorized",
+      "forbidden",
+      "400",
+      "401",
+      "403",
+      "404",
+      "422",
     ];
 
-    return permanentCodes.includes(code);
+    if (permanentCodes.some((c) => code.includes(c) || msg.includes(c))) {
+      return true;
+    }
+
+    return false;
   }
 
   /**
