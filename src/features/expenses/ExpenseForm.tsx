@@ -191,7 +191,10 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({
       const allocations: Record<string, number> = {};
       participantMembers.forEach((m) => {
         const val = parseFloat(exactAmounts[m.id] || "0");
-        allocations[m.id] = Math.round(val * 100);
+        const minor = Math.round(val * 100);
+        if (minor > 0) {
+          allocations[m.id] = minor;
+        }
       });
       const results = splitExact(amountMinor, allocations);
       return results.map((r) => ({
@@ -203,11 +206,16 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({
 
     if (splitMethod === "percentage") {
       const bpsMap: Record<string, number> = {};
+      const activePctIds: string[] = [];
       participantMembers.forEach((m) => {
         const pct = parseFloat(percentages[m.id] || "0");
-        bpsMap[m.id] = Math.round(pct * 100);
+        const bps = Math.round(pct * 100);
+        if (bps > 0) {
+          bpsMap[m.id] = bps;
+          activePctIds.push(m.id);
+        }
       });
-      const results = splitPercentage(amountMinor, bpsMap, participantIdsList);
+      const results = splitPercentage(amountMinor, bpsMap, activePctIds);
       return results.map((r) => ({
         memberId: r.memberId,
         amountMinor: r.amountMinor,
@@ -267,6 +275,8 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({
     const fxNum = isForeignCurrency ? Math.round(parseFloat(fxRate) * 10000) : 1;
     const fxDen = isForeignCurrency ? 10000 : 1;
 
+    const finalParticipantIds = splits.map((s) => s.memberId);
+
     const data: ExpenseFormData = {
       title: title.trim(),
       category,
@@ -288,7 +298,7 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({
         },
       ],
       splits,
-      participantIds,
+      participantIds: finalParticipantIds,
     };
 
     try {

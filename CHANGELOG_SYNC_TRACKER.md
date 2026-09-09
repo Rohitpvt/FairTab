@@ -6,6 +6,13 @@
 
 ## Change Log
 
+### [2026-09-09] - Exact Split Zero-Amount Member Filtering & Outbox Validation Fix
+- **Scope**: `Logic / Bug Fix`
+- **Files Changed**:
+  - `src/features/expenses/ExpenseForm.tsx` (Filtered out 0-amount member allocations from `splits` and derived `participantIds` strictly from non-zero split members to comply with backend positive-integer requirement)
+- **Sync Status**: `Synced to Android` (Compiled bundle synced via `sync-web-assets.js` and Capacitor public assets updated)
+
+
 ### [2026-09-09] - Multi-Group Settlement Navigation & Link Accessibility
 - **Scope**: `UI / Feature / Bug Fix`
 - **Files Changed**:
