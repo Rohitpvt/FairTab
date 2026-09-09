@@ -17,7 +17,7 @@ export default defineConfig({
     setupFiles: "./src/test/setup.ts",
     exclude: ["**/node_modules/**", "**/dist/**", "**/e2e/**"],
   },
-  base: process.env.VITE_APP_BASE_PATH || "/FairTab/",
+  base: process.env.VITE_APP_BASE_PATH || "/",
   plugins: [
     react(),
     tailwindcss(),
@@ -34,8 +34,8 @@ export default defineConfig({
         theme_color: "#0b0f19",
         background_color: "#060810",
         display: "standalone",
-        start_url: "/FairTab/",
-        scope: "/FairTab/",
+        start_url: process.env.VITE_APP_BASE_PATH || "/",
+        scope: process.env.VITE_APP_BASE_PATH || "/",
         icons: [
           {
             src: "icons/icon-192.png",

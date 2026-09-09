@@ -6,8 +6,11 @@ import { PageContainer } from "../../components/layout/PageContainer";
 import { Button } from "../../components/ui/Button";
 import { Skeleton } from "../../components/ui/Skeleton";
 import { auth } from "../../infrastructure/firebase/firebase";
+import { useAuth } from "../auth/AuthProvider";
 import { fairtabApi } from "../../infrastructure/api/fairtabApi";
 import { toast } from "sonner";
+
+import { AuthLayout } from "../auth/AuthLayout";
 
 export const InvitationAcceptPage: React.FC = () => {
   const { invitationId, token } = useParams<{ invitationId?: string; token?: string }>();
@@ -28,7 +31,7 @@ export const InvitationAcceptPage: React.FC = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(() => actualToken ? null : "No invitation token provided.");
 
-  const currentUser = auth.currentUser;
+  const { user: currentUser, authState } = useAuth();
   const isOffline = !navigator.onLine;
 
   useEffect(() => {
@@ -52,8 +55,10 @@ export const InvitationAcceptPage: React.FC = () => {
 
     if (currentUser) {
       resolveToken();
+    } else if (authState === "unauthenticated") {
+      setIsLoading(false);
     }
-  }, [actualToken, currentUser]);
+  }, [actualToken, currentUser, authState]);
 
   const handleAcceptEmailInvite = async () => {
     if (isOffline) {
@@ -106,8 +111,8 @@ export const InvitationAcceptPage: React.FC = () => {
 
     const loginRedirectUrl = `/auth/login?redirect=${encodeURIComponent(location.pathname)}`;
     return (
-      <PageContainer title="Sign In Required" description="Join shared ledger groups on FairTab.">
-        <div className="max-w-md mx-auto text-left mt-8 glass-elevated border border-white/10 rounded-2xl p-6 flex flex-col gap-4">
+      <AuthLayout title="Sign In Required" subtitle="Join shared ledger groups on FairTab">
+        <div className="flex flex-col gap-4 text-left">
           <p className="text-sm text-text-secondary leading-relaxed">
             You opened an invitation link. Please sign in or register to join the group or submit a join request.
           </p>
@@ -120,19 +125,19 @@ export const InvitationAcceptPage: React.FC = () => {
             </Button>
           </div>
         </div>
-      </PageContainer>
+      </AuthLayout>
     );
   }
 
   if (isLoading) {
     return (
-      <PageContainer title="Resolving Invitation" description="Fetching secure invitation details...">
-        <div className="max-w-md mx-auto flex flex-col gap-4 mt-8">
+      <AuthLayout title="Resolving Invitation" subtitle="Fetching secure invitation details...">
+        <div className="flex flex-col gap-4">
           <Skeleton className="h-12 w-full" />
           <Skeleton className="h-12 w-full" />
           <Skeleton className="h-12 w-full" />
         </div>
-      </PageContainer>
+      </AuthLayout>
     );
   }
 

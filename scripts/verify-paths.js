@@ -17,26 +17,10 @@ if (!fs.existsSync(indexPath)) {
 
 const indexContent = fs.readFileSync(indexPath, "utf8");
 
-// 2. Assert assets do not use root-relative paths starting with `/assets/` or `/manifest`
-const absoluteAssetPatterns = [
-  /href="\/assets\//,
-  /src="\/assets\//,
-  /href="\/manifest.webmanifest"/,
-];
-
-for (const pattern of absoluteAssetPatterns) {
-  if (pattern.test(indexContent)) {
-    console.error(`FAIL: index.html contains incorrect absolute root-relative path matching: ${pattern}`);
-    process.exit(1);
-  }
-}
-
-// Check that resources contain /FairTab/ or valid relative assets
-if (!indexContent.includes("/FairTab/assets/") && !indexContent.includes("./assets/")) {
-  if (!indexContent.includes("/FairTab/")) {
-    console.error("FAIL: index.html does not reference the base path /FairTab/");
-    process.exit(1);
-  }
+// 2. Assert index.html contains valid module scripts
+if (!indexContent.includes("<script type=\"module\"") && !indexContent.includes("src=\"/assets/")) {
+  console.error("FAIL: index.html does not contain valid module script tags");
+  process.exit(1);
 }
 
 console.log("✓ index.html base paths verified successfully.");

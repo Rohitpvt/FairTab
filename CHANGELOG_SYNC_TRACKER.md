@@ -6,6 +6,16 @@
 
 ## Change Log
 
+### [2026-09-09] - Firebase Hosting Deployment & Standalone Invitation Landing Fix
+- **Scope**: `Config / Hosting / UI / Logic`
+- **Files Changed**:
+  - `.env.production` (Updated `VITE_APP_BASE_PATH=/` for Firebase root hosting)
+  - `vite.config.ts` (Updated default base path to `/` and manifest start URL)
+  - `index.html` (Updated icon links to root `/icons/icon-192.png`)
+  - `scripts/verify-paths.js` (Updated postbuild verification for root base path `/`)
+  - `src/features/invitations/InvitationAcceptPage.tsx` (Integrated `useAuth()` to smoothly resolve unauthenticated state without hanging in `isLoading` and wrapped in `AuthLayout` for pristine standalone presentation)
+- **Sync Status**: `Synced to Android` (Tested and verified live with Chrome on Pixel 8 Pro emulator)
+
 ### [2026-09-09] - Firebase Hosting Domain Migration for App & Group Invite Links
 - **Scope**: `Config / Logic / Hosting`
 - **Files Changed**:
