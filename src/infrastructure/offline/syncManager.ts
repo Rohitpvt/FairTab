@@ -226,16 +226,12 @@ class ForegroundSyncManager {
   }
 
   /**
-   * Clear permanently failed or invalid outbox operations
+   * Clear permanently failed or invalid outbox operations across all records
    */
   public async clearFailedOperations(groupId?: string): Promise<number> {
-    const currentUid = auth.currentUser?.uid || "anonymous";
     const allOps = await offlineDb.expenseOutbox.toArray();
     const failedOps = allOps.filter(
-      (op) =>
-        op.status === "failed" &&
-        (!groupId || op.groupId === groupId) &&
-        (op.uid === currentUid || op.uid === "anonymous" || !op.uid)
+      (op) => op.status === "failed" && (!groupId || op.groupId === groupId)
     );
 
     for (const op of failedOps) {
@@ -244,18 +240,26 @@ class ForegroundSyncManager {
 
     const receipts = await offlineDb.receiptDrafts.toArray();
     const failedReceipts = receipts.filter(
-      (r) =>
-        r.status === "failed" &&
-        (!groupId || r.groupId === groupId) &&
-        (r.uid === currentUid || r.uid === "anonymous" || !r.uid)
+      (r) => r.status === "failed" && (!groupId || r.groupId === groupId)
     );
 
     for (const r of failedReceipts) {
       await offlineDb.receiptDrafts.delete(r.id);
     }
 
+    // Force an immediate notification cycle
     await this.notifyListeners();
     return failedOps.length + failedReceipts.length;
+  }
+
+  /**
+   * Clear all pending and failed operations completely (hard reset outbox)
+   */
+  public async purgeOutbox(): Promise<void> {
+    await offlineDb.expenseOutbox.clear();
+    await offlineDb.receiptDrafts.clear();
+    await offlineDb.outboxAttempts.clear();
+    await this.notifyListeners();
   }
 
   /**
