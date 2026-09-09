@@ -15,8 +15,8 @@ export function getPublicAppBaseUrl(): string {
     }
   }
 
-  // Canonical production web deployment URL
-  return "https://rohitpvt.github.io/FairTab";
+  // Canonical production web deployment URL (Firebase Hosting)
+  return "https://fairtab-48340.web.app";
 }
 
 /**

@@ -6,6 +6,14 @@
 
 ## Change Log
 
+### [2026-09-09] - Firebase Hosting Domain Migration for App & Group Invite Links
+- **Scope**: `Config / Logic / Hosting`
+- **Files Changed**:
+  - `.firebaserc` (Updated default Firebase project ID to `fairtab-48340`)
+  - `firebase.json` (Added Firebase Hosting configuration pointing to `dist` directory with SPA rewrite rules)
+  - `src/utils/urlHelper.ts` (Updated canonical public base URL from `https://rohitpvt.github.io/FairTab` to `https://fairtab-48340.web.app`)
+- **Sync Status**: `Synced to Android` (Tested and verified live on Pixel 8 Pro emulator)
+
 ### [2026-09-09] - Instant Onboarding & Disabled Email Verification Gate
 - **Scope**: `Logic / Config / Auth`
 - **Files Changed**:
