@@ -201,7 +201,7 @@ export const OverviewPage: React.FC = () => {
 
       // Calculate debts for this group to know who owes whom
       const recommendations =
-        (g as any).settlementStrategy === "minimum_transactions"
+        g.settlementStrategy === "minimum_transactions"
           ? simplifyMinimumTransactions(balances)
           : simplifyPreserveRelationships(groupExpenses, groupSettlements, memberIds);
       recommendations.forEach((rec) => {
