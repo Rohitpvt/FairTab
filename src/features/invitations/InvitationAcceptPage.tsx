@@ -27,38 +27,46 @@ export const InvitationAcceptPage: React.FC = () => {
   const actualToken = token || invitationId;
   const isGlobalJoin = location.pathname.includes("/join/");
 
-  const [isLoading, setIsLoading] = useState(() => !!actualToken);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [errorMsg, setErrorMsg] = useState<string | null>(() => actualToken ? null : "No invitation token provided.");
-
   const { user: currentUser, authState } = useAuth();
   const isOffline = !navigator.onLine;
 
+  const [isResolving, setIsResolving] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(() => actualToken ? null : "No invitation token provided.");
+
   useEffect(() => {
-    if (!actualToken) {
+    if (!actualToken || !currentUser) {
       return;
     }
 
+    let isMounted = true;
     const resolveToken = async () => {
-      setIsLoading(true);
+      setIsResolving(true);
       setErrorMsg(null);
       try {
-        // We call resolveInviteToken backend helper to get the details secure server-side
         const res: any = await fairtabApi.invitations.resolveInviteToken({ token: actualToken });
-        setResolvedDetails(res);
+        if (isMounted) {
+          setResolvedDetails(res);
+        }
       } catch (err: any) {
-        setErrorMsg(err.message || "Failed to resolve invitation token.");
+        if (isMounted) {
+          setErrorMsg(err.message || "Failed to resolve invitation token.");
+        }
       } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          setIsResolving(false);
+        }
       }
     };
 
-    if (currentUser) {
-      resolveToken();
-    } else if (authState === "unauthenticated") {
-      setIsLoading(false);
-    }
-  }, [actualToken, currentUser, authState]);
+    resolveToken();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [actualToken, currentUser]);
+
+  const isLoading = (authState === "initializing" || authState === "authenticated-profile-loading" || isResolving) && !errorMsg;
 
   const handleAcceptEmailInvite = async () => {
     if (isOffline) {
