@@ -6,6 +6,29 @@
 
 ## Change Log
 
+### [2026-09-10] - Group Data Export Permission Fix & Scoped Single-Group Exports
+- **Scope**: `Logic / Security / UI / Export`
+- **Files Changed**:
+  - `src/utils/exportHelper.ts` (Replaced root collection queries on `/users` and `/groups` with secure direct document reads on `/users/{uid}`, `/userGroupIndex/{uid}/groups`, and individual group subcollections; added `fetchGroupExportData` for fast single-group backup/CSV generation; fixed `receiverId` mapping in settlements CSV)
+  - `src/features/groups/GroupSettingsPage.tsx` (Connected JSON, Expenses CSV, Splits CSV, and Settlements CSV export handlers directly to `fetchGroupExportData`)
+- **Sync Status**: `Synced to Web & Deployed` (Verified with ESLint, Vitest, and deployed live to Firebase Hosting)
+
+### [2026-09-10] - Dashboard Gross Debt & Credit Totals Calculation Parity
+- **Scope**: `Logic / UI / Calculations`
+- **Files Changed**:
+  - `src/features/dashboard/OverviewPage.tsx` (Aggregated `totalOwedMinor` and `totalOwesMinor` directly from bilateral debt recommendations rather than net balance sign checks so "You are owed total" and "You owe total" reflect exact gross amounts; updated suggested settlement calculation to resolve member IDs and respect group strategy)
+  - `src/features/settlements/GlobalSettlementsPage.tsx` (Updated global currency summary to accumulate pairwise debts and credits according to each group's `settlementStrategy`)
+- **Sync Status**: `Synced to Web & Deployed` (169 Vitest tests passing, deployed live to Firebase Hosting)
+
+### [2026-09-10] - Debt Tracking Simplification Strategy (Preserve Relationships vs Minimum Transactions)
+- **Scope**: `Logic / Domain / UI / Settings`
+- **Files Changed**:
+  - `packages/domain/src/expenses/groupSchema.ts` & `src/features/groups/CreateGroupPage.tsx` (Defaulted `settlementStrategy` to `preserve_relationships`)
+  - `src/features/groups/GroupSettingsPage.tsx` (Added Balance Calculation strategy selector with clear explanations)
+  - `src/features/settlements/components/DebtSimplificationPanel.tsx` & `SettlementsPage.tsx` (Added interactive sync toggle buttons in Debt Optimization Plan banner)
+  - `packages/domain/src/expenses/balances.ts` & `simplification.ts` (Ensured non-voided active expenses are properly calculated)
+- **Sync Status**: `Synced to Web & Deployed` (Deployed live to Firebase Hosting)
+
 ### [2026-09-10] - Outbox Sync Error Visibility & Immediate Recovery Fix
 - **Scope**: `Logic / Offline / UI / Sync`
 - **Files Changed**:
