@@ -188,19 +188,22 @@ export const ExpenseListPage: React.FC<ExpenseListPageProps> = ({
             </div>
             
             <div className="flex items-center gap-2 self-end sm:self-auto">
-              {syncStatus.failedCount > 0 && (
+              {(syncStatus.failedCount > 0 || syncStatus.pendingCount > 0) && (
                 <Button
                   size="sm"
                   variant="ghost"
                   onClick={async () => {
-                    await syncManager.clearFailedOperations();
-                    setSyncStatus((prev) => ({ ...prev, failedCount: 0 }));
+                    await syncManager.clearFailedOperations(groupId);
+                    if (syncStatus.pendingCount > 0) {
+                      await syncManager.purgeOutbox();
+                    }
+                    setSyncStatus({ isOnline: true, isSyncing: false, pendingCount: 0, failedCount: 0 });
                     setFailedOpsList([]);
-                    toast.success("Cleared failed sync operations.");
+                    toast.success("Outbox sync queue reset.");
                   }}
                   className="text-xs text-text-muted hover:text-danger hover:bg-danger/10 border border-white/10"
                 >
-                  Dismiss Failed
+                  Clear Queue
                 </Button>
               )}
               {(syncStatus.failedCount > 0 || syncStatus.pendingCount > 0) && syncStatus.isOnline && (

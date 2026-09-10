@@ -327,6 +327,23 @@ export const GroupDetailPage: React.FC = () => {
       description={group.description || `Split ledger group using ${group.baseCurrency}.`}
       action={
         <div className="flex flex-wrap items-center gap-2">
+          {canInviteMember(currentUserRole) && group.status === "active" && (
+            <Button
+              onClick={() => {
+                if (group.memberUserIds.length >= 100) {
+                  toast.error("Cannot invite members: limit of 100 has been reached.");
+                  return;
+                }
+                setIsInviteOpen(true);
+              }}
+              variant="gradient"
+              size="sm"
+              className="flex items-center gap-1.5 text-xs shadow-lg shadow-accent-cyan/10"
+            >
+              <UserPlus className="h-3.5 w-3.5" />
+              <span>Invite</span>
+            </Button>
+          )}
           <Link to={`/groups/${group.id}/settlements`}>
             <Button variant="secondary" size="sm" className="flex items-center gap-1.5 text-xs">
               <HandCoins className="h-3.5 w-3.5" />
