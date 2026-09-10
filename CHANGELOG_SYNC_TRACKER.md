@@ -6,10 +6,11 @@
 
 ## Change Log
 
-### [2026-09-10] - Dual-Layer Resilient Invitation Resolution & Retry UI
-- **Scope**: `Logic / UI / Resilience`
+### [2026-09-10] - Immediate Firestore Invite Resolution & Auth Redirection Bridge
+- **Scope**: `Logic / UI / Routing / Auth`
 - **Files Changed**:
-  - `src/features/invitations/InvitationAcceptPage.tsx` (Implemented dual-layer resolution: ensures fresh Firebase ID token before calling backend API, with direct Firestore `/globalInviteLinks/{tokenHash}` fallback; added user-friendly error card with "Retry Link" and "Return to Groups" actions)
+  - `src/features/invitations/InvitationAcceptPage.tsx` (Prioritized direct client Firestore lookup `/globalInviteLinks/{tokenHash}` before serverless API fallback, preventing CORS/cold-start errors; improved auth state loading handling)
+  - `src/features/auth/LoginForm.tsx` & `RegisterForm.tsx` (Preserved `redirect` parameter and pending invite tokens upon successful login/registration so users are returned directly to their invite acceptance screen instead of default `/overview`)
 - **Sync Status**: `Synced to Android` (Compiled bundle synced via `sync-web-assets.js` and Capacitor public assets updated)
 
 ### [2026-09-10] - Forced Canonical Firebase Hosting URL & Cloud Functions Invite Fix

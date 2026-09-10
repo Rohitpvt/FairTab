@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Eye, EyeOff, AlertCircle } from "lucide-react";
 import { authService } from "../../infrastructure/firebase/authService";
 import { useAuth } from "./AuthProvider";
@@ -14,6 +14,7 @@ import type { LoginFormData } from "./loginSchema";
 
 export const LoginForm: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { setTrustedDevicePreference } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -46,7 +47,23 @@ export const LoginForm: React.FC = () => {
 
       await authService.loginEmail(data.email, data.password, data.rememberDevice);
       toast.success("Successfully logged in!");
-      navigate("/overview");
+
+      // Check query redirect or pending invite token
+      const searchParams = new URLSearchParams(location.search);
+      const redirectParam = searchParams.get("redirect");
+      const pendingToken = sessionStorage.getItem("fairtab:pending-invite-token");
+      const pendingType = sessionStorage.getItem("fairtab:pending-invite-type") || "email";
+
+      if (redirectParam && redirectParam.startsWith("/")) {
+        navigate(redirectParam);
+      } else if (pendingToken) {
+        sessionStorage.removeItem("fairtab:pending-invite-token");
+        sessionStorage.removeItem("fairtab:pending-invite-type");
+        const path = pendingType === "global" ? `/join/${pendingToken}` : `/invite/${pendingToken}`;
+        navigate(path);
+      } else {
+        navigate("/overview");
+      }
     } catch (err: unknown) {
       try {
         sessionStorage.removeItem("fairtab:pending-remember");

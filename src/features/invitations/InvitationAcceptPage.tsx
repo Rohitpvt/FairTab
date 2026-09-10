@@ -52,28 +52,17 @@ export const InvitationAcceptPage: React.FC = () => {
       return;
     }
 
+    // Wait until Firebase auth initialization finishes before resolving
+    if (authState === "initializing") {
+      return;
+    }
+
     let isMounted = true;
     const resolveToken = async () => {
       setIsResolving(true);
       setErrorMsg(null);
 
-      // Attempt 1: Call fairtabApi backend endpoint
-      try {
-        if (auth.currentUser) {
-          // Ensure fresh Firebase ID Token exists before making the request
-          await auth.currentUser.getIdToken();
-        }
-        const res: any = await fairtabApi.invitations.resolveInviteToken({ token: actualToken });
-        if (isMounted && res && res.groupName) {
-          setResolvedDetails(res);
-          setIsResolving(false);
-          return;
-        }
-      } catch (apiErr: any) {
-        console.warn("Backend resolveToken returned error, attempting direct Firestore resolution fallback:", apiErr);
-      }
-
-      // Attempt 2: Direct Firestore query fallback for global links
+      // Attempt 1: Direct Firestore query for global links (instant & ultra-reliable)
       try {
         const hashedToken = await sha256Hex(actualToken);
         const globalLinkRef = doc(db, "globalInviteLinks", hashedToken);
@@ -107,12 +96,27 @@ export const InvitationAcceptPage: React.FC = () => {
           return;
         }
       } catch (firestoreErr: any) {
-        console.warn("Direct Firestore token resolution fallback failed:", firestoreErr);
+        console.warn("Direct Firestore token resolution fallback note:", firestoreErr);
+      }
+
+      // Attempt 2: Call fairtabApi backend endpoint (for email invites and server validation)
+      try {
+        if (auth.currentUser) {
+          await auth.currentUser.getIdToken();
+        }
+        const res: any = await fairtabApi.invitations.resolveInviteToken({ token: actualToken });
+        if (isMounted && res && res.groupName) {
+          setResolvedDetails(res);
+          setIsResolving(false);
+          return;
+        }
+      } catch (apiErr: any) {
+        console.warn("Backend resolveToken returned error:", apiErr);
       }
 
       // If both fail:
       if (isMounted) {
-        setErrorMsg("Unable to load invitation details. Please check your internet connection or verify the link is valid.");
+        setErrorMsg("Unable to load invitation details. Please check your connection or verify that the link is valid.");
         setIsResolving(false);
       }
     };
@@ -122,9 +126,10 @@ export const InvitationAcceptPage: React.FC = () => {
     return () => {
       isMounted = false;
     };
-  }, [actualToken, currentUser, resolveAttempt]);
+  }, [actualToken, currentUser, authState, resolveAttempt]);
 
-  const isLoading = (authState === "initializing" || authState === "authenticated-profile-loading" || isResolving) && !errorMsg;
+  const isResolvingState = isResolving || (!!currentUser && (authState === "initializing" || authState === "authenticated-profile-loading"));
+  const isLoading = isResolvingState && !errorMsg && !resolvedDetails;
 
   const handleAcceptEmailInvite = async () => {
     if (isOffline) {
@@ -135,7 +140,6 @@ export const InvitationAcceptPage: React.FC = () => {
 
     setIsProcessing(true);
     try {
-      // Force refresh auth token for email_verified claim update
       if (auth.currentUser) {
         await auth.currentUser.getIdToken(true);
       }
@@ -171,7 +175,7 @@ export const InvitationAcceptPage: React.FC = () => {
     }
   };
 
-  if (!currentUser) {
+  if (!currentUser && authState !== "initializing") {
     // Store token in sessionStorage for redirection bridge
     if (actualToken) {
       sessionStorage.setItem("fairtab:pending-invite-token", actualToken);
@@ -239,7 +243,7 @@ export const InvitationAcceptPage: React.FC = () => {
 
   // If email invite, check verified email
   if (resolvedDetails.type === "email") {
-    if (!currentUser.emailVerified) {
+    if (!currentUser?.emailVerified) {
       return (
         <PageContainer title="Verify Email" description="Account verification required.">
           <div className="max-w-md mx-auto text-left mt-8 glass-elevated border border-white/10 rounded-2xl p-6 flex flex-col gap-4">
