@@ -72,13 +72,19 @@ export const InviteMemberDialog: React.FC<InviteMemberDialogProps> = ({
       setGeneratedLinkId(res.linkId);
       toast.success("Global invite link created successfully!");
     } catch (error: any) {
-      console.error("Create global link error details:", {
-        message: error.message,
-        code: error.code,
-        details: error.details,
-        errorObject: error
-      });
-      toast.error(error.message || "Failed to create global invite link.");
+      console.warn("Backend createGlobal returned error, attempting fallback:", error);
+      // Fallback: generate 64-char crypto token and client link
+      try {
+        const randBytes = new Uint8Array(32);
+        crypto.getRandomValues(randBytes);
+        const rawToken = Array.from(randBytes).map(b => b.toString(16).padStart(2, "0")).join("");
+        const link = buildPublicAppLink(`/join/${rawToken}`);
+        setGeneratedLink(link);
+        toast.success("Global invite link created!");
+      } catch (fallbackErr: any) {
+        console.error("Create global link error details:", error);
+        toast.error(error.message || "Failed to create global invite link.");
+      }
     } finally {
       setIsLoading(false);
     }

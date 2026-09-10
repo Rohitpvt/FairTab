@@ -84,13 +84,51 @@ export const profileService = {
    * Updates only self-service fields on user profiles.
    * Increments version, validates immutable properties client-side.
    */
-  async updateUserProfile(_uid: string, updates: Partial<Pick<UserProfile, "displayName" | "photoURL" | "defaultCurrency" | "locale" | "timeZone" | "onboardingCompleted">>): Promise<void> {
-    const { fairtabApi } = await import("../api/fairtabApi");
-    await fairtabApi.accounts.updateProfile(updates);
+  async updateUserProfile(uid: string, updates: Partial<Pick<UserProfile, "displayName" | "photoURL" | "defaultCurrency" | "locale" | "timeZone" | "onboardingCompleted">>): Promise<void> {
+    try {
+      const { fairtabApi } = await import("../api/fairtabApi");
+      await fairtabApi.accounts.updateProfile(updates);
+      return;
+    } catch (apiErr: unknown) {
+      console.warn("Backend updateUserProfile returned error, falling back to direct Firestore transaction:", apiErr);
+    }
+
+    // Direct Firestore transactional fallback conforming strictly to Firestore security rules:
+    const docRef = doc(db, "users", uid);
+    await runTransaction(db, async (transaction) => {
+      const docSnap = await transaction.get(docRef);
+      if (!docSnap.exists()) {
+        throw new Error("User profile not found in Firestore.");
+      }
+      const existing = docSnap.data() as UserProfile;
+
+      const newDisplayName = updates.displayName !== undefined ? updates.displayName.trim() : existing.displayName;
+      const patch: Partial<UserProfile> = {
+        updatedAt: serverTimestamp(),
+        updatedBy: uid,
+        version: (existing.version || 1) + 1,
+      };
+
+      if (updates.displayName !== undefined) {
+        patch.displayName = newDisplayName;
+        patch.displayNameLower = newDisplayName.toLowerCase();
+      }
+      if (updates.photoURL !== undefined) patch.photoURL = updates.photoURL;
+      if (updates.defaultCurrency !== undefined) patch.defaultCurrency = updates.defaultCurrency;
+      if (updates.locale !== undefined) patch.locale = updates.locale;
+      if (updates.timeZone !== undefined) patch.timeZone = updates.timeZone;
+      if (updates.onboardingCompleted !== undefined) patch.onboardingCompleted = updates.onboardingCompleted;
+
+      transaction.update(docRef, patch);
+    });
   },
 
   async repairUserProfile(): Promise<{ success: boolean; repairedCount: number }> {
-    const { fairtabApi } = await import("../api/fairtabApi");
-    return (await fairtabApi.accounts.repairProfile()) as { success: boolean; repairedCount: number };
+    try {
+      const { fairtabApi } = await import("../api/fairtabApi");
+      return (await fairtabApi.accounts.repairProfile()) as { success: boolean; repairedCount: number };
+    } catch {
+      return { success: false, repairedCount: 0 };
+    }
   }
 };

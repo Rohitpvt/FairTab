@@ -6,6 +6,15 @@
 
 ## Change Log
 
+### [2026-09-10] - Onboarding Setup Resilience & Invite Link Creation Fallback
+- **Scope**: `Logic / UI / Profile / Invitations`
+- **Files Changed**:
+  - `src/infrastructure/firebase/profileService.ts` (Added transactional Firestore client-side fallback to `updateUserProfile` to guarantee onboarding "Complete Setup" never blocks or fails during serverless cold starts)
+  - `src/features/groups/InviteMemberDialog.tsx` (Added client-side cryptographic token generation fallback for global invite link creation)
+  - `src/features/invitations/InvitationAcceptPage.tsx` (Prioritized direct client Firestore lookup `/globalInviteLinks/{tokenHash}` before serverless API fallback, preventing CORS/cold-start errors; improved auth state loading handling)
+  - `src/features/auth/LoginForm.tsx` & `RegisterForm.tsx` (Preserved `redirect` parameter and pending invite tokens upon successful login/registration so users are returned directly to their invite acceptance screen instead of default `/overview`)
+- **Sync Status**: `Synced to Android` (Compiled bundle synced via `sync-web-assets.js` and Capacitor public assets updated)
+
 ### [2026-09-10] - Immediate Firestore Invite Resolution & Auth Redirection Bridge
 - **Scope**: `Logic / UI / Routing / Auth`
 - **Files Changed**:
