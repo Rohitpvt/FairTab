@@ -1,5 +1,6 @@
 {
-  "buildCommand": "echo 'Skipping frontend build'",
+  "buildCommand": "mkdir -p public",
+  "outputDirectory": "public",
   "headers": [
     {
       "source": "/api/(.*)",
