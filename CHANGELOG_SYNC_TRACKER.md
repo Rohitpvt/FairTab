@@ -6,6 +6,17 @@
 
 ## Change Log
 
+### [2026-09-11] - Animated 404 Page & Global Error Boundary with Working Retry
+- **Scope**: `UI / Feedback / Error Handling / Routing / PWA`
+- **Files Changed**:
+  - `src/components/feedback/Animated404ErrorView.tsx` (Created responsive, mobile-optimized animated 404 / error view featuring the animated character walking canvas, large header, error details collapsible trace, and interactive "Try Again", "Return to Dashboard", and "Back" buttons)
+  - `src/features/error/NotFoundPage.tsx` (Replaced plain placeholder with `Animated404ErrorView` for unknown route fallbacks)
+  - `src/components/feedback/ErrorBoundary.tsx` (Integrated `Animated404ErrorView` with custom error trace toggle and component error state reset)
+  - `src/App.tsx` (Wrapped top-level `<Routes>` in `<ErrorBoundary>` and added catch-all outer 404 route for unauthenticated paths)
+  - `public/offline.html` (Updated offline service worker fallback to use animated 404 canvas and retry button)
+  - `public/images/404-bg.gif` & `src/assets/404-bg.gif` (Integrated animated asset into bundle)
+- **Sync Status**: `Synced to Web & Android` (169 Vitest tests passing, deployed live to Firebase Hosting, synced via `npm run build:mobile`)
+
 ### [2026-09-11] - Analytics & Insights Historical Ledgers & Past Balance Summary Records
 - **Scope**: `UI / Analytics / Insights / Ledgers / Balances`
 - **Files Changed**:

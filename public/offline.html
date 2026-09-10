@@ -3,72 +3,133 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>FairTab — Offline Fallback</title>
+    <title>FairTab — Connection Offline</title>
     <style>
+      * {
+        box-sizing: border-box;
+      }
       body {
         margin: 0;
-        padding: 0;
-        font-family: Inter, system-ui, -apple-system, sans-serif;
-        background: linear-gradient(145deg, #060810 0%, #090d18 52%, #070a12 100%);
-        color: #f5f7fa;
+        padding: 16px;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        background: #0f172a;
+        color: #1e293b;
         display: flex;
         align-items: center;
         justify-content: center;
         min-height: 100vh;
+      }
+      .card {
+        background: #ffffff;
+        border-radius: 24px;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        max-width: 580px;
+        width: 100%;
+        overflow: hidden;
         text-align: center;
       }
-      .container {
-        padding: 2rem;
-        background: rgba(15, 21, 35, 0.62);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 1.125rem;
-        box-shadow: 0 18px 50px rgba(0, 0, 0, 0.3);
-        max-width: 400px;
-        backdrop-filter: blur(20px);
+      .bg-container {
+        background-image: url("./images/404-bg.gif");
+        height: 280px;
+        background-position: center;
+        background-repeat: no-repeat;
+        background-size: contain;
+        display: flex;
+        align-items: flex-start;
+        justify-content: center;
+        padding-top: 16px;
       }
-      h1 {
-        font-size: 1.75rem;
-        margin-bottom: 0.5rem;
-        background: linear-gradient(135deg, #7c6cff 0%, #9d5cff 48%, #22d3ee 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
+      .bg-container h1 {
+        font-size: 4rem;
+        margin: 0;
+        color: #1e293b;
+        font-family: Georgia, serif;
+        font-weight: 900;
+        letter-spacing: 2px;
+      }
+      .content {
+        padding: 0 24px 32px 24px;
+        margin-top: -30px;
+        background: #ffffff;
+      }
+      h2 {
+        font-size: 1.5rem;
+        margin: 0 0 8px 0;
+        color: #0f172a;
+        font-weight: 800;
       }
       p {
-        color: #adbac7;
-        font-size: 1rem;
+        color: #64748b;
+        font-size: 0.95rem;
         line-height: 1.5;
-        margin-bottom: 1.5rem;
+        margin: 0 auto 24px auto;
+        max-width: 420px;
       }
-      .badge {
-        display: inline-block;
-        padding: 0.25rem 0.75rem;
-        border-radius: 9999px;
-        background: rgba(245, 158, 11, 0.15);
-        color: #f59e0b;
-        font-size: 0.85rem;
-        margin-bottom: 1.5rem;
-        font-weight: 500;
-        border: 1px solid rgba(245, 158, 11, 0.2);
+      .btn-group {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        max-width: 380px;
+        margin: 0 auto;
       }
-      .btn {
-        background: linear-gradient(135deg, #7c6cff 0%, #22d3ee 100%);
-        color: #f5f7fa;
+      @media (min-width: 480px) {
+        .btn-group {
+          flex-direction: row;
+        }
+        .bg-container {
+          height: 320px;
+        }
+        .bg-container h1 {
+          font-size: 5rem;
+        }
+      }
+      .btn-primary {
+        background: #39ac31;
+        color: #ffffff;
         border: none;
-        padding: 0.75rem 1.5rem;
-        border-radius: 0.875rem;
-        font-weight: 600;
+        padding: 12px 24px;
+        border-radius: 12px;
+        font-weight: 700;
+        font-size: 0.95rem;
         cursor: pointer;
-        width: 100%;
-        box-sizing: border-box;
+        flex: 1;
+        transition: background 0.2s, transform 0.1s;
+        box-shadow: 0 10px 15px -3px rgba(57, 172, 49, 0.3);
+      }
+      .btn-primary:hover {
+        background: #32962b;
+        transform: translateY(-1px);
+      }
+      .btn-secondary {
+        background: #0f172a;
+        color: #ffffff;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 0.95rem;
+        cursor: pointer;
+        flex: 1;
+        transition: background 0.2s;
+      }
+      .btn-secondary:hover {
+        background: #1e293b;
       }
     </style>
   </head>
   <body>
-    <div class="container">
-      <div class="badge">No Connection</div>
-      <h1>FairTab</h1>
-      <p>It looks like you're currently offline. Previously cached screens and operations are available, but you need a network connection to load new sections.</p>
-      <button class="btn" onclick="window.location.reload()">Retry Connection</button>
+    <div class="card">
+      <div class="bg-container">
+        <h1>Offline</h1>
+      </div>
+      <div class="content">
+        <h2>Connection Lost</h2>
+        <p>You are currently offline. Check your internet connection and try loading the application again.</p>
+        <div class="btn-group">
+          <button class="btn-primary" onclick="window.location.reload()">Try Again</button>
+          <button class="btn-secondary" onclick="window.location.href='#/overview'">Return Home</button>
+        </div>
+      </div>
     </div>
   </body>
 </html>

@@ -51,13 +51,15 @@ import {
 } from "./features/auth/RouteGuards";
 import { EmulatorIndicator } from "./components/ui/EmulatorIndicator";
 import { CookieConsentBanner } from "./components/legal/CookieConsentBanner";
+import { ErrorBoundary } from "./components/feedback/ErrorBoundary";
 
 export function App() {
   return (
     <HashRouter>
       <AppActionProvider>
         <AuthProvider>
-          <Routes>
+          <ErrorBoundary>
+            <Routes>
             {/* Public-only authentication routes */}
             <Route element={<PublicOnlyRoute />}>
               <Route
@@ -357,13 +359,24 @@ export function App() {
                 />
               </Route>
             </Route>
+
+            {/* Top-level Fallback 404 for unauthenticated or outer routes */}
+            <Route
+              path="*"
+              element={
+                <Suspense fallback={<RoutePending />}>
+                  <NotFoundPage />
+                </Suspense>
+              }
+            />
           </Routes>
-          <EmulatorIndicator />
-          <CookieConsentBanner />
-        </AuthProvider>
-      </AppActionProvider>
-    </HashRouter>
-  );
+        </ErrorBoundary>
+        <EmulatorIndicator />
+        <CookieConsentBanner />
+      </AuthProvider>
+    </AppActionProvider>
+  </HashRouter>
+);
 }
 
 export default App;

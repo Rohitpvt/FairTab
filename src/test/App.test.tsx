@@ -146,9 +146,11 @@ describe("Routing and Fallback 404", () => {
     render(<App />);
 
     // Wait for the lazy-loaded NotFoundPage to mount
-    const errorHeading = await screen.findByText("Page Not Found");
+    const errorHeading = await screen.findByText("Look like you're lost");
     expect(errorHeading).toBeInTheDocument();
+    expect(screen.getByText("404")).toBeInTheDocument();
     expect(screen.getByText(/Return to Dashboard/i)).toBeInTheDocument();
+    expect(screen.getByText(/Try Again/i)).toBeInTheDocument();
   });
 });
 
