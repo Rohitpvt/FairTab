@@ -185,16 +185,12 @@ export const OverviewPage: React.FC = () => {
     const memberIds = getGroupMemberIds(g.groupId, groupExpenses, groupSettlements, userMemberId);
 
     try {
-      const balances = calculateBalances(groupExpenses, groupSettlements, memberIds);
+      const activeExpenses = groupExpenses.filter((e) => e.status !== "voided");
+      const balances = calculateBalances(activeExpenses, groupSettlements, memberIds);
       const userBalanceObj = balances.find((b) => b.memberId === userMemberId || b.memberId === currentUserId);
       const balance = userBalanceObj ? userBalanceObj.netBaseMinor : 0;
 
       totalNetBalanceMinor += balance;
-      if (balance > 0) {
-        totalOwedMinor += balance;
-      } else if (balance < 0) {
-        totalOwesMinor += Math.abs(balance);
-      }
 
       const currency = groupExpenses[0]?.groupBaseCurrency || "INR";
       dashboardCurrency = currency;
@@ -203,10 +199,11 @@ export const OverviewPage: React.FC = () => {
       const recommendations =
         g.settlementStrategy === "minimum_transactions"
           ? simplifyMinimumTransactions(balances)
-          : simplifyPreserveRelationships(groupExpenses, groupSettlements, memberIds);
+          : simplifyPreserveRelationships(activeExpenses, groupSettlements, memberIds);
       recommendations.forEach((rec) => {
         if (rec.toMemberId === userMemberId || rec.toMemberId === currentUserId) {
           // Other member owes the user
+          totalOwedMinor += rec.amountMinor;
           const otherName = getMemberName(g.groupId, rec.fromMemberId);
           userBreakdowns.push({
             id: `${g.groupId}:${rec.fromMemberId}->${rec.toMemberId}`,
@@ -220,6 +217,7 @@ export const OverviewPage: React.FC = () => {
           });
         } else if (rec.fromMemberId === userMemberId || rec.fromMemberId === currentUserId) {
           // User owes other member
+          totalOwesMinor += rec.amountMinor;
           const otherName = getMemberName(g.groupId, rec.toMemberId);
           userBreakdowns.push({
             id: `${g.groupId}:${rec.fromMemberId}->${rec.toMemberId}`,
@@ -316,13 +314,20 @@ export const OverviewPage: React.FC = () => {
   for (const g of groups) {
     const groupExpenses = expensesMap[g.groupId] || [];
     const groupSettlements = settlementsMap[g.groupId] || [];
+    const groupMembers = membersMap[g.groupId] || [];
     const currentUserId = user?.uid || "";
-    const memberIds = getGroupMemberIds(g.groupId, groupExpenses, groupSettlements, currentUserId);
+    const userMember = groupMembers.find((m) => m.userId === currentUserId || m.id === currentUserId);
+    const userMemberId = userMember?.id || currentUserId;
+    const memberIds = getGroupMemberIds(g.groupId, groupExpenses, groupSettlements, userMemberId);
 
     try {
-      const balances = calculateBalances(groupExpenses, groupSettlements, memberIds);
-      const recs = simplifyMinimumTransactions(balances);
-      const myDebt = recs.find((r) => r.fromMemberId === currentUserId);
+      const activeExpenses = groupExpenses.filter((e) => e.status !== "voided");
+      const balances = calculateBalances(activeExpenses, groupSettlements, memberIds);
+      const recs =
+        g.settlementStrategy === "minimum_transactions"
+          ? simplifyMinimumTransactions(balances)
+          : simplifyPreserveRelationships(activeExpenses, groupSettlements, memberIds);
+      const myDebt = recs.find((r) => r.fromMemberId === userMemberId || r.fromMemberId === currentUserId);
       if (myDebt) {
         suggestedSettlement = {
           groupId: g.groupId,

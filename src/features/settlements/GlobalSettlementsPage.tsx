@@ -9,7 +9,7 @@ import { useAuth } from "../auth/AuthProvider";
 import { groupService } from "../../infrastructure/firebase/groupService";
 import { expenseService } from "../../infrastructure/firebase/expenseService";
 import { settlementService } from "../../infrastructure/firebase/settlementService";
-import { calculateBalances, simplifyMinimumTransactions } from "@fairtab/domain";
+import { calculateBalances, simplifyMinimumTransactions, simplifyPreserveRelationships } from "@fairtab/domain";
 import type { UserGroupIndexDocument } from "../groups/userGroupIndexSchema";
 import type { ExpenseDocument, SettlementDocument } from "@fairtab/domain";
 import type { GroupMemberDocument } from "../groups/memberSchema";
@@ -20,6 +20,7 @@ interface GroupData {
   groupId: string;
   groupName: string;
   baseCurrency: string;
+  settlementStrategy?: "minimum_transactions" | "preserve_relationships";
   members: GroupMemberDocument[];
   expenses: ExpenseDocument[];
   settlements: SettlementDocument[];
@@ -66,6 +67,7 @@ export const GlobalSettlementsPage: React.FC = () => {
             groupId: g.groupId,
             groupName: g.groupName,
             baseCurrency: prev[g.groupId]?.baseCurrency || "INR",
+            settlementStrategy: prev[g.groupId]?.settlementStrategy || g.settlementStrategy || "preserve_relationships",
             members,
             expenses,
             settlements,
@@ -86,6 +88,7 @@ export const GlobalSettlementsPage: React.FC = () => {
                 settlements: [],
               }),
               baseCurrency: groupDoc.baseCurrency,
+              settlementStrategy: groupDoc.settlementStrategy,
             },
           }));
         }
@@ -99,7 +102,7 @@ export const GlobalSettlementsPage: React.FC = () => {
       unsubscribes.push(unsubMembers);
 
       const unsubExpenses = expenseService.watchExpenses(g.groupId, (expList) => {
-        expenses = expList.filter((e) => e.status === "active");
+        expenses = expList.filter((e) => e.status !== "voided");
         updateGroupData();
       });
       unsubscribes.push(unsubExpenses);
@@ -159,31 +162,33 @@ export const GlobalSettlementsPage: React.FC = () => {
 
     Object.values(groupsData).forEach((g) => {
       const activeMemberIds = g.members.map((m) => m.id);
-      const groupUserMember = g.members.find((m) => m.userId === currentUid);
-      const groupUserMemberId = groupUserMember?.id;
+      const groupUserMember = g.members.find((m) => m.userId === currentUid || m.id === currentUid);
+      const groupUserMemberId = groupUserMember?.id || currentUid;
 
       // Calculate net balances per member
       const balances = calculateBalances(g.expenses, g.settlements, activeMemberIds);
 
-      // Add user balance to overall currency summary
+      // Compute suggested settlements using the group's strategy
+      const simplifications =
+        g.settlementStrategy === "minimum_transactions"
+          ? simplifyMinimumTransactions(balances)
+          : simplifyPreserveRelationships(g.expenses, g.settlements, activeMemberIds);
+
+      // Add user debts and credits to overall currency summary
       if (groupUserMemberId) {
-        const userBal = balances.find((b) => b.memberId === groupUserMemberId);
-        if (userBal) {
-          const netAmount = userBal.netBaseMinor;
-          const curr = g.baseCurrency;
-          if (!currencySummary[curr]) {
-            currencySummary[curr] = { owe: 0, owed: 0 };
-          }
-          if (netAmount > 0) {
-            currencySummary[curr].owed += netAmount;
-          } else if (netAmount < 0) {
-            currencySummary[curr].owe += Math.abs(netAmount);
-          }
+        const curr = g.baseCurrency;
+        if (!currencySummary[curr]) {
+          currencySummary[curr] = { owe: 0, owed: 0 };
         }
+        simplifications.forEach((sim) => {
+          if (sim.toMemberId === groupUserMemberId) {
+            currencySummary[curr].owed += sim.amountMinor;
+          } else if (sim.fromMemberId === groupUserMemberId) {
+            currencySummary[curr].owe += sim.amountMinor;
+          }
+        });
       }
 
-      // Compute suggested minimum transactions for debt simplification
-      const simplifications = simplifyMinimumTransactions(balances);
       simplifications.forEach((sim) => {
         // Only include suggested settlements directly involving the current authenticated user
         const involvesCurrentUser =
