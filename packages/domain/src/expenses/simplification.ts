@@ -133,12 +133,12 @@ export function simplifyPreserveRelationships(
   // Initialize obligation matrix: matrix[u][v] = amount member u owes member v
   const allParticipantIds = new Set<string>(memberIds);
   for (const exp of expenses) {
-    if (exp.status !== "active") continue;
+    if (exp.status === "voided") continue;
     for (const p of exp.payers) allParticipantIds.add(p.memberId);
     for (const s of exp.splits) allParticipantIds.add(s.memberId);
   }
   for (const set of settlements) {
-    if (set.status !== "active") continue;
+    if (set.status === "voided") continue;
     allParticipantIds.add(set.payerId);
     allParticipantIds.add(set.receiverId);
   }
@@ -154,7 +154,7 @@ export function simplifyPreserveRelationships(
 
   // 1. Process active expenses to build pairwise obligations
   for (const exp of expenses) {
-    if (exp.status !== "active") {
+    if (exp.status === "voided") {
       continue;
     }
 
@@ -200,7 +200,7 @@ export function simplifyPreserveRelationships(
 
   // 2. Process active settlements to reduce obligations
   for (const set of settlements) {
-    if (set.status !== "active") {
+    if (set.status === "voided") {
       continue;
     }
 

@@ -16,7 +16,7 @@ import { expenseService } from "../../infrastructure/firebase/expenseService";
 import { settlementService } from "../../infrastructure/firebase/settlementService";
 import { db } from "../../infrastructure/firebase/firebase";
 import { doc, getDoc } from "firebase/firestore";
-import { calculateBalances, simplifyMinimumTransactions } from "@fairtab/domain";
+import { calculateBalances, simplifyMinimumTransactions, simplifyPreserveRelationships } from "@fairtab/domain";
 import type { UserGroupIndexDocument } from "../../features/groups/userGroupIndexSchema";
 import type { ExpenseDocument, SettlementDocument } from "@fairtab/domain";
 import { EmptyState } from "../../components/feedback/FeedbackStates";
@@ -199,8 +199,11 @@ export const OverviewPage: React.FC = () => {
       const currency = groupExpenses[0]?.groupBaseCurrency || "INR";
       dashboardCurrency = currency;
 
-      // Calculate simplified debts for this group to know who owes whom
-      const recommendations = simplifyMinimumTransactions(balances);
+      // Calculate debts for this group to know who owes whom
+      const recommendations =
+        (g as any).settlementStrategy === "minimum_transactions"
+          ? simplifyMinimumTransactions(balances)
+          : simplifyPreserveRelationships(groupExpenses, groupSettlements, memberIds);
       recommendations.forEach((rec) => {
         if (rec.toMemberId === userMemberId || rec.toMemberId === currentUserId) {
           // Other member owes the user

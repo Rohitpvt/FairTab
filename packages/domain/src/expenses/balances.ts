@@ -51,7 +51,7 @@ export function calculateBalances(
 
   // Process only active expenses
   for (const exp of expenses) {
-    if (exp.status !== "active") {
+    if (exp.status === "voided") {
       continue;
     }
 
@@ -74,7 +74,7 @@ export function calculateBalances(
 
   // Process only active settlements
   for (const set of actualSettlements) {
-    if (set.status !== "active") {
+    if (set.status === "voided") {
       continue;
     }
 
