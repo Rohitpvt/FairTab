@@ -263,9 +263,9 @@ export const GroupDetailPage: React.FC = () => {
 
   // Use group strategy or default
   const recommendations =
-    group.settlementStrategy === "preserve_relationships"
-      ? simplifyPreserveRelationships(activeExpenses, settlements, allMemberIds)
-      : simplifyMinimumTransactions(balances);
+    group.settlementStrategy === "minimum_transactions"
+      ? simplifyMinimumTransactions(balances)
+      : simplifyPreserveRelationships(activeExpenses, settlements, allMemberIds);
 
   const groupUserBreakdowns: {
     id: string;

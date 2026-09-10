@@ -27,7 +27,7 @@ export const CreateGroupPage: React.FC = () => {
       type: "trip",
       baseCurrency: "INR",
       simplifyDebts: true,
-      settlementStrategy: "minimum_transactions",
+      settlementStrategy: "preserve_relationships",
     },
   });
 

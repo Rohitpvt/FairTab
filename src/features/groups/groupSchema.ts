@@ -12,7 +12,7 @@ export const groupSchema = zod.object({
   type: zod.enum(["trip", "home", "couple", "event", "project", "other"]),
   baseCurrency: zod.string().min(1, "Base currency is required."),
   simplifyDebts: zod.boolean().default(true),
-  settlementStrategy: zod.enum(["minimum_transactions", "preserve_relationships"]).default("minimum_transactions"),
+  settlementStrategy: zod.enum(["minimum_transactions", "preserve_relationships"]).default("preserve_relationships"),
 });
 
 export type GroupFormData = zod.infer<typeof groupSchema>;

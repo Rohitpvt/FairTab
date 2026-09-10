@@ -4,7 +4,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import type { Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowLeft, Landmark, Download, Trash2 } from "lucide-react";
+import { ArrowLeft, Landmark, Download, Trash2, HandCoins } from "lucide-react";
 import { PageContainer } from "../../components/layout/PageContainer";
 import { Button } from "../../components/ui/Button";
 import { GlassPanel } from "../../components/ui/GlassPanel";
@@ -275,6 +275,28 @@ export const GroupSettingsPage: React.FC = () => {
                   {...register("simplifyDebts")}
                   className="w-4 h-4 rounded border-white/10 bg-white/5 text-accent-cyan focus:ring-accent-cyan"
                 />
+              </div>
+
+              {/* Settlement Strategy */}
+              <div className="flex flex-col gap-2 p-4 bg-white/[0.02] border border-white/5 rounded-xl">
+                <div className="flex items-center gap-2">
+                  <HandCoins className="h-4 w-4 text-accent-cyan" />
+                  <span className="text-sm font-semibold text-text-primary">Balance Calculation</span>
+                </div>
+                <span className="text-xs text-text-muted mb-2">
+                  Controls how debts are displayed and who pays whom.
+                </span>
+                <select
+                  id="grp-strategy"
+                  {...register("settlementStrategy")}
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-text-primary text-sm focus:outline-none focus:border-accent-cyan transition-colors [&>option]:bg-[#0c0f1d]"
+                >
+                  <option value="preserve_relationships">🔗 Preserve Relationships — shows who actually owes whom</option>
+                  <option value="minimum_transactions">⚡ Minimum Transactions — fewest total payments</option>
+                </select>
+                <p className="text-[10px] text-text-muted mt-1">
+                  {`"Preserve Relationships" keeps debts tied to actual expenses. "Minimum Transactions" may reroute debts through other members to reduce the number of payments.`}
+                </p>
               </div>
 
               {/* Action Buttons */}

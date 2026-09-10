@@ -806,7 +806,7 @@ export const groupService = {
             memberUserIds: [userId],
             activeMemberCount: 1,
             simplifyDebts: true,
-            settlementStrategy: "minimum_transactions",
+            settlementStrategy: "preserve_relationships",
             status: idxData.status as "active" | "archived",
             latestActivityAt: idxData.latestActivityAt,
             createdAt: idxData.updatedAt,
