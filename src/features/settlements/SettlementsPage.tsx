@@ -16,6 +16,7 @@ import type { GroupMemberDocument } from "../groups/memberSchema";
 import type { ExpenseDocument, SettlementDocument } from "@fairtab/domain";
 import { useMemberNameResolver } from "../../hooks/useMemberNameResolver";
 import { useAuth } from "../auth/AuthProvider";
+import { canEditSettings } from "../groups/permissions";
 
 export const SettlementsPage: React.FC = () => {
   const { user } = useAuth();
@@ -113,6 +114,9 @@ export const SettlementsPage: React.FC = () => {
     return resolveName(m) + (m.kind === "placeholder" ? " (Placeholder)" : isFormer ? " (Former)" : "");
   };
 
+  const currentMember = members.find((m) => m.userId === user?.uid);
+  const currentUserRole = currentMember?.role || "viewer";
+  const canManage = canEditSettings(currentUserRole);
   const isArchived = group.status === "archived";
 
   return (
@@ -152,6 +156,8 @@ export const SettlementsPage: React.FC = () => {
             settlements={settlements}
             members={members}
             baseCurrency={group.baseCurrency}
+            settlementStrategy={group.settlementStrategy || "preserve_relationships"}
+            canManageSettings={canManage}
           />
         </div>
 

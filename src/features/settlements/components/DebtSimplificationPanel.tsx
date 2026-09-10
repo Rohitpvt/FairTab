@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Sparkles, ArrowRight, Info, HelpCircle } from "lucide-react";
 import { GlassPanel } from "../../../components/ui/GlassPanel";
@@ -12,6 +12,8 @@ import {
 import type { ExpenseDocument, SettlementDocument } from "@fairtab/domain";
 import type { GroupMemberDocument } from "../../groups/memberSchema";
 import { useMemberNameResolver } from "../../../hooks/useMemberNameResolver";
+import { groupService } from "../../../infrastructure/firebase/groupService";
+import { toast } from "sonner";
 
 interface DebtSimplificationPanelProps {
   groupId: string;
@@ -19,6 +21,8 @@ interface DebtSimplificationPanelProps {
   settlements: SettlementDocument[];
   members: GroupMemberDocument[];
   baseCurrency: string;
+  settlementStrategy?: "minimum_transactions" | "preserve_relationships";
+  canManageSettings?: boolean;
 }
 
 export const DebtSimplificationPanel: React.FC<DebtSimplificationPanelProps> = ({
@@ -27,11 +31,19 @@ export const DebtSimplificationPanel: React.FC<DebtSimplificationPanelProps> = (
   settlements,
   members,
   baseCurrency,
+  settlementStrategy = "preserve_relationships",
+  canManageSettings = false,
 }) => {
   const navigate = useNavigate();
   const { resolveName } = useMemberNameResolver(members);
-  const [strategy, setStrategy] = useState<"min_tx" | "preserve_rel">("min_tx");
+  const [strategy, setStrategy] = useState<"min_tx" | "preserve_rel">(
+    settlementStrategy === "minimum_transactions" ? "min_tx" : "preserve_rel"
+  );
   const [showExplanation, setShowExplanation] = useState(false);
+
+  useEffect(() => {
+    setStrategy(settlementStrategy === "minimum_transactions" ? "min_tx" : "preserve_rel");
+  }, [settlementStrategy]);
 
   const allMemberIds = Array.from(
     new Set([
@@ -68,6 +80,23 @@ export const DebtSimplificationPanel: React.FC<DebtSimplificationPanelProps> = (
     return ((parts[0]?.[0] || "") + (parts[1]?.[0] || "")).toUpperCase() || "M";
   };
 
+  const handleStrategyChange = async (newStrategy: "min_tx" | "preserve_rel") => {
+    setStrategy(newStrategy);
+    if (canManageSettings) {
+      try {
+        const mapped = newStrategy === "min_tx" ? "minimum_transactions" : "preserve_relationships";
+        await groupService.updateGroup(groupId, { settlementStrategy: mapped }, 0);
+        toast.success(
+          newStrategy === "preserve_rel"
+            ? "Switched to Preserve Relationships (shows direct debts)"
+            : "Switched to Minimize Transfers (fewest total payments)"
+        );
+      } catch (err) {
+        console.warn("Could not save settlement strategy setting:", err);
+      }
+    }
+  };
+
   return (
     <GlassPanel variant="standard" className="flex flex-col gap-4">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/5 pb-3">
@@ -87,7 +116,7 @@ export const DebtSimplificationPanel: React.FC<DebtSimplificationPanelProps> = (
         <div className="flex w-full sm:w-auto bg-surface-primary p-1 rounded-xl border border-white/5 shrink-0 gap-1">
           <button
             type="button"
-            onClick={() => setStrategy("min_tx")}
+            onClick={() => handleStrategyChange("min_tx")}
             className={`flex-1 sm:flex-initial px-3 py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer text-center min-h-[36px] ${
               strategy === "min_tx"
                 ? "bg-accent-cyan/15 text-accent-cyan shadow-sm border border-accent-cyan/20"
@@ -98,7 +127,7 @@ export const DebtSimplificationPanel: React.FC<DebtSimplificationPanelProps> = (
           </button>
           <button
             type="button"
-            onClick={() => setStrategy("preserve_rel")}
+            onClick={() => handleStrategyChange("preserve_rel")}
             className={`flex-1 sm:flex-initial px-3 py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer text-center min-h-[36px] ${
               strategy === "preserve_rel"
                 ? "bg-accent-indigo/15 text-accent-indigo shadow-sm border border-accent-indigo/20"
