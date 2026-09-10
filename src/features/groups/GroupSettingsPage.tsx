@@ -15,7 +15,7 @@ import { auth } from "../../infrastructure/firebase/firebase";
 import { toast } from "sonner";
 import { Skeleton } from "../../components/ui/Skeleton";
 import { canEditSettings, canArchiveGroup } from "./permissions";
-import { fetchUserExportData, generateCsvLedger, triggerDownload } from "../../utils/exportHelper";
+import { fetchGroupExportData, generateCsvLedger, triggerDownload } from "../../utils/exportHelper";
 
 import ArchiveGroupDialog from "./ArchiveGroupDialog";
 import DeleteGroupDialog from "./DeleteGroupDialog";
@@ -38,11 +38,7 @@ export const GroupSettingsPage: React.FC = () => {
     setIsExporting(true);
     const toastId = toast.loading("Compressing and downloading group JSON package...");
     try {
-      const data = await fetchUserExportData(auth.currentUser.uid);
-      const groupExport = data.groups.find((g) => g.group.id === groupId);
-      if (!groupExport) {
-        throw new Error("Group not found in backup data.");
-      }
+      const groupExport = await fetchGroupExportData(groupId);
       const jsonStr = JSON.stringify(groupExport, null, 2);
       triggerDownload(jsonStr, `FairTab_group_${group.name}_backup.json`, "application/json");
       toast.success("Group JSON backup downloaded successfully!", { id: toastId });
@@ -59,11 +55,7 @@ export const GroupSettingsPage: React.FC = () => {
     setIsExporting(true);
     const toastId = toast.loading(`Compiling and downloading group ${csvType.toUpperCase()} CSV...`);
     try {
-      const data = await fetchUserExportData(auth.currentUser.uid);
-      const groupExport = data.groups.find((g) => g.group.id === groupId);
-      if (!groupExport) {
-        throw new Error("Group not found in backup data.");
-      }
+      const groupExport = await fetchGroupExportData(groupId);
       // Wrap it in a single export structure
       const wrappedData = {
         userProfile: {},

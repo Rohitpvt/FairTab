@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { collection, getDocs, query, where } from "firebase/firestore";
+import { collection, doc, getDoc, getDocs } from "firebase/firestore";
 import { db } from "../infrastructure/firebase/firebase";
 
 export interface ExportDataResult {
@@ -55,81 +55,110 @@ export function triggerDownload(content: string, filename: string, mimeType: str
   URL.revokeObjectURL(url);
 }
 
-// Fetches the full backup data structure for the current user
-export async function fetchUserExportData(uid: string): Promise<ExportDataResult> {
-  const userProfileSnap = await getDocs(query(collection(db, "users"), where("uid", "==", uid)));
-  let userProfile = {};
-  if (!userProfileSnap.empty) {
-    userProfile = userProfileSnap.docs[0].data();
+// Fetches the backup data structure for a single group
+export async function fetchGroupExportData(groupId: string): Promise<ExportDataResult["groups"][0]> {
+  const groupDocRef = doc(db, "groups", groupId);
+  const groupDocSnap = await getDoc(groupDocRef);
+  if (!groupDocSnap.exists()) {
+    throw new Error("Group document not found.");
+  }
+  const group = { id: groupDocSnap.id, ...groupDocSnap.data() };
+
+  // Fetch members
+  const membersSnap = await getDocs(collection(db, "groups", groupId, "members"));
+  const members = membersSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
+
+  // Fetch expenses
+  const expensesSnap = await getDocs(collection(db, "groups", groupId, "expenses"));
+  const expenses = expensesSnap.docs.map((d) => {
+    const data: Record<string, any> = { id: d.id, ...d.data() };
+    delete data.payloadHash;
+    delete data.latestOperationId;
+    return data;
+  });
+
+  // Fetch settlements
+  const settlementsSnap = await getDocs(collection(db, "groups", groupId, "settlements"));
+  const settlements = settlementsSnap.docs.map((d) => {
+    const data: Record<string, any> = { id: d.id, ...d.data() };
+    delete data.payloadHash;
+    delete data.latestOperationId;
+    return data;
+  });
+
+  // Fetch budgets (gracefully ignore if none or empty)
+  let budgets: any[];
+  try {
+    const budgetsSnap = await getDocs(collection(db, "groups", groupId, "budgets"));
+    budgets = budgetsSnap.docs.map((d) => {
+      const data: Record<string, any> = { id: d.id, ...d.data() };
+      delete data.payloadHash;
+      delete data.latestOperationId;
+      return data;
+    });
+  } catch {
+    budgets = [];
   }
 
-  const groupsQuery = query(collection(db, "groups"), where("memberUserIds", "array-contains", uid));
-  const groupsSnap = await getDocs(groupsQuery);
-  
-  const groupsData: ExportDataResult["groups"] = [];
-
-  for (const groupDoc of groupsSnap.docs) {
-    const groupId = groupDoc.id;
-    const group = groupDoc.data();
-
-    // Fetch members
-    const membersSnap = await getDocs(collection(db, "groups", groupId, "members"));
-    const members = membersSnap.docs.map((d) => d.data());
-
-    // Fetch expenses
-    const expensesSnap = await getDocs(collection(db, "groups", groupId, "expenses"));
-    const expenses = expensesSnap.docs.map((d) => {
-      const data = d.data();
-      // Remove sensitive internal hashes and receipts
-      delete data.payloadHash;
-      delete data.latestOperationId;
-      return data;
-    });
-
-    // Fetch settlements
-    const settlementsSnap = await getDocs(collection(db, "groups", groupId, "settlements"));
-    const settlements = settlementsSnap.docs.map((d) => {
-      const data = d.data();
-      delete data.payloadHash;
-      delete data.latestOperationId;
-      return data;
-    });
-
-    // Fetch budgets
-    const budgetsSnap = await getDocs(collection(db, "groups", groupId, "budgets"));
-    const budgets = budgetsSnap.docs.map((d) => {
-      const data = d.data();
-      delete data.payloadHash;
-      delete data.latestOperationId;
-      return data;
-    });
-
-    // Fetch recurring templates
+  // Fetch recurring templates (gracefully ignore if none or empty)
+  const recurringTemplates: any[] = [];
+  const recurringOccurrences: any[] = [];
+  try {
     const templatesSnap = await getDocs(collection(db, "groups", groupId, "recurringTemplates"));
-    const recurringTemplates: any[] = [];
-    const recurringOccurrences: any[] = [];
-
     for (const tempDoc of templatesSnap.docs) {
       const templateId = tempDoc.id;
-      const templateData = tempDoc.data();
+      const templateData = { id: templateId, ...tempDoc.data() };
       recurringTemplates.push(templateData);
 
-      // Fetch occurrences for this template
-      const occurrencesSnap = await getDocs(collection(db, "groups", groupId, "recurringTemplates", templateId, "occurrences"));
-      occurrencesSnap.docs.forEach((occDoc) => {
-        recurringOccurrences.push(occDoc.data());
-      });
+      try {
+        const occurrencesSnap = await getDocs(
+          collection(db, "groups", groupId, "recurringTemplates", templateId, "occurrences")
+        );
+        occurrencesSnap.docs.forEach((occDoc) => {
+          recurringOccurrences.push({ id: occDoc.id, ...occDoc.data() });
+        });
+      } catch {
+        // occurrences may not exist
+      }
     }
+  } catch {
+    // recurringTemplates may not exist
+  }
 
-    groupsData.push({
-      group,
-      members,
-      expenses,
-      settlements,
-      budgets,
-      recurringTemplates,
-      recurringOccurrences,
-    });
+  return {
+    group,
+    members,
+    expenses,
+    settlements,
+    budgets,
+    recurringTemplates,
+    recurringOccurrences,
+  };
+}
+
+// Fetches the full backup data structure for all groups of the current user
+export async function fetchUserExportData(uid: string): Promise<ExportDataResult> {
+  const userDocSnap = await getDoc(doc(db, "users", uid));
+  const userProfile = userDocSnap.exists() ? { uid, ...userDocSnap.data() } : {};
+
+  // Read user's groups index securely
+  const userGroupsSnap = await getDocs(collection(db, `userGroupIndex/${uid}/groups`));
+  const groupIds = userGroupsSnap.docs
+    .filter((d) => {
+      const st = d.data().status;
+      return st !== "deleted" && st !== "left";
+    })
+    .map((d) => d.data().groupId || d.id);
+
+  const groupsData: ExportDataResult["groups"] = [];
+
+  for (const groupId of groupIds) {
+    try {
+      const groupData = await fetchGroupExportData(groupId);
+      groupsData.push(groupData);
+    } catch (e) {
+      console.warn(`Failed to export data for group ${groupId}:`, e);
+    }
   }
 
   return {
@@ -222,6 +251,7 @@ export function generateCsvLedger(data: ExportDataResult): {
     });
 
     settlements.forEach((set) => {
+      const payeeId = set.receiverId || set.payeeId;
       settlementRows.push([
         set.id,
         group.id,
@@ -229,8 +259,8 @@ export function generateCsvLedger(data: ExportDataResult): {
         formatTimestamp(set.createdAt),
         set.payerId,
         memberNameMap[set.payerId] || set.payerId,
-        set.payeeId,
-        memberNameMap[set.payeeId] || set.payeeId,
+        payeeId,
+        memberNameMap[payeeId] || payeeId,
         set.amountMinor,
         set.currency,
         set.status,
