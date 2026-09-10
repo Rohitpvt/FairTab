@@ -26,6 +26,7 @@ import { InsightCard } from "./InsightCard";
 import { useMemberNameResolver } from "../../hooks/useMemberNameResolver";
 import { InsightExplanationDialog } from "./InsightDetailDialogs";
 import { InsightCardSkeleton } from "../../components/ui/Skeleton";
+import { HistoricalLedgerAndBalanceSection } from "../analytics/HistoricalLedgerAndBalanceSection";
 
 export const SmartInsightsPage: React.FC = () => {
   const [activeGroups, setActiveGroups] = useState<{ groupId: string; groupName: string }[]>([]);
@@ -308,6 +309,15 @@ export const SmartInsightsPage: React.FC = () => {
                 </div>
               )}
             </div>
+
+            {/* Historical Ledgers & Balance Summary Records */}
+            <HistoricalLedgerAndBalanceSection
+              group={group}
+              members={members}
+              expenses={expenses}
+              settlements={settlements}
+              resolveName={resolveName}
+            />
           </div>
         )}
       </div>

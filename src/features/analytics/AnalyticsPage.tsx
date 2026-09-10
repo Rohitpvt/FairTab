@@ -21,6 +21,7 @@ import { SpendingTrendChart } from "./SpendingTrendChart";
 import { MemberContributionPanel } from "./MemberContributionPanel";
 import { MonthlyComparisonCard } from "./MonthlyComparisonCard";
 import { ExportAnalyticsDialog } from "./ExportAnalyticsDialog";
+import { HistoricalLedgerAndBalanceSection } from "./HistoricalLedgerAndBalanceSection";
 import { Button } from "../../components/ui/Button";
 import { BalanceCardSkeleton, ChartSkeleton } from "../../components/ui/Skeleton";
 import { Download, AlertCircle } from "lucide-react";
@@ -221,6 +222,15 @@ export const AnalyticsPage: React.FC = () => {
               <MemberContributionPanel contributions={memberContributions} formatAmount={formatAmount} />
               <MonthlyComparisonCard trend={monthlyComparison} formatAmount={formatAmount} />
             </div>
+
+            {/* Historical Ledgers & Balance Summary Records */}
+            <HistoricalLedgerAndBalanceSection
+              group={group}
+              members={members}
+              expenses={expenses}
+              settlements={settlements}
+              resolveName={resolveName}
+            />
           </div>
         )}
       </div>

@@ -6,6 +6,14 @@
 
 ## Change Log
 
+### [2026-09-11] - Analytics & Insights Historical Ledgers & Past Balance Summary Records
+- **Scope**: `UI / Analytics / Insights / Ledgers / Balances`
+- **Files Changed**:
+  - `src/features/analytics/HistoricalLedgerAndBalanceSection.tsx` (Created comprehensive component with 3 interactive tabs: **Balance Summary** per-member cards with net balances, total paid, total share consumed, and pairwise debt breakdowns; **Expenses Ledger** full searchable/filterable table of expenses with timestamps, category chips, splits, and statuses; and **Settlements Ledger** table detailing past settlements with transfers, dates, amounts, and statuses)
+  - `src/features/analytics/AnalyticsPage.tsx` (Embedded HistoricalLedgerAndBalanceSection at the bottom of the analytics dashboard)
+  - `src/features/insights/SmartInsightsPage.tsx` (Embedded HistoricalLedgerAndBalanceSection at the bottom of the smart insights dashboard)
+- **Sync Status**: `Synced to Web & Android` (Compiled with TypeScript/Vite, synced to Android via `npm run build:mobile`, and deployed to Firebase Hosting)
+
 ### [2026-09-10] - Group Data Export Permission Fix & Scoped Single-Group Exports
 - **Scope**: `Logic / Security / UI / Export`
 - **Files Changed**:
