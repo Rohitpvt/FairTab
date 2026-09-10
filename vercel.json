@@ -1,5 +1,5 @@
 {
-  "buildCommand": "mkdir -p public",
+  "buildCommand": "npm run -w packages/domain build && mkdir -p public",
   "outputDirectory": "public",
   "headers": [
     {
