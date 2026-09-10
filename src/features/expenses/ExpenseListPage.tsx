@@ -53,11 +53,30 @@ export const ExpenseListPage: React.FC<ExpenseListPageProps> = ({
     const refreshFailedOps = async () => {
       try {
         const state = await syncManager.getOutboxState();
-        const failed = state.failedOps.map((op) => ({
-          id: op.clientOperationId,
-          error: op.errorMessage,
-          title: op.payload?.title || op.type,
-        }));
+        const failed: Array<{ id: string; error?: string; title?: string }> = [];
+
+        // Include any operations with errors (whether status is "failed" or "pending" after a retry attempt)
+        state.operations.forEach((op) => {
+          if (op.errorMessage || op.status === "failed") {
+            failed.push({
+              id: op.clientOperationId,
+              error: op.errorMessage || "Operation failed during synchronization.",
+              title: op.payload?.title || op.type,
+            });
+          }
+        });
+
+        // Also check receipt drafts
+        state.receipts.forEach((r) => {
+          if (r.errorMessage || r.status === "failed") {
+            failed.push({
+              id: r.id,
+              error: r.errorMessage || "Receipt upload failed.",
+              title: r.fileName || "Receipt",
+            });
+          }
+        });
+
         setFailedOpsList(failed);
       } catch (err) {
         console.error("Failed to load outbox state", err);

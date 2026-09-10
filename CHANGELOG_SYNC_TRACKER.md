@@ -6,6 +6,12 @@
 
 ## Change Log
 
+### [2026-09-10] - Outbox Sync Error Visibility & Immediate Recovery Fix
+- **Scope**: `Logic / Offline / UI / Sync`
+- **Files Changed**:
+  - `src/features/expenses/ExpenseListPage.tsx` (Expanded `refreshFailedOps` outbox listener to extract error messages from all pending retry operations and receipt drafts, rendering the precise rejection/network error reason directly in the sync banner alongside one-click "Clear Queue" and "Retry Sync" actions)
+- **Sync Status**: `Synced to Android` (Compiled web bundle synced to Android assets and verified with `npm run build:mobile`)
+
 ### [2026-09-10] - Onboarding Setup Resilience & Invite Link Creation Fallback
 - **Scope**: `Logic / UI / Profile / Invitations`
 - **Files Changed**:
