@@ -14,7 +14,7 @@ export const PageContainer: React.FC<PageContainerProps> = ({
   children,
 }) => {
   return (
-    <div className="w-full max-w-6xl mx-auto px-4 py-6 md:px-8 md:py-8 flex flex-col gap-6 animate-fade-in">
+    <div className="w-full max-w-6xl mx-auto px-4 py-6 md:px-8 md:py-8 pb-20 md:pb-8 flex flex-col gap-6 animate-fade-in">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="min-w-0">
           <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold tracking-tight text-text-primary truncate">

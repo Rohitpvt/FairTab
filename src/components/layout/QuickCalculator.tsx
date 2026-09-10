@@ -206,12 +206,12 @@ export const QuickCalculator: React.FC<QuickCalculatorProps> = ({ isOpen, onOpen
         <RadixDialog.Overlay className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 transition-all duration-300" />
         <RadixDialog.Content
           aria-describedby={undefined}
-          className="fixed bottom-0 sm:bottom-auto sm:top-1/2 sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 w-full max-w-[370px] rounded-t-3xl sm:rounded-3xl border border-white/15 bg-surface-primary/95 backdrop-blur-2xl text-text-primary shadow-2xl p-5 z-50 focus:outline-none flex flex-col gap-3.5 max-h-[94vh] overflow-y-auto"
+          className="fixed bottom-0 sm:bottom-auto sm:top-1/2 sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 w-full max-w-[370px] rounded-t-3xl sm:rounded-3xl border border-border-color bg-surface-primary/95 dark:bg-surface-primary/95 backdrop-blur-2xl text-text-primary shadow-2xl p-5 z-50 focus:outline-none flex flex-col gap-3.5 max-h-[94vh] overflow-y-auto"
         >
           {/* Header */}
-          <div className="flex items-center justify-between border-b border-white/10 pb-3">
+          <div className="flex items-center justify-between border-b border-border-color/60 pb-3">
             <div className="flex items-center gap-2.5">
-              <div className="p-2 rounded-xl bg-amber-400/10 text-amber-400 border border-amber-400/20">
+              <div className="p-2 rounded-xl bg-amber-400/10 text-amber-500 dark:text-amber-400 border border-amber-400/20">
                 <Sparkles className="h-4 w-4" />
               </div>
               <div>
@@ -223,7 +223,7 @@ export const QuickCalculator: React.FC<QuickCalculatorProps> = ({ isOpen, onOpen
             </div>
             <RadixDialog.Close asChild>
               <button
-                className="p-1.5 rounded-full text-text-muted hover:text-text-primary hover:bg-white/10 transition-colors cursor-pointer"
+                className="p-1.5 rounded-full text-text-muted hover:text-text-primary hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
                 aria-label="Close calculator"
               >
                 <X className="h-5 w-5" />
@@ -232,10 +232,10 @@ export const QuickCalculator: React.FC<QuickCalculatorProps> = ({ isOpen, onOpen
           </div>
 
           {/* Display screen */}
-          <div className="rounded-2xl bg-black/40 border border-white/10 p-4 flex flex-col items-end justify-between min-h-[84px] shadow-inner relative overflow-hidden">
-            <div className="text-xs text-text-muted font-mono tracking-wider truncate w-full flex justify-between items-center h-4">
-              <span className="text-[10px] text-text-muted uppercase">Result</span>
-              <span className="truncate pl-2">
+          <div className="rounded-2xl bg-slate-900 dark:bg-black/60 border border-slate-800 dark:border-white/10 p-4 flex flex-col items-end justify-between min-h-[84px] shadow-inner relative overflow-hidden text-white">
+            <div className="text-xs text-slate-400 font-mono tracking-wider truncate w-full flex justify-between items-center h-4">
+              <span className="text-[10px] text-slate-400 uppercase">Result</span>
+              <span className="truncate pl-2 text-slate-300">
                 {equation || (splitCount ? `Divided for ${splitCount} people` : "")}
               </span>
             </div>
@@ -243,7 +243,7 @@ export const QuickCalculator: React.FC<QuickCalculatorProps> = ({ isOpen, onOpen
             <div className="flex items-baseline justify-between w-full mt-1">
               <button
                 onClick={handleCopy}
-                className="text-text-muted hover:text-accent-cyan transition-colors p-1 rounded-md cursor-pointer active:scale-95"
+                className="text-slate-400 hover:text-accent-cyan transition-colors p-1 rounded-md cursor-pointer active:scale-95"
                 title="Copy calculated value"
                 aria-label="Copy to clipboard"
               >
@@ -266,7 +266,7 @@ export const QuickCalculator: React.FC<QuickCalculatorProps> = ({ isOpen, onOpen
                     key={tip}
                     type="button"
                     onClick={() => handleTip(tip)}
-                    className="py-1 px-1.5 text-xs font-semibold rounded-lg bg-white/5 hover:bg-white/10 text-text-secondary hover:text-white border border-white/5 active:scale-95 transition-all cursor-pointer"
+                    className="py-1 px-1.5 text-xs font-semibold rounded-lg bg-surface-secondary hover:bg-surface-hover text-text-primary border border-border-color/80 active:scale-95 transition-all cursor-pointer"
                   >
                     +{tip}%
                   </button>
@@ -287,8 +287,8 @@ export const QuickCalculator: React.FC<QuickCalculatorProps> = ({ isOpen, onOpen
                     onClick={() => handleSplit(n)}
                     className={`py-1 px-1.5 text-xs font-semibold rounded-lg border transition-all cursor-pointer active:scale-95 ${
                       splitCount === n
-                        ? "bg-accent-indigo/30 border-accent-indigo text-accent-cyan font-bold"
-                        : "bg-white/5 hover:bg-white/10 text-text-secondary hover:text-white border-white/5"
+                        ? "bg-accent-indigo/20 border-accent-indigo text-accent-indigo dark:text-accent-cyan font-bold shadow-sm"
+                        : "bg-surface-secondary hover:bg-surface-hover text-text-primary border-border-color/80"
                     }`}
                   >
                     ÷{n} ppl
@@ -309,20 +309,20 @@ export const QuickCalculator: React.FC<QuickCalculatorProps> = ({ isOpen, onOpen
             </button>
             <button
               onClick={handleBackspace}
-              className="p-3 flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 text-text-secondary hover:text-white border border-white/10 active:scale-95 transition-all cursor-pointer"
+              className="p-3 flex items-center justify-center rounded-xl bg-surface-secondary hover:bg-surface-hover text-text-primary border border-border-color/80 active:scale-95 transition-all cursor-pointer"
               aria-label="Backspace"
             >
               <Delete className="h-4 w-4" />
             </button>
             <button
               onClick={() => handleOperator("%")}
-              className="p-3 text-sm font-semibold rounded-xl bg-white/5 hover:bg-white/10 text-accent-cyan border border-white/10 active:scale-95 transition-all cursor-pointer"
+              className="p-3 text-sm font-semibold rounded-xl bg-surface-secondary hover:bg-surface-hover text-accent-cyan border border-border-color/80 active:scale-95 transition-all cursor-pointer"
             >
               %
             </button>
             <button
               onClick={() => handleOperator("÷")}
-              className="p-3 flex items-center justify-center rounded-xl bg-accent-indigo/20 hover:bg-accent-indigo/30 text-accent-cyan border border-accent-indigo/30 active:scale-95 transition-all cursor-pointer"
+              className="p-3 flex items-center justify-center rounded-xl bg-accent-indigo/15 hover:bg-accent-indigo/25 text-accent-indigo dark:text-accent-cyan border border-accent-indigo/25 active:scale-95 transition-all cursor-pointer"
             >
               <Divide className="h-4 w-4" />
             </button>
@@ -332,14 +332,14 @@ export const QuickCalculator: React.FC<QuickCalculatorProps> = ({ isOpen, onOpen
               <button
                 key={d}
                 onClick={() => handleDigit(d)}
-                className="p-3 text-base font-semibold rounded-xl bg-white/[0.04] hover:bg-white/[0.09] text-white border border-white/5 active:scale-95 transition-all cursor-pointer font-mono"
+                className="p-3 text-base font-semibold rounded-xl bg-surface-secondary/70 hover:bg-surface-hover text-text-primary border border-border-color/80 active:scale-95 transition-all cursor-pointer font-mono"
               >
                 {d}
               </button>
             ))}
             <button
               onClick={() => handleOperator("×")}
-              className="p-3 flex items-center justify-center rounded-xl bg-accent-indigo/20 hover:bg-accent-indigo/30 text-accent-cyan border border-accent-indigo/30 active:scale-95 transition-all cursor-pointer"
+              className="p-3 flex items-center justify-center rounded-xl bg-accent-indigo/15 hover:bg-accent-indigo/25 text-accent-indigo dark:text-accent-cyan border border-accent-indigo/25 active:scale-95 transition-all cursor-pointer"
             >
               <Multiply className="h-4 w-4" />
             </button>
@@ -349,14 +349,14 @@ export const QuickCalculator: React.FC<QuickCalculatorProps> = ({ isOpen, onOpen
               <button
                 key={d}
                 onClick={() => handleDigit(d)}
-                className="p-3 text-base font-semibold rounded-xl bg-white/[0.04] hover:bg-white/[0.09] text-white border border-white/5 active:scale-95 transition-all cursor-pointer font-mono"
+                className="p-3 text-base font-semibold rounded-xl bg-surface-secondary/70 hover:bg-surface-hover text-text-primary border border-border-color/80 active:scale-95 transition-all cursor-pointer font-mono"
               >
                 {d}
               </button>
             ))}
             <button
               onClick={() => handleOperator("-")}
-              className="p-3 flex items-center justify-center rounded-xl bg-accent-indigo/20 hover:bg-accent-indigo/30 text-accent-cyan border border-accent-indigo/30 active:scale-95 transition-all cursor-pointer"
+              className="p-3 flex items-center justify-center rounded-xl bg-accent-indigo/15 hover:bg-accent-indigo/25 text-accent-indigo dark:text-accent-cyan border border-accent-indigo/25 active:scale-95 transition-all cursor-pointer"
             >
               <Minus className="h-4 w-4" />
             </button>
@@ -366,14 +366,14 @@ export const QuickCalculator: React.FC<QuickCalculatorProps> = ({ isOpen, onOpen
               <button
                 key={d}
                 onClick={() => handleDigit(d)}
-                className="p-3 text-base font-semibold rounded-xl bg-white/[0.04] hover:bg-white/[0.09] text-white border border-white/5 active:scale-95 transition-all cursor-pointer font-mono"
+                className="p-3 text-base font-semibold rounded-xl bg-surface-secondary/70 hover:bg-surface-hover text-text-primary border border-border-color/80 active:scale-95 transition-all cursor-pointer font-mono"
               >
                 {d}
               </button>
             ))}
             <button
               onClick={() => handleOperator("+")}
-              className="p-3 flex items-center justify-center rounded-xl bg-accent-indigo/20 hover:bg-accent-indigo/30 text-accent-cyan border border-accent-indigo/30 active:scale-95 transition-all cursor-pointer"
+              className="p-3 flex items-center justify-center rounded-xl bg-accent-indigo/15 hover:bg-accent-indigo/25 text-accent-indigo dark:text-accent-cyan border border-accent-indigo/25 active:scale-95 transition-all cursor-pointer"
             >
               <Plus className="h-4 w-4" />
             </button>
@@ -381,13 +381,13 @@ export const QuickCalculator: React.FC<QuickCalculatorProps> = ({ isOpen, onOpen
             {/* Row 5 */}
             <button
               onClick={() => handleDigit("0")}
-              className="col-span-2 p-3 text-base font-semibold rounded-xl bg-white/[0.04] hover:bg-white/[0.09] text-white border border-white/5 active:scale-95 transition-all cursor-pointer font-mono"
+              className="col-span-2 p-3 text-base font-semibold rounded-xl bg-surface-secondary/70 hover:bg-surface-hover text-text-primary border border-border-color/80 active:scale-95 transition-all cursor-pointer font-mono"
             >
               0
             </button>
             <button
               onClick={() => handleDigit(".")}
-              className="p-3 text-base font-semibold rounded-xl bg-white/[0.04] hover:bg-white/[0.09] text-white border border-white/5 active:scale-95 transition-all cursor-pointer font-mono"
+              className="p-3 text-base font-semibold rounded-xl bg-surface-secondary/70 hover:bg-surface-hover text-text-primary border border-border-color/80 active:scale-95 transition-all cursor-pointer font-mono"
             >
               .
             </button>
@@ -400,7 +400,7 @@ export const QuickCalculator: React.FC<QuickCalculatorProps> = ({ isOpen, onOpen
           </div>
 
           {/* Action button: Send to New Expense */}
-          <div className="pt-2 border-t border-white/10">
+          <div className="pt-2 border-t border-border-color/60">
             <button
               onClick={handleSendToExpense}
               className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-accent-indigo to-accent-cyan hover:opacity-90 text-white font-bold text-sm shadow-lg shadow-accent-indigo/20 flex items-center justify-center gap-2 active:scale-98 transition-all cursor-pointer"

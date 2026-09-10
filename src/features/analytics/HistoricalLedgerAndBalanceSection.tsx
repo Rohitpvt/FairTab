@@ -196,60 +196,65 @@ export const HistoricalLedgerAndBalanceSection: React.FC<HistoricalLedgerAndBala
         </div>
 
         {/* Tab Buttons & Search */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-t border-white/10 pt-4">
-          <div className="flex items-center gap-1.5 bg-black/20 p-1 rounded-xl border border-white/5 self-start sm:self-auto">
-            <button
-              onClick={() => setActiveTab("balance_summary")}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
-                activeTab === "balance_summary"
-                  ? "bg-accent-indigo text-white shadow-lg shadow-accent-indigo/20"
-                  : "text-text-secondary hover:text-text-primary"
-              }`}
-            >
-              <Coins className="h-3.5 w-3.5" />
-              Balance Summary
-            </button>
-            <button
-              onClick={() => setActiveTab("expense_ledger")}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
-                activeTab === "expense_ledger"
-                  ? "bg-accent-indigo text-white shadow-lg shadow-accent-indigo/20"
-                  : "text-text-secondary hover:text-text-primary"
-              }`}
-            >
-              <Receipt className="h-3.5 w-3.5" />
-              Expenses Ledger ({expenses.length})
-            </button>
-            <button
-              onClick={() => setActiveTab("settlement_ledger")}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
-                activeTab === "settlement_ledger"
-                  ? "bg-accent-indigo text-white shadow-lg shadow-accent-indigo/20"
-                  : "text-text-secondary hover:text-text-primary"
-              }`}
-            >
-              <Handshake className="h-3.5 w-3.5" />
-              Settlements ({settlements.length})
-            </button>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-t border-border-color/60 pt-4">
+          <div className="overflow-x-auto no-scrollbar w-full sm:w-auto pb-1">
+            <div className="inline-flex items-center gap-1.5 bg-black/10 dark:bg-black/30 p-1 rounded-xl border border-border-color/80 min-w-max">
+              <button
+                type="button"
+                onClick={() => setActiveTab("balance_summary")}
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all whitespace-nowrap cursor-pointer ${
+                  activeTab === "balance_summary"
+                    ? "bg-accent-indigo text-white shadow-lg shadow-accent-indigo/20"
+                    : "text-text-secondary hover:text-text-primary"
+                }`}
+              >
+                <Coins className="h-3.5 w-3.5" />
+                Balance Summary
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab("expense_ledger")}
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all whitespace-nowrap cursor-pointer ${
+                  activeTab === "expense_ledger"
+                    ? "bg-accent-indigo text-white shadow-lg shadow-accent-indigo/20"
+                    : "text-text-secondary hover:text-text-primary"
+                }`}
+              >
+                <Receipt className="h-3.5 w-3.5" />
+                Expenses Ledger ({expenses.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab("settlement_ledger")}
+                className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all whitespace-nowrap cursor-pointer ${
+                  activeTab === "settlement_ledger"
+                    ? "bg-accent-indigo text-white shadow-lg shadow-accent-indigo/20"
+                    : "text-text-secondary hover:text-text-primary"
+                }`}
+              >
+                <Handshake className="h-3.5 w-3.5" />
+                Settlements ({settlements.length})
+              </button>
+            </div>
           </div>
 
           {/* Search Bar & Status Filter for Ledgers */}
           {activeTab !== "balance_summary" && (
-            <div className="flex items-center gap-2">
-              <div className="relative">
+            <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full sm:w-auto">
+              <div className="relative flex-1 sm:flex-none">
                 <Search className="h-3.5 w-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
                 <input
                   type="text"
                   placeholder="Search ledger..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="bg-white/5 border border-white/10 rounded-lg pl-8 pr-3 py-1.5 text-xs text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent-cyan"
+                  className="w-full sm:w-auto bg-surface-secondary/70 border border-border-color rounded-lg pl-8 pr-3 py-1.5 text-xs text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent-cyan"
                 />
               </div>
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value as "all" | "active" | "voided")}
-                className="bg-white/5 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-text-primary focus:outline-none focus:border-accent-cyan [&>option]:bg-[#0c0f1d]"
+                className="bg-surface-secondary/70 border border-border-color rounded-lg px-2.5 py-1.5 text-xs text-text-primary focus:outline-none focus:border-accent-cyan"
               >
                 <option value="all">All Status</option>
                 <option value="active">Active</option>
@@ -387,10 +392,10 @@ export const HistoricalLedgerAndBalanceSection: React.FC<HistoricalLedgerAndBala
 
       {/* Tab 2: Expense Ledger */}
       {activeTab === "expense_ledger" && (
-        <GlassPanel variant="standard" className="p-0 overflow-hidden text-left">
-          <div className="overflow-x-auto">
-            <table className="w-full text-xs text-left">
-              <thead className="bg-white/5 border-b border-white/10 text-text-muted uppercase tracking-wider font-semibold">
+        <GlassPanel variant="standard" className="p-0 overflow-hidden text-left border border-border-color">
+          <div className="overflow-x-auto w-full">
+            <table className="w-full min-w-[580px] text-xs text-left">
+              <thead className="bg-surface-secondary/70 border-b border-border-color text-text-muted uppercase tracking-wider font-semibold">
                 <tr>
                   <th className="py-3 px-4">Date</th>
                   <th className="py-3 px-4">Expense Title</th>
@@ -401,7 +406,7 @@ export const HistoricalLedgerAndBalanceSection: React.FC<HistoricalLedgerAndBala
                   <th className="py-3 px-4 text-center">Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/5 text-text-primary">
+              <tbody className="divide-y divide-border-color/60 text-text-primary">
                 {filteredExpenses.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="py-8 text-center text-text-muted">
@@ -416,7 +421,7 @@ export const HistoricalLedgerAndBalanceSection: React.FC<HistoricalLedgerAndBala
                     return (
                       <tr
                         key={exp.id}
-                        className={`hover:bg-white/[0.02] transition-colors ${
+                        className={`hover:bg-surface-hover/50 transition-colors ${
                           isVoided ? "opacity-50 line-through" : ""
                         }`}
                       >
@@ -427,7 +432,7 @@ export const HistoricalLedgerAndBalanceSection: React.FC<HistoricalLedgerAndBala
                           {exp.title}
                         </td>
                         <td className="py-3 px-4">
-                          <span className="px-2 py-0.5 rounded-full bg-accent-indigo/15 text-accent-cyan border border-accent-indigo/20 text-[10px] font-semibold uppercase">
+                          <span className="px-2 py-0.5 rounded-full bg-accent-indigo/15 text-accent-indigo dark:text-accent-cyan border border-accent-indigo/20 text-[10px] font-semibold uppercase">
                             {exp.category}
                           </span>
                         </td>
@@ -463,10 +468,10 @@ export const HistoricalLedgerAndBalanceSection: React.FC<HistoricalLedgerAndBala
 
       {/* Tab 3: Settlements Ledger */}
       {activeTab === "settlement_ledger" && (
-        <GlassPanel variant="standard" className="p-0 overflow-hidden text-left">
-          <div className="overflow-x-auto">
-            <table className="w-full text-xs text-left">
-              <thead className="bg-white/5 border-b border-white/10 text-text-muted uppercase tracking-wider font-semibold">
+        <GlassPanel variant="standard" className="p-0 overflow-hidden text-left border border-border-color">
+          <div className="overflow-x-auto w-full">
+            <table className="w-full min-w-[520px] text-xs text-left">
+              <thead className="bg-surface-secondary/70 border-b border-border-color text-text-muted uppercase tracking-wider font-semibold">
                 <tr>
                   <th className="py-3 px-4">Date</th>
                   <th className="py-3 px-4">Payer</th>
@@ -476,7 +481,7 @@ export const HistoricalLedgerAndBalanceSection: React.FC<HistoricalLedgerAndBala
                   <th className="py-3 px-4 text-center">Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/5 text-text-primary">
+              <tbody className="divide-y divide-border-color/60 text-text-primary">
                 {filteredSettlements.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="py-8 text-center text-text-muted">
@@ -492,7 +497,7 @@ export const HistoricalLedgerAndBalanceSection: React.FC<HistoricalLedgerAndBala
                     return (
                       <tr
                         key={set.id}
-                        className={`hover:bg-white/[0.02] transition-colors ${
+                        className={`hover:bg-surface-hover/50 transition-colors ${
                           isVoided ? "opacity-50 line-through" : ""
                         }`}
                       >
@@ -502,7 +507,7 @@ export const HistoricalLedgerAndBalanceSection: React.FC<HistoricalLedgerAndBala
                         <td className="py-3 px-4 font-semibold text-text-primary">
                           {payerName}
                         </td>
-                        <td className="py-3 px-4 text-center text-accent-cyan">
+                        <td className="py-3 px-4 text-center text-accent-indigo dark:text-accent-cyan">
                           <ArrowRight className="h-4 w-4 mx-auto" />
                         </td>
                         <td className="py-3 px-4 font-semibold text-text-primary">

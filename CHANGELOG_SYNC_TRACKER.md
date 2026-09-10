@@ -6,6 +6,16 @@
 
 ## Change Log
 
+### [2026-09-11] - Mobile Responsive Layout, Light Mode Contrast & Navigation Clearance Fixes
+- **Scope**: `UI / Mobile Optimization / Styling / Layout / Accessibility`
+- **Files Changed**:
+  - `src/components/layout/QuickCalculator.tsx` (Fixed light mode keypad numbers, presets, and action buttons using theme tokens instead of hardcoded white text)
+  - `src/features/groups/GroupsPage.tsx` (Fixed group cards and icon containers using `bg-surface-primary` and `border-border-color` with high-contrast hover effects in light and dark modes)
+  - `src/features/insights/InsightCard.tsx` (Fixed code reason string overflow with responsive truncation, preventing collision with "Explain Metrics", and improved light/dark badge contrast)
+  - `src/features/analytics/HistoricalLedgerAndBalanceSection.tsx` (Added horizontal scroll container to tab navigation and minimum table column widths so tables never squash on mobile devices)
+  - `src/components/layout/AppShell.tsx` & `src/components/layout/PageContainer.tsx` (Increased mobile bottom padding to `pb-[110px]` / `pb-20` so the floating mobile navigation bar never covers bottom content or action buttons)
+- **Sync Status**: `Synced to Web & Android` (169 Vitest tests passing, deployed live to Firebase Hosting, synced via `npm run build:mobile`)
+
 ### [2026-09-11] - Animated 404 Page & Global Error Boundary with Working Retry
 - **Scope**: `UI / Feedback / Error Handling / Routing / PWA`
 - **Files Changed**:

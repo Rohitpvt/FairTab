@@ -62,12 +62,12 @@ export const GroupsPage: React.FC = () => {
           {groups.map((group) => (
             <div
               key={group.groupId}
-              className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur-md transition-all duration-300 hover:border-white/20 hover:bg-white/[0.06] hover:shadow-lg hover:shadow-accent-cyan/5 group"
+              className="relative overflow-hidden rounded-2xl border border-border-color bg-surface-primary shadow-sm hover:shadow-lg transition-all duration-300 hover:border-accent-cyan/40 hover:-translate-y-0.5 p-6 group"
             >
               {/* Top Row: Icon/Indicator */}
               <div className="flex justify-between items-start mb-4">
-                <div className="p-2.5 bg-white/5 rounded-xl border border-white/5 group-hover:border-white/10">
-                  <Users className="h-5 w-5 text-accent-cyan" />
+                <div className="p-2.5 bg-accent-indigo/10 rounded-xl border border-accent-indigo/20 group-hover:border-accent-indigo/40 transition-colors">
+                  <Users className="h-5 w-5 text-accent-indigo dark:text-accent-cyan" />
                 </div>
                 {group.status === "archived" && (
                   <span className="text-[10px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded bg-warning/10 border border-warning/20 text-warning">
@@ -77,7 +77,7 @@ export const GroupsPage: React.FC = () => {
               </div>
 
               {/* Title & Role */}
-              <h3 className="text-lg font-bold text-text-primary mb-1 group-hover:text-accent-cyan transition-colors">
+              <h3 className="text-lg font-bold text-text-primary mb-1 group-hover:text-accent-indigo dark:group-hover:text-accent-cyan transition-colors">
                 {group.groupName}
               </h3>
               <div className="flex items-center gap-1 text-xs text-text-muted mb-6">
@@ -86,7 +86,7 @@ export const GroupsPage: React.FC = () => {
               </div>
 
               {/* Bottom Row: Actions */}
-              <div className="flex items-center justify-between pt-4 border-t border-white/5">
+              <div className="flex items-center justify-between pt-4 border-t border-border-color/60">
                 <div className="flex items-center gap-1.5 text-xs text-text-muted">
                   <Calendar className="h-3.5 w-3.5" />
                   <span>
@@ -97,7 +97,7 @@ export const GroupsPage: React.FC = () => {
                 </div>
                 <Link
                   to={`/groups/${group.groupId}`}
-                  className="flex items-center gap-1 text-xs font-semibold text-accent-cyan hover:underline"
+                  className="flex items-center gap-1 text-xs font-semibold text-accent-indigo dark:text-accent-cyan hover:underline"
                 >
                   View Details
                   <ArrowRight className="h-3 w-3" />

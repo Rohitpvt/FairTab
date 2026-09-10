@@ -188,7 +188,7 @@ export const AppShell: React.FC = () => {
         />
 
         {/* Main layout container */}
-        <div className="flex-1 flex flex-col min-w-0 pb-[80px] md:pb-0">
+        <div className="flex-1 flex flex-col min-w-0 pb-[110px] md:pb-0">
           {/* Top Header details */}
           <TopHeader title={getHeaderTitle()} onSearchClick={() => setIsSearchOpen(true)} />
 
