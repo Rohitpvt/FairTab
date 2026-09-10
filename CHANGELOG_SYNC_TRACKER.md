@@ -6,6 +6,12 @@
 
 ## Change Log
 
+### [2026-09-10] - Dual-Layer Resilient Invitation Resolution & Retry UI
+- **Scope**: `Logic / UI / Resilience`
+- **Files Changed**:
+  - `src/features/invitations/InvitationAcceptPage.tsx` (Implemented dual-layer resolution: ensures fresh Firebase ID token before calling backend API, with direct Firestore `/globalInviteLinks/{tokenHash}` fallback; added user-friendly error card with "Retry Link" and "Return to Groups" actions)
+- **Sync Status**: `Synced to Android` (Compiled bundle synced via `sync-web-assets.js` and Capacitor public assets updated)
+
 ### [2026-09-10] - Forced Canonical Firebase Hosting URL & Cloud Functions Invite Fix
 - **Scope**: `Logic / Config / API`
 - **Files Changed**:

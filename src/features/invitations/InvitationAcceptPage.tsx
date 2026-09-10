@@ -1,16 +1,24 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
-import { UserCheck, AlertTriangle, ShieldCheck } from "lucide-react";
+import { UserCheck, AlertTriangle, ShieldCheck, RefreshCw, AlertCircle } from "lucide-react";
+import { doc, getDoc } from "firebase/firestore";
 import { PageContainer } from "../../components/layout/PageContainer";
 import { Button } from "../../components/ui/Button";
 import { Skeleton } from "../../components/ui/Skeleton";
-import { auth } from "../../infrastructure/firebase/firebase";
+import { auth, db } from "../../infrastructure/firebase/firebase";
 import { useAuth } from "../auth/AuthProvider";
 import { fairtabApi } from "../../infrastructure/api/fairtabApi";
 import { toast } from "sonner";
-
 import { AuthLayout } from "../auth/AuthLayout";
+
+// SHA-256 helper for client-side direct token lookup fallback
+async function sha256Hex(text: string): Promise<string> {
+  const msgUint8 = new TextEncoder().encode(text);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", msgUint8);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+}
 
 export const InvitationAcceptPage: React.FC = () => {
   const { invitationId, token } = useParams<{ invitationId?: string; token?: string }>();
@@ -33,6 +41,11 @@ export const InvitationAcceptPage: React.FC = () => {
   const [isResolving, setIsResolving] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(() => actualToken ? null : "No invitation token provided.");
+  const [resolveAttempt, setResolveAttempt] = useState(0);
+
+  const retryResolve = useCallback(() => {
+    setResolveAttempt((prev) => prev + 1);
+  }, []);
 
   useEffect(() => {
     if (!actualToken || !currentUser) {
@@ -43,19 +56,64 @@ export const InvitationAcceptPage: React.FC = () => {
     const resolveToken = async () => {
       setIsResolving(true);
       setErrorMsg(null);
+
+      // Attempt 1: Call fairtabApi backend endpoint
       try {
+        if (auth.currentUser) {
+          // Ensure fresh Firebase ID Token exists before making the request
+          await auth.currentUser.getIdToken();
+        }
         const res: any = await fairtabApi.invitations.resolveInviteToken({ token: actualToken });
-        if (isMounted) {
+        if (isMounted && res && res.groupName) {
           setResolvedDetails(res);
-        }
-      } catch (err: any) {
-        if (isMounted) {
-          setErrorMsg(err.message || "Failed to resolve invitation token.");
-        }
-      } finally {
-        if (isMounted) {
           setIsResolving(false);
+          return;
         }
+      } catch (apiErr: any) {
+        console.warn("Backend resolveToken returned error, attempting direct Firestore resolution fallback:", apiErr);
+      }
+
+      // Attempt 2: Direct Firestore query fallback for global links
+      try {
+        const hashedToken = await sha256Hex(actualToken);
+        const globalLinkRef = doc(db, "globalInviteLinks", hashedToken);
+        const globalLinkSnap = await getDoc(globalLinkRef);
+
+        if (globalLinkSnap.exists()) {
+          const linkData = globalLinkSnap.data();
+          if (linkData.status !== "active") {
+            if (isMounted) {
+              setErrorMsg("This invite link has been revoked or is no longer active.");
+              setIsResolving(false);
+            }
+            return;
+          }
+          if (linkData.expiresAt && Date.now() > (linkData.expiresAt.toDate ? linkData.expiresAt.toDate().getTime() : new Date(linkData.expiresAt).getTime())) {
+            if (isMounted) {
+              setErrorMsg("This invite link has expired.");
+              setIsResolving(false);
+            }
+            return;
+          }
+
+          if (isMounted) {
+            setResolvedDetails({
+              type: "global",
+              groupName: linkData.groupName || "FairTab Group",
+              proposedRole: linkData.proposedRole || "member",
+            });
+            setIsResolving(false);
+          }
+          return;
+        }
+      } catch (firestoreErr: any) {
+        console.warn("Direct Firestore token resolution fallback failed:", firestoreErr);
+      }
+
+      // If both fail:
+      if (isMounted) {
+        setErrorMsg("Unable to load invitation details. Please check your internet connection or verify the link is valid.");
+        setIsResolving(false);
       }
     };
 
@@ -64,7 +122,7 @@ export const InvitationAcceptPage: React.FC = () => {
     return () => {
       isMounted = false;
     };
-  }, [actualToken, currentUser]);
+  }, [actualToken, currentUser, resolveAttempt]);
 
   const isLoading = (authState === "initializing" || authState === "authenticated-profile-loading" || isResolving) && !errorMsg;
 
@@ -100,6 +158,9 @@ export const InvitationAcceptPage: React.FC = () => {
 
     setIsProcessing(true);
     try {
+      if (auth.currentUser) {
+        await auth.currentUser.getIdToken();
+      }
       await fairtabApi.invitations.requestJoinGlobal({ token: actualToken });
       toast.success("Join request submitted successfully!");
       navigate("/groups");
@@ -151,11 +212,26 @@ export const InvitationAcceptPage: React.FC = () => {
 
   if (errorMsg || !resolvedDetails) {
     return (
-      <PageContainer title="Invalid Invitation" description={errorMsg || "The invitation could not be resolved."}>
-        <div className="max-w-md mx-auto text-center mt-12">
-          <Button onClick={() => navigate("/groups")} variant="gradient" className="w-full">
-            Return to Groups List
-          </Button>
+      <PageContainer title="Invitation Unavailable" description={errorMsg || "The invitation could not be resolved."}>
+        <div className="max-w-md mx-auto text-center mt-8 glass-elevated border border-white/10 rounded-2xl p-6 md:p-8 flex flex-col gap-5">
+          <div className="mx-auto w-12 h-12 rounded-2xl bg-danger/10 border border-danger/20 flex items-center justify-center text-danger">
+            <AlertCircle className="w-6 h-6" />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <h4 className="text-base font-bold text-text-primary">Unable to Resolve Link</h4>
+            <p className="text-xs text-text-secondary leading-relaxed">
+              {errorMsg || "The invitation link is either invalid, expired, or the server could not be reached."}
+            </p>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-3 mt-2">
+            <Button onClick={retryResolve} variant="secondary" className="flex-1 flex items-center justify-center gap-2">
+              <RefreshCw className="w-4 h-4" />
+              <span>Retry Link</span>
+            </Button>
+            <Button onClick={() => navigate("/groups")} variant="gradient" className="flex-1">
+              Return to Groups
+            </Button>
+          </div>
         </div>
       </PageContainer>
     );
