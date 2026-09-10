@@ -416,30 +416,6 @@ export const GroupDetailPage: React.FC = () => {
               isArchived={group.status === "archived" || group.status === "deleted"}
             />
           </div>
-
-          {/* Activity Logs Timeline */}
-          <div className="glass-elevated border border-white/10 rounded-2xl p-6 text-left">
-            <h3 className="text-base font-bold text-text-primary mb-4">Recent Activity Feed</h3>
-            {activities.length === 0 ? (
-              <p className="text-xs text-text-muted">No group timeline events logged yet.</p>
-            ) : (
-              <div className="flex flex-col gap-3">
-                {activities.map((act) => (
-                  <div key={act.id} className="flex gap-3 text-xs leading-relaxed items-start">
-                    <div className="w-1.5 h-1.5 rounded-full bg-accent-cyan mt-1.5 shrink-0" />
-                    <div className="flex-1">
-                      <p className="text-text-secondary">{act.summary}</p>
-                      <span className="text-[10px] text-text-muted">
-                        {(act.createdAt as { seconds: number })?.seconds
-                          ? new Date((act.createdAt as { seconds: number }).seconds * 1000).toLocaleString()
-                          : "Just now"}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
         </div>
 
         {/* Right Side: Balance Projection & Members */}
@@ -580,6 +556,30 @@ export const GroupDetailPage: React.FC = () => {
         </div>
       </div>
     </div>
+
+      {/* Activity Logs Timeline — Full Width at Bottom */}
+      <div className="glass-elevated border border-white/10 rounded-2xl p-6 text-left">
+        <h3 className="text-base font-bold text-text-primary mb-4">Recent Activity Feed</h3>
+        {activities.length === 0 ? (
+          <p className="text-xs text-text-muted">No group timeline events logged yet.</p>
+        ) : (
+          <div className="flex flex-col gap-3">
+            {activities.map((act) => (
+              <div key={act.id} className="flex gap-3 text-xs leading-relaxed items-start">
+                <div className="w-1.5 h-1.5 rounded-full bg-accent-cyan mt-1.5 shrink-0" />
+                <div className="flex-1">
+                  <p className="text-text-secondary">{act.summary}</p>
+                  <span className="text-[10px] text-text-muted">
+                    {(act.createdAt as { seconds: number })?.seconds
+                      ? new Date((act.createdAt as { seconds: number }).seconds * 1000).toLocaleString()
+                      : "Just now"}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* Action Modals */}
       <InviteMemberDialog
