@@ -81,7 +81,7 @@ export const InviteMemberDialog: React.FC<InviteMemberDialogProps> = ({
         const link = buildPublicAppLink(`/join/${rawToken}`);
         setGeneratedLink(link);
         toast.success("Global invite link created!");
-      } catch (fallbackErr: any) {
+      } catch {
         console.error("Create global link error details:", error);
         toast.error(error.message || "Failed to create global invite link.");
       }
