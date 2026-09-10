@@ -105,14 +105,7 @@ export function createHandlerContext(uid: string, token?: DecodedToken) {
 
 export function withAuth(handler: AuthenticatedHandler) {
   return async (req: VercelRequest, res: VercelResponse) => {
-    try {
-      await ensureFirebaseInitialized();
-    } catch (e) {
-      console.error("Firebase initialization failed:", e);
-      res.status(500).json({ code: "internal", message: "Failed to initialize Firebase Admin" });
-      return;
-    }
-    // CORS headers
+    // CORS headers - set unconditionally
     const origin = req.headers.origin;
     const allowedOrigins = [
       "https://rohitpvt.github.io",
@@ -120,14 +113,24 @@ export function withAuth(handler: AuthenticatedHandler) {
       "https://fairtab-48340.firebaseapp.com"
     ];
 
-    if (!origin || allowedOrigins.includes(origin) || !process.env.VERCEL) {
-      res.setHeader("Access-Control-Allow-Origin", origin || "*");
+    if (origin && (allowedOrigins.includes(origin) || !process.env.VERCEL)) {
+      res.setHeader("Access-Control-Allow-Origin", origin);
+    } else {
+      res.setHeader("Access-Control-Allow-Origin", "*");
     }
-    res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
-    res.setHeader("Access-Control-Allow-Headers", "Authorization, Content-Type");
+    res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT, DELETE");
+    res.setHeader("Access-Control-Allow-Headers", "Authorization, Content-Type, X-Requested-With, Accept");
 
     if (req.method === "OPTIONS") {
       res.status(200).end();
+      return;
+    }
+
+    try {
+      await ensureFirebaseInitialized();
+    } catch (e) {
+      console.error("Firebase initialization failed:", e);
+      res.status(500).json({ code: "internal", message: "Failed to initialize Firebase Admin" });
       return;
     }
 
