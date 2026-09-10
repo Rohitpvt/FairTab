@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Sparkles, ArrowRight, Info, HelpCircle } from "lucide-react";
 import { GlassPanel } from "../../../components/ui/GlassPanel";
@@ -36,14 +36,10 @@ export const DebtSimplificationPanel: React.FC<DebtSimplificationPanelProps> = (
 }) => {
   const navigate = useNavigate();
   const { resolveName } = useMemberNameResolver(members);
-  const [strategy, setStrategy] = useState<"min_tx" | "preserve_rel">(
-    settlementStrategy === "minimum_transactions" ? "min_tx" : "preserve_rel"
-  );
+  const [userSelectedStrategy, setUserSelectedStrategy] = useState<"min_tx" | "preserve_rel" | null>(null);
   const [showExplanation, setShowExplanation] = useState(false);
 
-  useEffect(() => {
-    setStrategy(settlementStrategy === "minimum_transactions" ? "min_tx" : "preserve_rel");
-  }, [settlementStrategy]);
+  const strategy = userSelectedStrategy ?? (settlementStrategy === "minimum_transactions" ? "min_tx" : "preserve_rel");
 
   const allMemberIds = Array.from(
     new Set([
@@ -81,7 +77,7 @@ export const DebtSimplificationPanel: React.FC<DebtSimplificationPanelProps> = (
   };
 
   const handleStrategyChange = async (newStrategy: "min_tx" | "preserve_rel") => {
-    setStrategy(newStrategy);
+    setUserSelectedStrategy(newStrategy);
     if (canManageSettings) {
       try {
         const mapped = newStrategy === "min_tx" ? "minimum_transactions" : "preserve_relationships";
