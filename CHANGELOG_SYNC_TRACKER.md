@@ -6,6 +6,14 @@
 
 ## Change Log
 
+### [2026-09-10] - Forced Canonical Firebase Hosting URL & Cloud Functions Invite Fix
+- **Scope**: `Logic / Config / API`
+- **Files Changed**:
+  - `src/utils/urlHelper.ts` (Forced `getPublicAppBaseUrl()` to unconditionally return canonical `https://fairtab-48340.web.app` for invite links across web, mobile, and custom domain sessions)
+  - `functions/src/invitationOperations.ts` (Updated email invitation fallback URL to `https://fairtab-48340.web.app/#/invite/<token>`)
+  - `api/_lib/middleware.ts` (Added `https://fairtab-48340.web.app` and `https://fairtab-48340.firebaseapp.com` to allowed CORS origins)
+- **Sync Status**: `Synced to Android` (Compiled bundle synced via `sync-web-assets.js` and Capacitor public assets updated)
+
 ### [2026-09-09] - Firebase Hosting Deployment & Standalone Invitation Landing Fix
 - **Scope**: `Config / Hosting / UI / Logic`
 - **Files Changed**:

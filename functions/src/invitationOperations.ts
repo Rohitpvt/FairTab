@@ -171,7 +171,7 @@ export async function handleCreateEmailInvitation(
   const inviterSnap = await db.doc(`users/${uid}`).get();
   const inviterName = inviterSnap.exists ? (inviterSnap.data()!.displayName || "Someone") : "Someone";
 
-  const inviteUrl = `https://rohitpvt.github.io/FairTab/#/invite/${rawToken}`;
+  const inviteUrl = `https://fairtab-48340.web.app/#/invite/${rawToken}`;
   const subject = `Invitation to join ${groupData.name} on FairTab`;
   const html = `
     <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #eee; border-radius: 8px;">

@@ -114,9 +114,13 @@ export function withAuth(handler: AuthenticatedHandler) {
     }
     // CORS headers
     const origin = req.headers.origin;
-    const allowedOrigin = "https://rohitpvt.github.io";
+    const allowedOrigins = [
+      "https://rohitpvt.github.io",
+      "https://fairtab-48340.web.app",
+      "https://fairtab-48340.firebaseapp.com"
+    ];
 
-    if (origin === allowedOrigin || !process.env.VERCEL) {
+    if (!origin || allowedOrigins.includes(origin) || !process.env.VERCEL) {
       res.setHeader("Access-Control-Allow-Origin", origin || "*");
     }
     res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
