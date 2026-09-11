@@ -131,7 +131,9 @@ export const AnalyticsPage: React.FC = () => {
   // 3. Watch approved occurrences for active templates
   useEffect(() => {
     if (!selectedGroupId || templates.length === 0) {
-      setApprovedOccurrences([]);
+      setTimeout(() => {
+        setApprovedOccurrences([]);
+      }, 0);
       return;
     }
 
