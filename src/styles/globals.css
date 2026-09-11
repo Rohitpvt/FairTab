@@ -490,3 +490,12 @@ select option {
   transform: translateX(28px) scaleX(1.2) scaleY(0.85);
 }
 
+/* Hide scrollbar utility */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+

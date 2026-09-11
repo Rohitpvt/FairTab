@@ -6,6 +6,13 @@
 
 ## Change Log
 
+### [2026-09-11] - Mobile Responsive Ledger Tabs & Section Overflow Fix
+- **Scope**: `UI / Mobile Optimization / Analytics & Ledger / Responsive Layout`
+- **Files Changed**:
+  - `src/features/analytics/HistoricalLedgerAndBalanceSection.tsx` (Converted rigid minimum-width tab button strip to a flex-1/flex-initial container with responsive label truncation and horizontal scroll padding so tabs fit cleanly inside the panel without overflowing on small screens)
+  - `src/styles/globals.css` (Added cross-browser `.no-scrollbar` utility classes for smooth horizontal scrolling)
+- **Sync Status**: `Synced to Web & Android` (175/175 unit tests passing, ESLint 0 errors, TypeScript 0 errors, production build verified, deployed live to Firebase Hosting, synced to Android via `npm run build:mobile`)
+
 ### [2026-09-11] - Real-Time Web Push & Mobile Phone Screen Notifications System
 - **Scope**: `PWA / Mobile Web / Push Notifications / Service Worker / Financial Alerts`
 - **Files Changed**:

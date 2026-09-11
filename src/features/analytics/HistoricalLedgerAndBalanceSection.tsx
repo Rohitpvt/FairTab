@@ -196,44 +196,45 @@ export const HistoricalLedgerAndBalanceSection: React.FC<HistoricalLedgerAndBala
         </div>
 
         {/* Tab Buttons & Search */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-t border-border-color/60 pt-4">
-          <div className="overflow-x-auto no-scrollbar w-full sm:w-auto pb-1">
-            <div className="inline-flex items-center gap-1.5 bg-black/10 dark:bg-black/30 p-1 rounded-xl border border-border-color/80 min-w-max">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 border-t border-border-color/60 pt-4 w-full">
+          <div className="w-full lg:w-auto overflow-x-auto no-scrollbar pb-1 -mx-1 px-1">
+            <div className="flex items-center gap-1 sm:gap-1.5 bg-black/10 dark:bg-black/30 p-1 rounded-xl border border-border-color/80 w-full sm:w-auto">
               <button
                 type="button"
                 onClick={() => setActiveTab("balance_summary")}
-                className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all whitespace-nowrap cursor-pointer ${
+                className={`flex-1 sm:flex-initial px-2.5 sm:px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all whitespace-nowrap cursor-pointer ${
                   activeTab === "balance_summary"
                     ? "bg-accent-indigo text-white shadow-lg shadow-accent-indigo/20"
                     : "text-text-secondary hover:text-text-primary"
                 }`}
               >
-                <Coins className="h-3.5 w-3.5" />
-                Balance Summary
+                <Coins className="h-3.5 w-3.5 shrink-0" />
+                <span className="truncate">Balance</span>
+                <span className="hidden sm:inline">Summary</span>
               </button>
               <button
                 type="button"
                 onClick={() => setActiveTab("expense_ledger")}
-                className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all whitespace-nowrap cursor-pointer ${
+                className={`flex-1 sm:flex-initial px-2.5 sm:px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all whitespace-nowrap cursor-pointer ${
                   activeTab === "expense_ledger"
                     ? "bg-accent-indigo text-white shadow-lg shadow-accent-indigo/20"
                     : "text-text-secondary hover:text-text-primary"
                 }`}
               >
-                <Receipt className="h-3.5 w-3.5" />
-                Expenses Ledger ({expenses.length})
+                <Receipt className="h-3.5 w-3.5 shrink-0" />
+                <span>Expenses ({expenses.length})</span>
               </button>
               <button
                 type="button"
                 onClick={() => setActiveTab("settlement_ledger")}
-                className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all whitespace-nowrap cursor-pointer ${
+                className={`flex-1 sm:flex-initial px-2.5 sm:px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all whitespace-nowrap cursor-pointer ${
                   activeTab === "settlement_ledger"
                     ? "bg-accent-indigo text-white shadow-lg shadow-accent-indigo/20"
                     : "text-text-secondary hover:text-text-primary"
                 }`}
               >
-                <Handshake className="h-3.5 w-3.5" />
-                Settlements ({settlements.length})
+                <Handshake className="h-3.5 w-3.5 shrink-0" />
+                <span>Settlements ({settlements.length})</span>
               </button>
             </div>
           </div>
