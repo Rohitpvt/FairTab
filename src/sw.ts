@@ -23,12 +23,75 @@ self.addEventListener("fetch", (event) => {
   if (event.request.mode === "navigate") {
     event.respondWith(
       fetch(event.request).catch(async () => {
-        const cachedResponse = await caches.match("/FairTab/offline.html") || await caches.match("offline.html");
-        return cachedResponse || new Response("Offline Fallback", {
-          status: 503,
-          headers: { "Content-Type": "text/html" }
-        });
+        const cachedResponse =
+          (await caches.match("/FairTab/offline.html")) ||
+          (await caches.match("offline.html"));
+        return (
+          cachedResponse ||
+          new Response("Offline Fallback", {
+            status: 503,
+            headers: { "Content-Type": "text/html" },
+          })
+        );
       })
     );
   }
+});
+
+// Web Push event listener
+self.addEventListener("push", (event) => {
+  if (!event.data) return;
+
+  try {
+    const payload = event.data.json();
+    const title = payload.title || "FairTab Notification";
+    const options = {
+      body: payload.body || "New update in FairTab",
+      icon: payload.icon || "/icons/icon-192.png",
+      badge: payload.badge || "/icons/icon-192.png",
+      tag: payload.tag || "fairtab-alert",
+      data: payload.data || { url: "/" },
+      vibrate: payload.vibrate || [200, 100, 200, 100, 200],
+    } as NotificationOptions;
+
+    event.waitUntil(self.registration.showNotification(title, options));
+  } catch (err) {
+    console.error("Error processing push payload:", err);
+    // Plain text fallback
+    const text = event.data.text();
+    event.waitUntil(
+      self.registration.showNotification("FairTab", {
+        body: text,
+        icon: "/icons/icon-192.png",
+      })
+    );
+  }
+});
+
+// Notification click and deep-link routing
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+
+  const targetUrl = event.notification.data?.url || "/";
+
+  event.waitUntil(
+    self.clients
+      .matchAll({ type: "window", includeUncontrolled: true })
+      .then((clientList) => {
+        // If a window is already open, focus it and navigate
+        for (const client of clientList) {
+          if ("focus" in client) {
+            client.focus();
+            if (targetUrl && "navigate" in client) {
+              (client as WindowClient).navigate(targetUrl);
+            }
+            return;
+          }
+        }
+        // Otherwise, open a new window
+        if (self.clients.openWindow) {
+          return self.clients.openWindow(targetUrl);
+        }
+      })
+  );
 });

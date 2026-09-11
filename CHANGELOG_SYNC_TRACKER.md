@@ -6,6 +6,18 @@
 
 ## Change Log
 
+### [2026-09-11] - Real-Time Web Push & Mobile Phone Screen Notifications System
+- **Scope**: `PWA / Mobile Web / Push Notifications / Service Worker / Financial Alerts`
+- **Files Changed**:
+  - `src/infrastructure/notifications/webNotificationService.ts` (Built notification service supporting browser permissions, service worker `showNotification` dispatch, vibration feedback patterns, deep link routing, and bounded event deduplication caching)
+  - `src/sw.ts` (Added service worker `push` and `notificationclick` listeners with window focus and deep-link routing)
+  - `src/hooks/useNotificationWatcher.ts` (Real-time listener monitoring expenses, budgets, settlements, and invitations to dispatch lock screen and phone notifications)
+  - `src/components/layout/AppShell.tsx` (Mounted notification watcher hook globally in layout)
+  - `src/features/settings/SettingsPage.tsx` (Added Push & Device Notifications control panel with master toggle, granular category toggles, and "Send Test Notification" trigger)
+  - `src/features/notifications/NotificationsPage.tsx` (Added quick phone push notification status and testing card)
+  - `src/test/webNotificationService.test.ts` (Added unit tests covering preferences, deduplication, and notification dispatch)
+- **Sync Status**: `Synced to Web & Android` (173/173 unit tests passing, ESLint 0 errors, production build verified, deployed live to Firebase Hosting, synced to Android via `npm run build:mobile`)
+
 ### [2026-09-11] - Unified Analytics & Insights Page & Consolidated Navigation
 - **Scope**: `UI / Analytics / Smart Insights / Navigation / Routing / Lint / Testing`
 - **Files Changed**:

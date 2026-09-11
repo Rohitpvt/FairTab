@@ -17,6 +17,8 @@ import { useAppActions, useAppState } from "../../app/providers/AppActionProvide
 import { groupService } from "../../infrastructure/firebase/groupService";
 import type { UserGroupIndexDocument } from "../../features/groups/userGroupIndexSchema";
 
+import { useNotificationWatcher } from "../../hooks/useNotificationWatcher";
+
 // Isolated dialog component to prevent AppShell and active routes from re-rendering when open state changes
 const AddExpenseDialog: React.FC = () => {
   const { isAddExpenseOpen } = useAppState();
@@ -122,6 +124,7 @@ const AddExpenseDialog: React.FC = () => {
 };
 
 export const AppShell: React.FC = () => {
+  useNotificationWatcher();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);

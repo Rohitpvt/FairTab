@@ -11,6 +11,8 @@ import {
   Edit2,
   Check,
   RefreshCw,
+  Smartphone,
+  Send,
 } from "lucide-react";
 import { PageContainer } from "../../components/layout/PageContainer";
 import { GlassPanel } from "../../components/ui/GlassPanel";
@@ -32,6 +34,10 @@ import {
 import { purgeUserOfflineData } from "../../infrastructure/offline/db";
 import { fetchUserExportData, generateCsvLedger, triggerDownload } from "../../utils/exportHelper";
 import { AccountGroupResolutionModal } from "./AccountGroupResolutionModal";
+import {
+  webNotificationService,
+  type NotificationPreferences,
+} from "../../infrastructure/notifications/webNotificationService";
 
 export const SettingsPage: React.FC = () => {
   const { user, profile, refreshProfile, signOut, trustedDevice, setTrustedDevicePreference } = useAuth();
@@ -49,6 +55,73 @@ export const SettingsPage: React.FC = () => {
   const [isSavingName, setIsSavingName] = useState(false);
 
   const [isExporting, setIsExporting] = useState(false);
+
+  // Notification state & handlers
+  const [notifPrefs, setNotifPrefs] = useState<NotificationPreferences>(() =>
+    webNotificationService.getPreferences()
+  );
+  const [permissionState, setPermissionState] = useState<NotificationPermission>(() =>
+    webNotificationService.getPermission()
+  );
+  const [isSendingTestNotif, setIsSendingTestNotif] = useState(false);
+
+  const handleToggleMasterNotifications = async () => {
+    if (!notifPrefs.enabled) {
+      if (permissionState !== "granted") {
+        const res = await webNotificationService.requestPermission();
+        setPermissionState(res);
+        if (res === "granted") {
+          const updated = { ...notifPrefs, enabled: true };
+          setNotifPrefs(updated);
+          webNotificationService.savePreferences(updated);
+          toast.success("Phone screen & push notifications enabled!");
+        } else if (res === "denied") {
+          toast.error("Notification permission was denied in your browser settings.");
+        }
+        return;
+      }
+    }
+
+    const updated = { ...notifPrefs, enabled: !notifPrefs.enabled };
+    setNotifPrefs(updated);
+    webNotificationService.savePreferences(updated);
+    if (updated.enabled) {
+      toast.success("Phone notifications enabled.");
+    } else {
+      toast.info("Phone notifications paused.");
+    }
+  };
+
+  const handleTogglePrefCategory = (key: keyof Omit<NotificationPreferences, "enabled">) => {
+    const updated = { ...notifPrefs, [key]: !notifPrefs[key] };
+    setNotifPrefs(updated);
+    webNotificationService.savePreferences(updated);
+    toast.success("Notification preferences updated!");
+  };
+
+  const handleSendTestNotification = async () => {
+    setIsSendingTestNotif(true);
+    try {
+      if (permissionState !== "granted") {
+        const res = await webNotificationService.requestPermission();
+        setPermissionState(res);
+        if (res !== "granted") {
+          toast.error("Please allow notification permissions in your browser first.");
+          return;
+        }
+      }
+      const sent = await webNotificationService.sendTestNotification();
+      if (sent) {
+        toast.success("Test notification sent to your device screen!");
+      } else {
+        toast.info("Notification dispatched. Check your device notifications tray.");
+      }
+    } catch (e: any) {
+      toast.error("Failed to send test notification: " + e.message);
+    } finally {
+      setIsSendingTestNotif(false);
+    }
+  };
 
   const handleExportDataJson = async () => {
     if (!user) return;
@@ -378,6 +451,192 @@ export const SettingsPage: React.FC = () => {
                     }`}
                   />
                 </button>
+              </div>
+            </div>
+          </GlassPanel>
+
+          {/* Push & Phone Screen Notifications */}
+          <GlassPanel variant="standard" className="flex flex-col gap-4">
+            <div className="flex items-center justify-between border-b border-white/5 pb-3">
+              <div className="flex items-center gap-2">
+                <Smartphone className="h-5 w-5 text-accent-indigo" />
+                <h3 className="text-sm font-bold text-text-primary uppercase tracking-wider">
+                  Push & Device Notifications
+                </h3>
+              </div>
+              <div className="flex items-center gap-2">
+                {permissionState === "granted" ? (
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                    <Check className="h-3 w-3" /> Permission Allowed
+                  </span>
+                ) : permissionState === "denied" ? (
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/10 text-rose-400 border border-rose-500/20">
+                    Permission Blocked
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                    Permission Needed
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-4">
+              {/* Master Push Toggle */}
+              <div className="flex items-center justify-between gap-4 p-3 rounded-xl bg-white/[0.02] border border-white/5">
+                <div>
+                  <h4 className="text-xs font-semibold text-text-primary">
+                    Instant Mobile & Browser Alerts
+                  </h4>
+                  <p className="text-[10px] text-text-muted mt-0.5 leading-normal">
+                    Receive lock screen notifications and status bar alerts on your phone or computer when expenses, budget limits, or payments change.
+                  </p>
+                </div>
+                <button
+                  onClick={handleToggleMasterNotifications}
+                  className={`w-11 h-6 rounded-full p-0.5 transition-colors cursor-pointer shrink-0 ${
+                    notifPrefs.enabled && permissionState === "granted"
+                      ? "bg-accent-indigo"
+                      : "bg-white/10"
+                  }`}
+                  aria-label="Toggle master notifications"
+                >
+                  <div
+                    className={`h-5 w-5 rounded-full bg-text-primary shadow-sm transform transition-transform ${
+                      notifPrefs.enabled && permissionState === "granted"
+                        ? "translate-x-5"
+                        : "translate-x-0"
+                    }`}
+                  />
+                </button>
+              </div>
+
+              {/* Granular notification category toggles */}
+              <div className="flex flex-col gap-3 border-t border-white/5 pt-3">
+                <h5 className="text-[11px] font-bold uppercase tracking-wider text-text-secondary">
+                  Notification Triggers
+                </h5>
+
+                {/* 1. New Expenses */}
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <h6 className="text-xs font-medium text-text-primary">
+                      💸 New Expense Activity
+                    </h6>
+                    <p className="text-[10px] text-text-muted">
+                      Alert when someone logs a new expense and calculates your share
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => handleTogglePrefCategory("expenses")}
+                    disabled={!notifPrefs.enabled}
+                    className={`w-9 h-5 rounded-full p-0.5 transition-colors cursor-pointer shrink-0 disabled:opacity-40 ${
+                      notifPrefs.expenses ? "bg-accent-indigo" : "bg-white/10"
+                    }`}
+                    aria-label="Toggle expense notifications"
+                  >
+                    <div
+                      className={`h-4 w-4 rounded-full bg-text-primary shadow-sm transform transition-transform ${
+                        notifPrefs.expenses ? "translate-x-4" : "translate-x-0"
+                      }`}
+                    />
+                  </button>
+                </div>
+
+                {/* 2. Budget Warnings */}
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <h6 className="text-xs font-medium text-text-primary">
+                      ⚠️ Budget Overrun & Anomaly Warnings
+                    </h6>
+                    <p className="text-[10px] text-text-muted">
+                      Alert when a category reaches 90% or exceeds 100% of its budget limit
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => handleTogglePrefCategory("budgets")}
+                    disabled={!notifPrefs.enabled}
+                    className={`w-9 h-5 rounded-full p-0.5 transition-colors cursor-pointer shrink-0 disabled:opacity-40 ${
+                      notifPrefs.budgets ? "bg-accent-indigo" : "bg-white/10"
+                    }`}
+                    aria-label="Toggle budget notifications"
+                  >
+                    <div
+                      className={`h-4 w-4 rounded-full bg-text-primary shadow-sm transform transition-transform ${
+                        notifPrefs.budgets ? "translate-x-4" : "translate-x-0"
+                      }`}
+                    />
+                  </button>
+                </div>
+
+                {/* 3. Debt Settlements & Cleared Balances */}
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <h6 className="text-xs font-medium text-text-primary">
+                      ✅ Debt Payments & Settlements
+                    </h6>
+                    <p className="text-[10px] text-text-muted">
+                      Alert when a member clears an owed balance or records a settlement to you
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => handleTogglePrefCategory("settlements")}
+                    disabled={!notifPrefs.enabled}
+                    className={`w-9 h-5 rounded-full p-0.5 transition-colors cursor-pointer shrink-0 disabled:opacity-40 ${
+                      notifPrefs.settlements ? "bg-accent-indigo" : "bg-white/10"
+                    }`}
+                    aria-label="Toggle settlement notifications"
+                  >
+                    <div
+                      className={`h-4 w-4 rounded-full bg-text-primary shadow-sm transform transition-transform ${
+                        notifPrefs.settlements ? "translate-x-4" : "translate-x-0"
+                      }`}
+                    />
+                  </button>
+                </div>
+
+                {/* 4. Debt & Payment Reminders */}
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <h6 className="text-xs font-medium text-text-primary">
+                      💳 Debt & Payment Reminders
+                    </h6>
+                    <p className="text-[10px] text-text-muted">
+                      Receive reminders for pending balances you owe
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => handleTogglePrefCategory("reminders")}
+                    disabled={!notifPrefs.enabled}
+                    className={`w-9 h-5 rounded-full p-0.5 transition-colors cursor-pointer shrink-0 disabled:opacity-40 ${
+                      notifPrefs.reminders ? "bg-accent-indigo" : "bg-white/10"
+                    }`}
+                    aria-label="Toggle reminder notifications"
+                  >
+                    <div
+                      className={`h-4 w-4 rounded-full bg-text-primary shadow-sm transform transition-transform ${
+                        notifPrefs.reminders ? "translate-x-4" : "translate-x-0"
+                      }`}
+                    />
+                  </button>
+                </div>
+              </div>
+
+              {/* Action row: Send Test Notification */}
+              <div className="flex items-center justify-between gap-3 border-t border-white/5 pt-3">
+                <p className="text-[11px] text-text-muted">
+                  Test your mobile lock-screen & browser push delivery
+                </p>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={handleSendTestNotification}
+                  disabled={isSendingTestNotif}
+                  className="flex items-center gap-1.5 text-xs shrink-0"
+                >
+                  <Send className="h-3.5 w-3.5 text-accent-cyan" />
+                  <span>Send Test Notification</span>
+                </Button>
               </div>
             </div>
           </GlassPanel>

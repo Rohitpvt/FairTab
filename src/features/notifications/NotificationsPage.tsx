@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect } from "react";
-import { Bell, UserPlus, Check, X, CheckCircle, XCircle } from "lucide-react";
+import { Bell, UserPlus, Check, X, CheckCircle, XCircle, Smartphone, Settings, Send } from "lucide-react";
+import { Link } from "react-router-dom";
 import { PageContainer } from "../../components/layout/PageContainer";
 import { EmptyState } from "../../components/feedback/FeedbackStates";
 import { auth, db } from "../../infrastructure/firebase/firebase";
@@ -9,6 +10,7 @@ import { fairtabApi } from "../../infrastructure/api/fairtabApi";
 import { Button } from "../../components/ui/Button";
 import { NotificationItemSkeleton } from "../../components/ui/Skeleton";
 import { toast } from "sonner";
+import { webNotificationService } from "../../infrastructure/notifications/webNotificationService";
 
 interface NotificationItem {
   id: string;
@@ -104,6 +106,48 @@ export const NotificationsPage: React.FC = () => {
       description="Manage join requests, approvals, and split-ledger activity."
     >
       <div className="flex flex-col gap-4 max-w-2xl mx-auto w-full mt-4">
+        {/* Phone & Browser Push Notifications quick status card */}
+        <div className="glass-standard border border-white/10 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 backdrop-blur-md">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-accent-indigo/15 text-accent-indigo dark:text-accent-cyan border border-accent-indigo/25 shrink-0">
+              <Smartphone className="h-5 w-5" />
+            </div>
+            <div>
+              <h4 className="text-xs font-bold text-text-primary">
+                Phone Screen & Push Notifications
+              </h4>
+              <p className="text-[11px] text-text-muted">
+                Receive instant alerts for budget spikes, new expenses & payments
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={async () => {
+                const perm = await webNotificationService.requestPermission();
+                if (perm === "granted") {
+                  await webNotificationService.sendTestNotification();
+                  toast.success("Test notification sent to your phone screen!");
+                } else if (perm === "denied") {
+                  toast.error("Notification permission was denied in your browser settings.");
+                }
+              }}
+              className="text-xs flex items-center gap-1.5"
+            >
+              <Send className="h-3 w-3 text-accent-cyan" />
+              <span>Test Push</span>
+            </Button>
+            <Link to="/settings">
+              <Button variant="ghost" size="sm" className="text-xs flex items-center gap-1.5">
+                <Settings className="h-3 w-3" />
+                <span>Configure</span>
+              </Button>
+            </Link>
+          </div>
+        </div>
+
         {isLoading ? (
           <div className="flex flex-col gap-3">
             <NotificationItemSkeleton />
