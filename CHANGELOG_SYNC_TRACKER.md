@@ -6,6 +6,12 @@
 
 ## Change Log
 
+### [2026-09-11] - Insight Card Explain Metrics Alignment & Flex Fix
+- **Scope**: `UI / Mobile Optimization / Smart Insights / Responsive Layout`
+- **Files Changed**:
+  - `src/features/insights/InsightCard.tsx` (Converted reason code metadata container to `flex-1 min-w-0` and locked "Explain Metrics" button to `shrink-0 whitespace-nowrap` on a single horizontal row, preventing text overlap or overflow outside the card boundaries on mobile devices)
+- **Sync Status**: `Synced to Web & Android` (175/175 unit tests passing, ESLint 0 errors, TypeScript 0 errors, production build verified, deployed live to Firebase Hosting, synced to Android via `npm run build:mobile`)
+
 ### [2026-09-11] - Mobile Responsive Ledger Tabs & Section Overflow Fix
 - **Scope**: `UI / Mobile Optimization / Analytics & Ledger / Responsive Layout`
 - **Files Changed**:

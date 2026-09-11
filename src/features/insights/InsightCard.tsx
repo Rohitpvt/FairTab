@@ -55,9 +55,9 @@ export const InsightCard: React.FC<InsightCardProps> = ({ insight, onExplain }) 
         {insight.explanation}
       </p>
 
-      <div className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 pt-2 border-t border-border-color/40 text-[10px] text-text-muted mt-auto">
+      <div className="flex items-center justify-between gap-2 pt-2.5 border-t border-border-color/40 text-[10px] text-text-muted mt-auto w-full">
         <span
-          className="flex items-center gap-1 min-w-0 max-w-[200px] xs:max-w-[240px] sm:max-w-[280px] font-mono text-[10px] text-text-muted truncate"
+          className="flex items-center gap-1 min-w-0 flex-1 font-mono text-[10px] text-text-muted overflow-hidden"
           title={`Code: ${insight.reasonCode}`}
         >
           <Sparkles className="h-3 w-3 text-accent-indigo shrink-0" />
@@ -66,9 +66,9 @@ export const InsightCard: React.FC<InsightCardProps> = ({ insight, onExplain }) 
         <button
           type="button"
           onClick={() => onExplain(insight)}
-          className="shrink-0 inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-accent-indigo/10 hover:bg-accent-indigo/20 text-accent-indigo dark:text-accent-cyan font-semibold text-[11px] transition-all cursor-pointer active:scale-95 border border-accent-indigo/20 focus:outline-none"
+          className="shrink-0 inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-accent-indigo/10 hover:bg-accent-indigo/20 text-accent-indigo dark:text-accent-cyan font-semibold text-[11px] whitespace-nowrap transition-all cursor-pointer active:scale-95 border border-accent-indigo/20 focus:outline-none"
         >
-          <HelpCircle className="h-3.5 w-3.5" />
+          <HelpCircle className="h-3.5 w-3.5 shrink-0" />
           <span>Explain Metrics</span>
         </button>
       </div>
