@@ -7,14 +7,15 @@
 ## Change Log
 
 ### [2026-09-11] - Unified Analytics & Insights Page & Consolidated Navigation
-- **Scope**: `UI / Analytics / Smart Insights / Navigation / Routing / Lint`
+- **Scope**: `UI / Analytics / Smart Insights / Navigation / Routing / Lint / Testing`
 - **Files Changed**:
   - `src/features/analytics/AnalyticsPage.tsx` (Combined analytics spending summary KPIs, deterministic smart insights & anomaly cards, category and monthly charts, and historical ledgers into a single non-repetitive dashboard; resolved `react-hooks/set-state-in-effect` rule)
   - `src/features/insights/SmartInsightsPage.tsx` (Re-exported unified `AnalyticsPage` for backward-compatibility)
   - `src/components/layout/Sidebar.tsx` (Consolidated "Analytics" and "Insights" into a single "Analytics & Insights" menu button; removed unused icon imports)
   - `src/components/layout/MobileDrawer.tsx` (Consolidated drawer items into a unified "Analytics & Insights" item; removed unused icon imports)
   - `src/App.tsx` (Redirected `/insights` route directly to `/analytics`)
-- **Sync Status**: `Synced to Web & Android` (ESLint 0 errors, production build verified, deployed live to Firebase Hosting, synced to Android via `npm run build:mobile`)
+  - `src/test/App.test.tsx` (Updated drawer navigation test assertions for unified analytics and insights)
+- **Sync Status**: `Synced to Web & Android` (169/169 unit tests passing, ESLint 0 errors, production build verified, deployed live to Firebase Hosting, synced to Android via `npm run build:mobile`)
 
 ### [2026-09-11] - Quick Split Calculator Display Numbers, Result Badge & Copy Button Visibility
 - **Scope**: `UI / Mobile Optimization / Calculator / Contrast & Visibility`
