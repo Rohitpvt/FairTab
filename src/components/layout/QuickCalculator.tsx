@@ -206,12 +206,12 @@ export const QuickCalculator: React.FC<QuickCalculatorProps> = ({ isOpen, onOpen
         <RadixDialog.Overlay className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 transition-all duration-300" />
         <RadixDialog.Content
           aria-describedby={undefined}
-          className="fixed bottom-0 sm:bottom-auto sm:top-1/2 sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 w-full max-w-[370px] rounded-t-3xl sm:rounded-3xl border border-border-color bg-surface-primary/95 dark:bg-surface-primary/95 backdrop-blur-2xl text-text-primary shadow-2xl p-5 z-50 focus:outline-none flex flex-col gap-3.5 max-h-[94vh] overflow-y-auto"
+          className="fixed bottom-4 sm:bottom-auto sm:top-1/2 left-1/2 -translate-x-1/2 sm:-translate-y-1/2 w-[calc(100%-2rem)] max-w-[370px] rounded-3xl border border-border-color/80 bg-surface-primary/95 backdrop-blur-2xl text-text-primary shadow-2xl p-5 z-50 focus:outline-none flex flex-col gap-3.5 max-h-[92vh] overflow-y-auto"
         >
           {/* Header */}
           <div className="flex items-center justify-between border-b border-border-color/60 pb-3">
             <div className="flex items-center gap-2.5">
-              <div className="p-2 rounded-xl bg-amber-400/10 text-amber-500 dark:text-amber-400 border border-amber-400/20">
+              <div className="p-2 rounded-xl bg-accent-indigo/10 text-accent-indigo dark:text-accent-cyan border border-accent-indigo/20">
                 <Sparkles className="h-4 w-4" />
               </div>
               <div>
@@ -231,25 +231,29 @@ export const QuickCalculator: React.FC<QuickCalculatorProps> = ({ isOpen, onOpen
             </RadixDialog.Close>
           </div>
 
-          {/* Display screen */}
-          <div className="rounded-2xl bg-slate-900 dark:bg-black/60 border border-slate-800 dark:border-white/10 p-4 flex flex-col items-end justify-between min-h-[84px] shadow-inner relative overflow-hidden text-white">
-            <div className="text-xs text-slate-400 font-mono tracking-wider truncate w-full flex justify-between items-center h-4">
-              <span className="text-[10px] text-slate-400 uppercase">Result</span>
-              <span className="truncate pl-2 text-slate-300">
+          {/* Display screen - Vibrant Theme Matching Glassmorphic Container */}
+          <div className="rounded-2xl bg-gradient-to-br from-accent-indigo/[0.08] via-accent-violet/[0.04] to-accent-cyan/[0.08] dark:from-accent-indigo/[0.15] dark:via-black/60 dark:to-accent-cyan/[0.12] border border-accent-indigo/25 dark:border-white/15 p-4 flex flex-col items-end justify-between min-h-[84px] shadow-sm relative overflow-hidden">
+            {/* Ambient inner soft glare */}
+            <div className="absolute -top-6 -right-6 w-24 h-24 bg-accent-cyan/15 rounded-full blur-xl pointer-events-none" />
+            <div className="absolute -bottom-6 -left-6 w-24 h-24 bg-accent-indigo/15 rounded-full blur-xl pointer-events-none" />
+
+            <div className="text-xs text-text-muted font-mono tracking-wider truncate w-full flex justify-between items-center h-4 relative z-10">
+              <span className="text-[10px] font-bold text-accent-indigo dark:text-accent-cyan uppercase tracking-wider">Result</span>
+              <span className="truncate pl-2 text-text-muted font-medium">
                 {equation || (splitCount ? `Divided for ${splitCount} people` : "")}
               </span>
             </div>
 
-            <div className="flex items-baseline justify-between w-full mt-1">
+            <div className="flex items-baseline justify-between w-full mt-1 relative z-10">
               <button
                 onClick={handleCopy}
-                className="text-slate-400 hover:text-accent-cyan transition-colors p-1 rounded-md cursor-pointer active:scale-95"
+                className="text-text-muted hover:text-accent-indigo dark:hover:text-accent-cyan transition-colors p-1 rounded-md cursor-pointer active:scale-95"
                 title="Copy calculated value"
                 aria-label="Copy to clipboard"
               >
-                {copied ? <Check className="h-4 w-4 text-emerald-400" /> : <Copy className="h-4 w-4" />}
+                {copied ? <Check className="h-4 w-4 text-emerald-500" /> : <Copy className="h-4 w-4" />}
               </button>
-              <span className="text-3xl font-extrabold tracking-tight font-mono text-white tabular-nums truncate pl-2">
+              <span className="text-3xl font-black tracking-tight font-mono text-text-primary dark:text-white tabular-nums truncate pl-2 drop-shadow-sm">
                 {display}
               </span>
             </div>

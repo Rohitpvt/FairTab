@@ -6,6 +6,12 @@
 
 ## Change Log
 
+### [2026-09-11] - Quick Split Calculator Mobile Centering & Glassmorphic Display Screen
+- **Scope**: `UI / Mobile Optimization / Calculator / Aesthetics`
+- **Files Changed**:
+  - `src/components/layout/QuickCalculator.tsx` (Fixed mobile modal centering with symmetric responsive viewport offsets `w-[calc(100%-2rem)] max-w-[370px] left-1/2 -translate-x-1/2`; upgraded result display screen to a vibrant glassmorphic card with subtle ambient glare, purple/cyan gradient borders, and high-contrast typography in light and dark modes)
+- **Sync Status**: `Synced to Web & Android` (169 Vitest tests passing, deployed live to Firebase Hosting, synced via `npm run build:mobile`)
+
 ### [2026-09-11] - Mobile Responsive Layout, Light Mode Contrast & Navigation Clearance Fixes
 - **Scope**: `UI / Mobile Optimization / Styling / Layout / Accessibility`
 - **Files Changed**:
