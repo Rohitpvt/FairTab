@@ -6,6 +6,12 @@
 
 ## Change Log
 
+### [2026-09-11] - Quick Split Calculator Display Numbers, Result Badge & Copy Button Visibility
+- **Scope**: `UI / Mobile Optimization / Calculator / Contrast & Visibility`
+- **Files Changed**:
+  - `src/components/layout/QuickCalculator.tsx` (Enhanced display screen elements with high-contrast, premium styling: numbers styled in `text-4xl font-black text-slate-950 dark:text-white drop-shadow-sm`, "Result" tag highlighted as an indigo/cyan pill badge, equation text enhanced to `text-slate-700 dark:text-slate-300 font-semibold`, and the Copy button upgraded into an interactive glass badge with green feedback indicator)
+- **Sync Status**: `Synced to Web & Android` (169 Vitest tests passing, deployed live to Firebase Hosting, synced via `npm run build:mobile`)
+
 ### [2026-09-11] - Quick Split Calculator Mobile Centering & Glassmorphic Display Screen
 - **Scope**: `UI / Mobile Optimization / Calculator / Aesthetics`
 - **Files Changed**:

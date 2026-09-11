@@ -231,29 +231,38 @@ export const QuickCalculator: React.FC<QuickCalculatorProps> = ({ isOpen, onOpen
             </RadixDialog.Close>
           </div>
 
-          {/* Display screen - Vibrant Theme Matching Glassmorphic Container */}
-          <div className="rounded-2xl bg-gradient-to-br from-accent-indigo/[0.08] via-accent-violet/[0.04] to-accent-cyan/[0.08] dark:from-accent-indigo/[0.15] dark:via-black/60 dark:to-accent-cyan/[0.12] border border-accent-indigo/25 dark:border-white/15 p-4 flex flex-col items-end justify-between min-h-[84px] shadow-sm relative overflow-hidden">
-            {/* Ambient inner soft glare */}
+          {/* Display screen - Vibrant High-Contrast Glassmorphic Container */}
+          <div className="rounded-2xl bg-slate-50/90 dark:bg-slate-900/80 border-2 border-accent-indigo/30 dark:border-accent-indigo/40 p-4 flex flex-col items-end justify-between min-h-[92px] shadow-inner relative overflow-hidden">
+            {/* Ambient inner soft glow */}
             <div className="absolute -top-6 -right-6 w-24 h-24 bg-accent-cyan/15 rounded-full blur-xl pointer-events-none" />
             <div className="absolute -bottom-6 -left-6 w-24 h-24 bg-accent-indigo/15 rounded-full blur-xl pointer-events-none" />
 
-            <div className="text-xs text-text-muted font-mono tracking-wider truncate w-full flex justify-between items-center h-4 relative z-10">
-              <span className="text-[10px] font-bold text-accent-indigo dark:text-accent-cyan uppercase tracking-wider">Result</span>
-              <span className="truncate pl-2 text-text-muted font-medium">
+            {/* Top row: RESULT badge & Equation breakdown */}
+            <div className="text-xs font-mono tracking-wider truncate w-full flex justify-between items-center h-5 relative z-10">
+              <span className="px-2 py-0.5 rounded-md bg-accent-indigo/15 text-accent-indigo dark:text-accent-cyan font-bold text-[10px] uppercase tracking-wider border border-accent-indigo/25">
+                Result
+              </span>
+              <span className="truncate pl-2 text-slate-700 dark:text-slate-300 font-semibold text-[11px]">
                 {equation || (splitCount ? `Divided for ${splitCount} people` : "")}
               </span>
             </div>
 
-            <div className="flex items-baseline justify-between w-full mt-1 relative z-10">
+            {/* Bottom row: Copy button & Bold numerals */}
+            <div className="flex items-baseline justify-between w-full mt-2 relative z-10">
               <button
+                type="button"
                 onClick={handleCopy}
-                className="text-text-muted hover:text-accent-indigo dark:hover:text-accent-cyan transition-colors p-1 rounded-md cursor-pointer active:scale-95"
-                title="Copy calculated value"
+                className={`p-1.5 rounded-lg border transition-all cursor-pointer active:scale-90 shadow-sm flex items-center justify-center ${
+                  copied
+                    ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30"
+                    : "bg-accent-indigo/10 hover:bg-accent-indigo/20 text-accent-indigo dark:text-accent-cyan border-accent-indigo/25"
+                }`}
+                title={copied ? "Copied!" : "Copy calculated value"}
                 aria-label="Copy to clipboard"
               >
-                {copied ? <Check className="h-4 w-4 text-emerald-500" /> : <Copy className="h-4 w-4" />}
+                {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
               </button>
-              <span className="text-3xl font-black tracking-tight font-mono text-text-primary dark:text-white tabular-nums truncate pl-2 drop-shadow-sm">
+              <span className="text-4xl font-black tracking-tight font-mono text-slate-950 dark:text-white tabular-nums truncate pl-2 drop-shadow-sm">
                 {display}
               </span>
             </div>
