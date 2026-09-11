@@ -102,7 +102,7 @@ describe("App Shell and Layout", () => {
     expect(await screen.findByText("More Features")).toBeInTheDocument();
     expect(screen.getByText("Quick access to all FairTab tools")).toBeInTheDocument();
     expect(screen.getByText("Balances & debt payoff")).toBeInTheDocument();
-    expect(screen.getByText("Spending trends & charts")).toBeInTheDocument();
+    expect(screen.getByText("Spending trends, AI insights & ledgers")).toBeInTheDocument();
     expect(screen.getByText("Quick Calculator")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /sign out/i })).toBeInTheDocument();
 
