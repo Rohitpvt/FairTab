@@ -6,6 +6,16 @@
 
 ## Change Log
 
+### [2026-09-11] - Unified Analytics & Insights Page & Consolidated Navigation
+- **Scope**: `UI / Analytics / Smart Insights / Navigation / Routing`
+- **Files Changed**:
+  - `src/features/analytics/AnalyticsPage.tsx` (Combined analytics spending summary KPIs, deterministic smart insights & anomaly cards, category and monthly charts, and historical ledgers into a single non-repetitive dashboard sharing unified group hooks and IndexedDB offline cache)
+  - `src/features/insights/SmartInsightsPage.tsx` (Re-exported unified `AnalyticsPage` for backward-compatibility)
+  - `src/components/layout/Sidebar.tsx` (Consolidated "Analytics" and "Insights" into a single "Analytics & Insights" menu button)
+  - `src/components/layout/MobileDrawer.tsx` (Consolidated drawer items into a unified "Analytics & Insights" item)
+  - `src/App.tsx` (Redirected `/insights` route directly to `/analytics`)
+- **Sync Status**: `Synced to Web & Android` (Production build verified, deployed live to Firebase Hosting, synced to Android via `npm run build:mobile`)
+
 ### [2026-09-11] - Quick Split Calculator Display Numbers, Result Badge & Copy Button Visibility
 - **Scope**: `UI / Mobile Optimization / Calculator / Contrast & Visibility`
 - **Files Changed**:

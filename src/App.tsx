@@ -26,7 +26,6 @@ const RecurringPage = lazy(() => import("./features/recurring/RecurringPage"));
 const NotificationsPage = lazy(() => import("./features/notifications/NotificationsPage"));
 const SettingsPage = lazy(() => import("./features/settings/SettingsPage"));
 const NotFoundPage = lazy(() => import("./features/error/NotFoundPage"));
-const SmartInsightsPage = lazy(() => import("./features/insights/SmartInsightsPage").then(m => ({ default: m.SmartInsightsPage })));
 
 // Lazy-loaded legal pages
 const PrivacyPolicyPage = lazy(() => import("./features/legal/PrivacyPolicyPage"));
@@ -317,11 +316,7 @@ export function App() {
                 />
                 <Route
                   path="insights"
-                  element={
-                    <Suspense fallback={<RoutePending />}>
-                      <SmartInsightsPage />
-                    </Suspense>
-                  }
+                  element={<Navigate to="/analytics" replace />}
                 />
                 <Route
                   path="recurring"

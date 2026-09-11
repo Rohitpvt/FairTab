@@ -6,7 +6,6 @@ import {
   CheckSquare,
   BarChart2,
   Wallet,
-  Sparkles,
   Repeat,
   Calculator,
   X,
@@ -43,10 +42,10 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({ isOpen, onOpenChange
       badgeColor: "text-accent-cyan",
     },
     {
-      label: "Analytics",
+      label: "Analytics & Insights",
       path: "/analytics",
       icon: BarChart2,
-      description: "Spending trends & charts",
+      description: "Spending trends, AI insights & ledgers",
       badgeColor: "text-accent-violet",
     },
     {
@@ -55,13 +54,6 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({ isOpen, onOpenChange
       icon: Wallet,
       description: "Category limits & alerts",
       badgeColor: "text-amber-400",
-    },
-    {
-      label: "Smart Insights",
-      path: "/insights",
-      icon: Sparkles,
-      description: "Smart AI recommendations",
-      badgeColor: "text-emerald-400",
     },
     {
       label: "Recurring",

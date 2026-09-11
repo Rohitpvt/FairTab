@@ -12,7 +12,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Wallet,
-  Sparkles,
   LogOut,
   Calculator,
 } from "lucide-react";
@@ -37,9 +36,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { label: "Groups", path: "/groups", icon: Compass },
     { label: "Expenses", path: "/expenses", icon: DollarSign },
     { label: "Settlements", path: "/settlements", icon: CheckSquare },
-    { label: "Analytics", path: "/analytics", icon: BarChart2 },
+    { label: "Analytics & Insights", path: "/analytics", icon: BarChart2 },
     { label: "Budgets", path: "/budgets", icon: Wallet },
-    { label: "Insights", path: "/insights", icon: Sparkles },
     { label: "Recurring", path: "/recurring", icon: Repeat },
     { label: "Notifications", path: "/notifications", icon: Bell },
     { label: "Settings", path: "/settings", icon: Settings },
