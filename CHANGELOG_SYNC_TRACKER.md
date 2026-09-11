@@ -16,7 +16,7 @@
   - `src/features/settings/SettingsPage.tsx` (Added Push & Device Notifications control panel with master toggle, granular category toggles, and "Send Test Notification" trigger)
   - `src/features/notifications/NotificationsPage.tsx` (Added quick phone push notification status and testing card)
   - `src/test/webNotificationService.test.ts` (Added unit tests covering preferences, deduplication, and notification dispatch)
-- **Sync Status**: `Synced to Web & Android` (173/173 unit tests passing, ESLint 0 errors, production build verified, deployed live to Firebase Hosting, synced to Android via `npm run build:mobile`)
+- **Sync Status**: `Synced to Web & Android` (175/175 unit tests passing, ESLint 0 errors, TypeScript 0 errors, production build verified, deployed live to Firebase Hosting, synced to Android via `npm run build:mobile`)
 
 ### [2026-09-11] - Unified Analytics & Insights Page & Consolidated Navigation
 - **Scope**: `UI / Analytics / Smart Insights / Navigation / Routing / Lint / Testing`

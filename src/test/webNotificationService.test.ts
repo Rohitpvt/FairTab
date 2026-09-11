@@ -48,6 +48,16 @@ describe("WebNotificationService Unit Tests", () => {
     expect(service.hasBeenNotified("expense_99999")).toBe(false);
   });
 
+  it("bounds the deduplication cache size without memory leak", () => {
+    for (let i = 0; i < 250; i++) {
+      service.markAsNotified(`event_${i}`);
+    }
+    // Oldest items should have been shifted out
+    expect(service.hasBeenNotified("event_0")).toBe(false);
+    // Recent items remain cached
+    expect(service.hasBeenNotified("event_249")).toBe(true);
+  });
+
   it("returns false for sendNotification when notifications are disabled in preferences", async () => {
     service.savePreferences({
       ...DEFAULT_NOTIFICATION_PREFERENCES,
@@ -58,5 +68,17 @@ describe("WebNotificationService Unit Tests", () => {
       body: "Test Body",
     });
     expect(result).toBe(false);
+  });
+
+  it("handles requestPermission gracefully when Notification API is mocked", async () => {
+    vi.spyOn(service, "isSupported").mockReturnValue(true);
+    const requestMock = vi.fn().mockResolvedValue("granted");
+    (window as unknown as { Notification: { requestPermission: typeof requestMock } }).Notification = {
+      requestPermission: requestMock,
+    };
+
+    const result = await service.requestPermission();
+    expect(result).toBe("granted");
+    expect(service.getPreferences().enabled).toBe(true);
   });
 });
