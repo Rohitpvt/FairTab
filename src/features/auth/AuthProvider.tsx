@@ -123,17 +123,38 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
         setTrustedDevice(isTrusted);
 
-        setAuthState("authenticated-profile-loading");
+        // Check local profile cache for instant offline responsiveness
+        const cachedProfileRaw = localStorage.getItem(`fairtab:${u.uid}:profile_cache`);
+        let initialProfile: UserProfile | null = null;
+        if (cachedProfileRaw) {
+          try {
+            initialProfile = JSON.parse(cachedProfileRaw) as UserProfile;
+            setProfile(initialProfile);
+            setAuthState("ready");
+          } catch {
+            // ignore invalid cache
+          }
+        }
+
+        if (!initialProfile) {
+          setAuthState("authenticated-profile-loading");
+        }
+
         try {
           const { doc, onSnapshot } = await import("firebase/firestore");
           const { db } = await import("../../infrastructure/firebase/firebase");
           const docRef = doc(db, "users", u.uid);
 
-          unsubscribeProfile = onSnapshot(docRef, async (snap) => {
-            console.log("[onSnapshot] snap.exists() =", snap.exists());
+          unsubscribeProfile = onSnapshot(docRef, { includeMetadataChanges: true }, async (snap) => {
+            console.log("[onSnapshot] snap.exists() =", snap.exists(), "fromCache =", snap.metadata.fromCache);
             if (snap.exists()) {
               const p = snap.data() as UserProfile;
               setProfile(p);
+              try {
+                localStorage.setItem(`fairtab:${u.uid}:profile_cache`, JSON.stringify(p));
+              } catch {
+                // ignore storage quota errors
+              }
               
               const requireVerification = import.meta.env.VITE_REQUIRE_EMAIL_VERIFICATION !== "false";
               const emailVerified = auth.currentUser?.emailVerified ?? u.emailVerified;
@@ -147,25 +168,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 setAuthState("onboarding-required");
               } else {
                 setAuthState("ready");
-                // Trigger backend profile repair silently in the background
-                profileService.repairUserProfile().catch((err) => {
-                  console.warn("Failed to trigger background profile repair:", err);
-                });
+                // Trigger backend profile repair silently in the background if online
+                if (navigator.onLine) {
+                  profileService.repairUserProfile().catch((err) => {
+                    console.warn("Failed to trigger background profile repair:", err);
+                  });
+                }
               }
-            } else {
-              // Document doesn't exist yet, trigger idempotent bootstrap
+            } else if (!snap.metadata.fromCache) {
+              // Document doesn't exist on server, trigger idempotent bootstrap
               await bootstrapProfile(u);
             }
           }, (err) => {
             console.error("Error listening to profile:", err);
-            setError(err.message || "An error occurred while loading your profile.");
-            setAuthState("error");
+            // If offline, don't hard fail if we have cached profile or active user session
+            if (!navigator.onLine || cachedProfileRaw) {
+              setAuthState("ready");
+            } else {
+              setError(err.message || "An error occurred while loading your profile.");
+              setAuthState("error");
+            }
           });
         } catch (err: unknown) {
           console.error("Error setting up profile subscription:", err);
-          const errorObj = err instanceof Error ? err : new Error(String(err));
-          setError(errorObj.message || "An error occurred while loading your profile.");
-          setAuthState("error");
+          if (!navigator.onLine || cachedProfileRaw) {
+            setAuthState("ready");
+          } else {
+            const errorObj = err instanceof Error ? err : new Error(String(err));
+            setError(errorObj.message || "An error occurred while loading your profile.");
+            setAuthState("error");
+          }
         }
       }
     });

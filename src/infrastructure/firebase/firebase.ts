@@ -55,25 +55,17 @@ const GLOBAL_EMULATORS_KEY = "__FAIRTAB_EMULATORS_CONNECTED__";
 if (getApps().length === 0) {
   app = initializeApp(firebaseConfig);
 
-  // Firestore Cache Strategy Selection before initialization
-  // untrusted device: memory cache only
-  // trusted device: persistent IndexedDB cache with multi-tab support
-  const isTrustedDevice = typeof localStorage !== "undefined" && localStorage.getItem("fairtab:active-trusted-device") === "true";
-
+  // Firestore Cache Strategy:
+  // Enable persistent IndexedDB local cache by default with multi-tab support for seamless offline capabilities.
+  // Fall back to memoryLocalCache if IndexedDB is unavailable or restricted.
   try {
-    if (isTrustedDevice) {
-      db = initializeFirestore(app, {
-        localCache: persistentLocalCache({
-          tabManager: persistentMultipleTabManager(),
-        }),
-      });
-    } else {
-      db = initializeFirestore(app, {
-        localCache: memoryLocalCache(),
-      });
-    }
+    db = initializeFirestore(app, {
+      localCache: persistentLocalCache({
+        tabManager: persistentMultipleTabManager(),
+      }),
+    });
   } catch (error) {
-    console.warn("Firestore custom cache initialization failed, falling back to memory cache", error);
+    console.warn("Firestore persistent cache initialization failed, falling back to memory cache", error);
     db = initializeFirestore(app, {
       localCache: memoryLocalCache(),
     });

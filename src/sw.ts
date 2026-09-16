@@ -18,18 +18,28 @@ self.addEventListener("activate", (event) => {
   event.waitUntil(self.clients.claim());
 });
 
-// Implement a basic fallback for navigation when offline and not cached
+// Implement robust SPA navigation fallback when offline
 self.addEventListener("fetch", (event) => {
   if (event.request.mode === "navigate") {
     event.respondWith(
       fetch(event.request).catch(async () => {
-        const cachedResponse =
+        // Serve precached index.html so the Single Page Application loads seamlessly offline
+        const cachedApp =
+          (await caches.match("/index.html")) ||
+          (await caches.match("index.html")) ||
+          (await caches.match("/FairTab/index.html"));
+        if (cachedApp) {
+          return cachedApp;
+        }
+
+        const cachedFallback =
           (await caches.match("/FairTab/offline.html")) ||
-          (await caches.match("offline.html"));
+          (await caches.match("offline.html")) ||
+          (await caches.match("/offline.html"));
         return (
-          cachedResponse ||
-          new Response("Offline Fallback", {
-            status: 503,
+          cachedFallback ||
+          new Response("FairTab Offline", {
+            status: 200,
             headers: { "Content-Type": "text/html" },
           })
         );
