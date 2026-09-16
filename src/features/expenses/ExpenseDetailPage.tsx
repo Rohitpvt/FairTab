@@ -23,6 +23,7 @@ import {
   History,
   AlertCircle,
   Undo2,
+  Check,
 } from "lucide-react";
 
 export const ExpenseDetailPage: React.FC = () => {
@@ -78,6 +79,31 @@ export const ExpenseDetailPage: React.FC = () => {
   const togglePaymentStatus = async (memberId: string) => {
     if (!groupId || !expenseId) return;
     const isPaid = payments.some((p) => p.memberId === memberId && p.status === "paid");
+    const previousPayments = [...payments];
+
+    // Optimistic update
+    setPayments((prev) => {
+      const existing = prev.find((p) => p.memberId === memberId);
+      if (existing) {
+        return prev.map((p) =>
+          p.memberId === memberId
+            ? { ...p, status: isPaid ? "unpaid" : "paid", markedAt: new Date() }
+            : p
+        );
+      }
+      return [
+        ...prev,
+        {
+          memberId,
+          status: "paid",
+          settlementIds: [],
+          markedBy: auth.currentUser?.uid || "",
+          markedAt: new Date(),
+          version: 1,
+        },
+      ];
+    });
+
     setIsUpdatingPayment((prev) => ({ ...prev, [memberId]: true }));
     try {
       const clientOperationId = crypto.randomUUID();
@@ -96,6 +122,8 @@ export const ExpenseDetailPage: React.FC = () => {
         toast.success("Split marked as paid successfully.");
       }
     } catch (err: any) {
+      // Revert optimistic update on failure
+      setPayments(previousPayments);
       toast.error(err.message || "Failed to update payment status.");
     } finally {
       setIsUpdatingPayment((prev) => ({ ...prev, [memberId]: false }));
@@ -380,13 +408,25 @@ export const ExpenseDetailPage: React.FC = () => {
                             size="sm"
                             disabled={isUpdating}
                             onClick={() => togglePaymentStatus(s.memberId)}
-                            className={`px-3 py-1.5 h-8 text-[10px] rounded-lg border font-semibold transition-all ${
+                            className={`px-3 py-1.5 h-8 text-[11px] rounded-lg border font-semibold inline-flex items-center gap-1.5 transition-all ${
                               isPaid
-                                ? "border-red-500/30 text-red-400 hover:bg-red-500/10"
-                                : "border-accent-cyan/30 text-accent-cyan hover:bg-accent-cyan/10"
+                                ? "border-red-500/30 text-red-400 hover:bg-red-500/10 hover:border-red-500/50"
+                                : "border-accent-cyan/30 text-accent-cyan hover:bg-accent-cyan/10 hover:border-accent-cyan/50"
                             }`}
                           >
-                            {isUpdating ? "..." : isPaid ? "Unmark" : "Mark Paid"}
+                            {isUpdating ? (
+                              "..."
+                            ) : isPaid ? (
+                              <>
+                                <Undo2 className="h-3 w-3" />
+                                Undo
+                              </>
+                            ) : (
+                              <>
+                                <Check className="h-3 w-3" />
+                                Mark Paid
+                              </>
+                            )}
                           </Button>
                         )}
                       </div>
