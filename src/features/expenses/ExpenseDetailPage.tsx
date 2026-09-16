@@ -7,7 +7,8 @@ import type { GroupDocument } from "../groups/groupSchema";
 import type { GroupMemberDocument } from "../groups/memberSchema";
 import { useMemberNameResolver } from "../../hooks/useMemberNameResolver";
 import { expenseService } from "../../infrastructure/firebase/expenseService";
-import type { ExpenseDocument, ExpenseRevision, ParticipantPaymentDocument } from "@fairtab/domain";
+import { settlementService } from "../../infrastructure/firebase/settlementService";
+import type { ExpenseDocument, ExpenseRevision, ParticipantPaymentDocument, SettlementDocument } from "@fairtab/domain";
 import { formatMinorUnit } from "@fairtab/domain";
 import { auth } from "../../infrastructure/firebase/firebase";
 import { syncManager } from "../../infrastructure/offline/syncManager";
@@ -35,6 +36,7 @@ export const ExpenseDetailPage: React.FC = () => {
   const [expense, setExpense] = useState<ExpenseDocument | null>(null);
   const [revisions, setRevisions] = useState<ExpenseRevision[]>([]);
   const [payments, setPayments] = useState<ParticipantPaymentDocument[]>([]);
+  const [settlements, setSettlements] = useState<SettlementDocument[]>([]);
   const [isUpdatingPayment, setIsUpdatingPayment] = useState<Record<string, boolean>>({});
   
   const [isLoading, setIsLoading] = useState(true);
@@ -67,18 +69,36 @@ export const ExpenseDetailPage: React.FC = () => {
       setPayments(p);
     });
 
+    const unsubSettlements = settlementService.watchSettlements(groupId, (s) => {
+      setSettlements(s);
+    });
+
     return () => {
       unsubGroup();
       unsubMembers();
       unsubExpense();
       unsubRevisions();
       unsubPayments();
+      unsubSettlements();
     };
   }, [groupId, expenseId]);
 
+  const isMemberPaid = (memberId: string) => {
+    const payment = payments.find((p) => p.memberId === memberId);
+    if (payment) {
+      return payment.status === "paid";
+    }
+    return settlements.some(
+      (set) =>
+        set.relatedExpenseId === expenseId &&
+        set.relatedMemberId === memberId &&
+        set.status === "active"
+    );
+  };
+
   const togglePaymentStatus = async (memberId: string) => {
     if (!groupId || !expenseId) return;
-    const isPaid = payments.some((p) => p.memberId === memberId && p.status === "paid");
+    const isPaid = isMemberPaid(memberId);
     const previousPayments = [...payments];
 
     // Optimistic update
@@ -95,7 +115,7 @@ export const ExpenseDetailPage: React.FC = () => {
         ...prev,
         {
           memberId,
-          status: "paid",
+          status: isPaid ? "unpaid" : "paid",
           settlementIds: [],
           markedBy: auth.currentUser?.uid || "",
           markedAt: new Date(),
@@ -226,11 +246,10 @@ export const ExpenseDetailPage: React.FC = () => {
   ));
 
   const totalParticipants = expense.splits.length;
-  const paidPayments = payments.filter((p) => p.status === "paid");
-  const paidCount = paidPayments.filter(p => expense.splits.some(s => s.memberId === p.memberId)).length;
+  const paidCount = expense.splits.filter((s) => isMemberPaid(s.memberId)).length;
   const totalAmount = expense.amountMinor;
   const paidAmount = expense.splits
-    .filter((s) => payments.some((p) => p.memberId === s.memberId && p.status === "paid"))
+    .filter((s) => isMemberPaid(s.memberId))
     .reduce((sum, s) => sum + s.amountMinor, 0);
 
   const progressText = `${paidCount} of ${totalParticipants} paid • ${formatMinorUnit(paidAmount, expense.currency)} of ${formatMinorUnit(totalAmount, expense.currency)} collected`;
@@ -367,8 +386,7 @@ export const ExpenseDetailPage: React.FC = () => {
               </div>
               <div className="flex flex-col gap-4">
                 {expense.splits.map((s) => {
-                  const payment = payments.find((p) => p.memberId === s.memberId);
-                  const isPaid = payment?.status === "paid";
+                  const isPaid = isMemberPaid(s.memberId);
                   const isUpdating = !!isUpdatingPayment[s.memberId];
                   return (
                     <div key={s.memberId} className="flex justify-between items-center text-xs border-b border-white/5 pb-3 last:border-0 last:pb-0">
