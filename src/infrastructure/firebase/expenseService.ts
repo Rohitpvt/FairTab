@@ -121,7 +121,11 @@ export const expenseService = {
       (snapshot) => {
         const payments: ParticipantPaymentDocument[] = [];
         snapshot.forEach((d) => {
-          payments.push(d.data() as ParticipantPaymentDocument);
+          const data = d.data() as ParticipantPaymentDocument;
+          payments.push({
+            ...data,
+            memberId: data.memberId || d.id,
+          });
         });
         callback(payments);
       },
