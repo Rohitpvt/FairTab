@@ -6,6 +6,7 @@ import { budgetService } from "../infrastructure/firebase/budgetService";
 import { settlementService } from "../infrastructure/firebase/settlementService";
 import { collection, query, orderBy, limit, onSnapshot } from "firebase/firestore";
 import { webNotificationService } from "../infrastructure/notifications/webNotificationService";
+import { buildPublicAppLink } from "../utils/urlHelper";
 import type { ExpenseDocument, SettlementDocument, BudgetDocument } from "@fairtab/domain";
 
 /**
@@ -71,7 +72,7 @@ export function useNotificationWatcher() {
                 webNotificationService.sendNotification(`💸 New Expense in ${groupName}`, {
                   body: `A member added "${exp.title}" (${currency} ${totalFormatted}). Your share: ${currency} ${shareFormatted}.`,
                   tag: eventId,
-                  data: { url: window.location.origin + `#/groups/${groupId}` },
+                  data: { url: buildPublicAppLink(`/groups/${groupId}`) },
                 });
                 webNotificationService.markAsNotified(eventId);
               }
@@ -100,7 +101,7 @@ export function useNotificationWatcher() {
               webNotificationService.sendNotification(`⚠️ Budget Configured in ${groupName}`, {
                 body: `${b.name || b.category || "Monthly"} budget is active at ${currency} ${limitFormatted}.`,
                 tag: eventId,
-                data: { url: window.location.origin + `#/budgets` },
+                data: { url: buildPublicAppLink("/budgets") },
               });
               webNotificationService.markAsNotified(eventId);
             });
@@ -144,7 +145,7 @@ export function useNotificationWatcher() {
                   webNotificationService.sendNotification(title, {
                     body,
                     tag: eventId,
-                    data: { url: window.location.origin + `#/settlements` },
+                    data: { url: buildPublicAppLink("/settlements") },
                   });
                   webNotificationService.markAsNotified(eventId);
                 }
@@ -181,14 +182,14 @@ export function useNotificationWatcher() {
             webNotificationService.sendNotification(`👥 Join Request: ${data.groupName || "Group"}`, {
               body: `${data.applicantName || "Someone"} requested to join ${data.groupName}.`,
               tag: eventId,
-              data: { url: window.location.origin + `#/notifications` },
+              data: { url: buildPublicAppLink("/notifications") },
             });
             webNotificationService.markAsNotified(eventId);
           } else if (data.type === "join_request_approved") {
             webNotificationService.sendNotification(`🎉 Group Invitation Approved`, {
               body: `Your request to join ${data.groupName} was approved!`,
               tag: eventId,
-              data: { url: window.location.origin + `#/groups/${data.groupId}` },
+              data: { url: buildPublicAppLink(`/groups/${data.groupId}`) },
             });
             webNotificationService.markAsNotified(eventId);
           }

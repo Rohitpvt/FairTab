@@ -4,6 +4,8 @@
  * vibration feedback, and deep linking actions for mobile browsers and PWAs.
  */
 
+import { buildPublicAppLink, getPublicAppBaseUrl } from "../../utils/urlHelper";
+
 export interface NotificationPreferences {
   enabled: boolean;
   expenses: boolean;
@@ -148,6 +150,8 @@ export class WebNotificationService {
     const defaultIcon = "/icons/icon-192.png";
     const defaultBadge = "/icons/icon-192.png";
     const defaultVibrate = [200, 100, 200, 100, 200];
+    const defaultUrl = getPublicAppBaseUrl() + "/#/overview";
+    const targetUrl = options?.data?.url || defaultUrl;
 
     try {
       const registration = await navigator.serviceWorker.ready;
@@ -157,7 +161,7 @@ export class WebNotificationService {
           icon: options?.icon || defaultIcon,
           badge: options?.badge || defaultBadge,
           tag: options?.tag,
-          data: options?.data || { url: window.location.origin },
+          data: { ...options?.data, url: targetUrl },
           vibrate: options?.vibrate || defaultVibrate,
           requireInteraction: options?.requireInteraction ?? false,
         } as NotificationOptions);
@@ -174,17 +178,13 @@ export class WebNotificationService {
         icon: options?.icon || defaultIcon,
         badge: options?.badge || defaultBadge,
         tag: options?.tag,
-        data: options?.data,
+        data: { ...options?.data, url: targetUrl },
       });
 
-      if (options?.data?.url) {
-        notif.onclick = () => {
-          window.focus();
-          if (options.data?.url) {
-            window.location.href = options.data.url as string;
-          }
-        };
-      }
+      notif.onclick = () => {
+        window.focus();
+        window.location.href = targetUrl;
+      };
       return true;
     } catch (err) {
       console.error("Failed to construct fallback notification:", err);
@@ -199,7 +199,7 @@ export class WebNotificationService {
     return this.sendNotification("🔔 FairTab Notifications Active", {
       body: "Instant lock screen & browser alerts are enabled for your account! You'll be alerted on new expenses, budget warnings & payments.",
       tag: "fairtab-test-notification",
-      data: { url: window.location.origin + "#/overview" },
+      data: { url: buildPublicAppLink("/overview") },
       vibrate: [150, 80, 150],
     });
   }

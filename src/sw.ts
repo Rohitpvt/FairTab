@@ -82,7 +82,25 @@ self.addEventListener("push", (event) => {
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
 
-  const targetUrl = event.notification.data?.url || "/";
+  const rawUrl = event.notification.data?.url;
+  let targetUrl = "https://fairtab-48340.web.app/#/overview";
+
+  if (rawUrl) {
+    if (rawUrl.startsWith("http://") || rawUrl.startsWith("https://")) {
+      // If legacy GitHub pages URL is embedded in an old notification payload, rewrite to live domain
+      if (rawUrl.includes("rohitpvt.github.io")) {
+        const hashIdx = rawUrl.indexOf("#");
+        const hashPart = hashIdx !== -1 ? rawUrl.substring(hashIdx) : "#/overview";
+        targetUrl = `https://fairtab-48340.web.app/${hashPart}`;
+      } else {
+        targetUrl = rawUrl;
+      }
+    } else if (rawUrl.startsWith("#")) {
+      targetUrl = `https://fairtab-48340.web.app/${rawUrl}`;
+    } else if (rawUrl.startsWith("/")) {
+      targetUrl = `https://fairtab-48340.web.app${rawUrl}`;
+    }
+  }
 
   event.waitUntil(
     self.clients
