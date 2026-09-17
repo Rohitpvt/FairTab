@@ -36,22 +36,24 @@ export const Animated404ErrorView: React.FC<Animated404ErrorViewProps> = ({
       if (onTryAgain) {
         await Promise.resolve(onTryAgain());
       } else {
-        // Fallback: Reload the current window / hash route
+        // Fallback: reload current location / route
         window.location.reload();
       }
     } catch (err) {
       console.error("Retry failed:", err);
+      window.location.reload();
     } finally {
-      setTimeout(() => setIsRetrying(false), 600);
+      setTimeout(() => setIsRetrying(false), 500);
     }
   };
 
   const handleGoHome = () => {
     if (homePath.startsWith("#")) {
-      window.location.hash = homePath;
-      // If we are already on that hash or need state reset
-      if (window.location.hash === homePath) {
+      const targetHash = homePath;
+      if (window.location.hash === targetHash) {
         window.location.reload();
+      } else {
+        window.location.hash = targetHash;
       }
     } else {
       window.location.href = homePath;
