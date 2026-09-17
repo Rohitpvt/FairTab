@@ -24,18 +24,15 @@ export const BalanceCard: React.FC<BalanceCardProps> = ({
   let cardTitle = label || "Net Balance";
   let statusColor = "text-text-primary";
   let Icon = CheckCircle2;
-  let bgGradient = "from-white/5 to-white/[0.02]";
 
   if (isPositive) {
     cardTitle = label || "You are owed";
     statusColor = "text-success";
     Icon = ArrowUpRight;
-    bgGradient = "from-success/5 to-transparent";
   } else if (isNegative) {
     cardTitle = label || "You owe";
     statusColor = "text-danger";
     Icon = ArrowDownLeft;
-    bgGradient = "from-danger/5 to-transparent";
   } else if (isSettled) {
     cardTitle = label || "Settled Up";
     statusColor = "text-text-muted";
@@ -47,19 +44,19 @@ export const BalanceCard: React.FC<BalanceCardProps> = ({
   return (
     <GlassPanel
       variant="standard"
-      className={`relative overflow-hidden bg-gradient-to-br ${bgGradient} flex items-center justify-between p-6 ${className}`}
+      className={`relative overflow-hidden border border-border-color bg-surface-primary/90 flex items-center justify-between p-5 sm:p-6 rounded-2xl ${className}`}
       {...props}
     >
       <div className="flex flex-col gap-1.5 z-10">
         <span className="text-text-muted text-xs font-semibold uppercase tracking-wider">
           {cardTitle}
         </span>
-        <span className={`text-3xl font-extrabold tracking-tight ${statusColor} financial-number`}>
+        <span className={`text-2xl sm:text-3xl font-extrabold tracking-tight ${statusColor} financial-number`}>
           {formatCurrency(isNegative ? absoluteAmount : amountMinor, currency)}
         </span>
       </div>
-      <div className={`p-3 rounded-xl glass-subtle ${statusColor} z-10`}>
-        <Icon className="h-6 w-6" aria-hidden="true" />
+      <div className={`p-3 rounded-xl bg-surface-secondary border border-border-color/60 ${statusColor} z-10`}>
+        <Icon className="h-5 w-5 sm:h-6 sm:w-6" aria-hidden="true" />
       </div>
     </GlassPanel>
   );

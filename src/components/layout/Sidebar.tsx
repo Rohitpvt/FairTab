@@ -69,7 +69,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       </div>
 
       {/* Nav Link Listings */}
-      <nav className="flex-1 px-3 py-3 flex flex-col gap-1 overflow-y-auto overflow-x-hidden">
+      <nav className="flex-1 px-3 py-3 flex flex-col gap-1.5 overflow-y-auto overflow-x-hidden">
         {menuItems.map((item) => {
           const Icon = item.icon;
           return (
@@ -77,15 +77,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
               key={item.path}
               to={item.path}
               className={({ isActive }) =>
-                `flex items-center px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group relative ${
+                `flex items-center px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 group relative ${
                   isActive
-                    ? "bg-accent-indigo text-white shadow-sm shadow-accent-indigo/30 font-semibold"
+                    ? "bg-[#E2C854] text-[#080808] font-bold shadow-sm"
                     : "text-text-secondary hover:bg-surface-hover hover:text-text-primary active:scale-[0.98]"
                 } ${isCollapsed ? "justify-center" : "gap-3"}`
               }
               title={isCollapsed ? item.label : undefined}
             >
-              <Icon className="h-5 w-5 shrink-0 transition-transform duration-200 group-hover:scale-105" />
+              <Icon className="h-5 w-5 shrink-0 transition-transform duration-150 group-hover:scale-105" />
               <span
                 className={`overflow-hidden whitespace-nowrap transition-all duration-300 ease-[cubic-bezier(0.2,0.8,0.2,1)] ${
                   isCollapsed ? "max-w-0 opacity-0" : "max-w-[180px] opacity-100"

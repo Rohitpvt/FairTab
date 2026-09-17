@@ -106,18 +106,18 @@ export const ExpenseRow: React.FC<ExpenseRowProps> = ({
 
   return (
     <div
-      className={`flex items-center justify-between p-4 glass-subtle rounded-xl border border-white/5 hover:border-white/10 transition-colors ${className}`}
+      className={`flex items-center justify-between p-4 bg-surface-primary/80 hover:bg-surface-secondary/90 rounded-2xl border border-border-color/80 hover:border-border-color transition-all duration-150 ${className}`}
       {...props}
     >
       <div className="flex items-center gap-3.5 min-w-0">
-        <div className="p-2.5 rounded-lg bg-surface-elevated text-text-secondary">
+        <div className="p-2.5 rounded-xl bg-surface-secondary border border-border-color/60 text-text-secondary">
           {getCategoryIcon()}
         </div>
         <div className="min-w-0">
           <div className="flex items-center gap-2">
             <h4 className="text-sm font-semibold text-text-primary truncate">{title}</h4>
             {groupName && (
-              <span className="text-[10px] text-text-muted truncate px-1.5 py-0.5 rounded bg-white/5">
+              <span className="text-[10px] font-medium text-text-muted truncate px-2 py-0.5 rounded-full bg-surface-elevated border border-border-color/50">
                 {groupName}
               </span>
             )}

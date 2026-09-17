@@ -15,6 +15,8 @@
   --color-text-muted: hsl(var(--text-muted));
   --color-text-disabled: hsl(var(--text-disabled));
 
+  --color-accent-gold: hsl(var(--accent-gold));
+  --color-accent-gold-hover: hsl(var(--accent-gold-hover));
   --color-accent-indigo: hsl(var(--accent-indigo));
   --color-accent-violet: hsl(var(--accent-violet));
   --color-accent-cyan: hsl(var(--accent-cyan));
@@ -29,6 +31,7 @@
   --radius-lg: var(--radius-lg);
   --radius-xl: var(--radius-xl);
   --radius-2xl: var(--radius-2xl);
+  --radius-bento: var(--radius-bento);
 
   --animate-shimmer: shimmer 2s infinite linear;
 

@@ -113,8 +113,8 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
                   className="flex items-center justify-center cursor-pointer select-none z-20 group"
                   aria-label="Add new expense"
                 >
-                  <div className="h-10 w-10 rounded-full bg-gradient-to-tr from-accent-indigo via-accent-violet to-accent-cyan flex items-center justify-center text-white shadow-md shadow-accent-indigo/40 active:scale-85 hover:scale-105 transition-all duration-200 border border-white/40">
-                    <Plus className="h-5 w-5 transition-transform duration-200 group-hover:rotate-90 stroke-[2.5]" />
+                  <div className="h-10 w-10 rounded-full bg-[#E2C854] flex items-center justify-center text-[#080808] shadow-md shadow-[#E2C854]/30 active:scale-90 hover:scale-105 transition-all duration-150 border border-[#E2C854]/60">
+                    <Plus className="h-5 w-5 transition-transform duration-150 group-hover:rotate-90 stroke-[2.5]" />
                   </div>
                 </button>
               </div>
@@ -132,19 +132,19 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
                   onMoreClick();
                 }}
                 ref={(el) => { tabRefs.current[idx] = el; }}
-                className={`relative flex flex-col items-center justify-center py-1 px-2 text-center select-none gap-0.5 min-w-[52px] min-h-[44px] rounded-xl transition-all duration-300 z-10 active:scale-85 cursor-pointer ${
+                className={`relative flex flex-col items-center justify-center py-1 px-2 text-center select-none gap-0.5 min-w-[52px] min-h-[44px] rounded-xl transition-all duration-200 z-10 active:scale-90 cursor-pointer ${
                   isMenuHighlight
-                    ? "text-accent-cyan font-bold"
-                    : "text-text-muted hover:text-text-primary opacity-60 hover:opacity-100"
+                    ? "text-[#E2C854] font-bold"
+                    : "text-text-muted hover:text-text-primary opacity-70 hover:opacity-100"
                 }`}
                 aria-label="Open more features menu"
               >
                 <Icon
-                  className={`h-5 w-5 transition-all duration-300 ${
-                    isMenuHighlight ? "scale-110 drop-shadow-[0_0_8px_hsl(var(--accent-cyan)/0.6)] opacity-100" : ""
+                  className={`h-5 w-5 transition-all duration-200 ${
+                    isMenuHighlight ? "scale-110 drop-shadow-[0_0_8px_rgba(226,200,84,0.6)] opacity-100" : ""
                   }`}
                 />
-                <span className={`text-[10px] tracking-tight transition-all duration-300 ${isMenuHighlight ? "font-bold text-text-primary" : "font-medium"}`}>
+                <span className={`text-[10px] tracking-tight transition-all duration-200 ${isMenuHighlight ? "font-bold text-text-primary" : "font-medium"}`}>
                   {tab.label}
                 </span>
               </button>
@@ -158,21 +158,21 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({
               onClick={() => triggerHaptic("selection")}
               ref={(el) => { tabRefs.current[idx] = el; }}
               className={({ isActive }) =>
-                `relative flex flex-col items-center justify-center py-1 px-2 text-center select-none gap-0.5 min-w-[52px] min-h-[44px] rounded-xl transition-all duration-300 z-10 active:scale-85 ${
+                `relative flex flex-col items-center justify-center py-1 px-2 text-center select-none gap-0.5 min-w-[52px] min-h-[44px] rounded-xl transition-all duration-200 z-10 active:scale-90 ${
                   isActive
-                    ? "text-accent-cyan font-bold"
-                    : "text-text-muted hover:text-text-primary opacity-60 hover:opacity-100"
+                    ? "text-[#E2C854] font-bold"
+                    : "text-text-muted hover:text-text-primary opacity-70 hover:opacity-100"
                 }`
               }
             >
               {({ isActive }) => (
                 <>
                   <Icon
-                    className={`h-5 w-5 transition-all duration-300 ${
-                      isActive ? "scale-110 drop-shadow-[0_0_8px_hsl(var(--accent-cyan)/0.6)] opacity-100" : ""
+                    className={`h-5 w-5 transition-all duration-200 ${
+                      isActive ? "scale-110 drop-shadow-[0_0_8px_rgba(226,200,84,0.6)] opacity-100" : ""
                     }`}
                   />
-                  <span className={`text-[10px] tracking-tight transition-all duration-300 ${isActive ? "font-bold text-text-primary" : "font-medium"}`}>
+                  <span className={`text-[10px] tracking-tight transition-all duration-200 ${isActive ? "font-bold text-text-primary" : "font-medium"}`}>
                     {tab.label}
                   </span>
                 </>

@@ -1,33 +1,38 @@
 :root {
-  /* Default Theme: Dark Mode values - Deep OLED Obsidian Palette */
-  --bg-base: 220 20% 2%;        /* Deepest Pitch/Obsidian #030407 */
-  --bg-deep: 220 18% 3.5%;      /* Ultra-deep abyss layer #06080b */
-  --surface-primary: 220 16% 5.5%; /* Pitch card surface #0b0e12 */
-  --surface-secondary: 220 14% 8%; /* Secondary surface #10141a */
-  --surface-elevated: 220 12% 11%; /* Floating elevated card #171b22 */
-  --surface-hover: 220 12% 14%;    /* Hover state #1e232c */
-  --border-color: 220 10% 14%;     /* Sleek subtle crisp border #1f232a */
+  /* Default Theme: Aura Dark & Gold Bento Palette */
+  --bg-base: 0 0% 3.1%;          /* #080808 Deep pitch background (preserved) */
+  --bg-deep: 0 0% 4.8%;          /* #0C0C0C Deep secondary canvas */
+  --surface-primary: 0 0% 6.5%;  /* #101010 Darker bento card surface */
+  --surface-secondary: 0 0% 8.5%;/* #161616 Nested surface */
+  --surface-elevated: 0 0% 11%;  /* #1C1C1C Modal & floating surface */
+  --surface-hover: 0 0% 13%;     /* #212121 Interactive hover */
+  --border-color: 240 3.7% 12%;  /* #1C1C1F Darker subtle precise border */
 
-  --text-primary: 220 33% 98%;
-  --text-secondary: 220 14% 75%;
-  --text-muted: 220 10% 52%;
-  --text-disabled: 220 8% 32%;
+  --text-primary: 0 0% 100%;     /* #FFFFFF Crisp header & body */
+  --text-secondary: 240 5% 65%;  /* #A1A1AA Readable metadata */
+  --text-muted: 240 4% 46%;      /* #71717A Subtle caption */
+  --text-disabled: 240 4% 30%;   /* Inactive state */
 
-  --accent-indigo: 246 100% 71%;
-  --accent-violet: 271 91% 65%;
-  --accent-cyan: 188 86% 53%;
+  /* Aura Accent Gold */
+  --accent-gold: 48 72% 61%;     /* #E2C854 Signature Aura gold */
+  --accent-gold-hover: 48 72% 52%;
+  --accent-gold-muted: 48 50% 25%;
+  --accent-indigo: 48 72% 61%;   /* Map primary action to Aura gold */
+  --accent-violet: 45 80% 65%;
+  --accent-cyan: 48 72% 61%;     /* Aura gold focus & neon highlights */
 
-  --success: 158 64% 52%;
-  --warning: 43 96% 56%;
-  --danger: 350 89% 70%;
+  --success: 158 64% 52%;        /* #22C55E */
+  --warning: 48 72% 61%;         /* Gold warning tone */
+  --danger: 350 89% 70%;         /* #F87171 */
   --info: 198 93% 60%;
 
-  /* Radii */
+  /* Bento Geometry Radii */
   --radius-sm: 0.5rem;
   --radius-md: 0.75rem;
   --radius-lg: 1rem;
   --radius-xl: 1.25rem;
   --radius-2xl: 1.5rem;
+  --radius-bento: 2rem;
   --radius-full: 9999px;
 
   /* Durations */
@@ -37,27 +42,31 @@
   --ease-standard: cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-/* Light Theme overrides */
+/* Light Theme overrides - Crisp Gold & Warm Clean Surfaces */
 .light {
-  --bg-base: 210 20% 98%;
-  --bg-deep: 210 15% 95%;
-  --surface-primary: 0 0% 100%;
-  --surface-secondary: 210 16% 96%;
-  --surface-elevated: 210 14% 93%;
-  --surface-hover: 210 10% 90%;
-  --border-color: 210 14% 88%;
+  --bg-base: 40 20% 98%;          /* Warm crisp light canvas */
+  --bg-deep: 40 15% 94%;          /* Subtle contrast layer */
+  --surface-primary: 0 0% 100%;   /* Pure white card */
+  --surface-secondary: 40 10% 96%;/* Soft nested card */
+  --surface-elevated: 0 0% 100%;  /* Elevated card */
+  --surface-hover: 40 15% 92%;
+  --border-color: 40 10% 88%;     /* Clean warm border */
 
-  --text-primary: 220 30% 12%;
-  --text-secondary: 220 14% 30%;
-  --text-muted: 220 10% 50%;
-  --text-disabled: 220 8% 70%;
+  --text-primary: 240 10% 10%;    /* #18181B High-contrast body */
+  --text-secondary: 240 5% 35%;   /* #52525B Readable secondary */
+  --text-muted: 240 4% 55%;       /* #8C8C94 */
+  --text-disabled: 240 4% 75%;
 
-  --accent-indigo: 246 85% 58%;
-  --accent-violet: 271 80% 55%;
-  --accent-cyan: 188 85% 42%;
+  /* Light mode Gold Accents - deep, rich and high-contrast */
+  --accent-gold: 45 85% 38%;      /* Deep readable luxury gold */
+  --accent-gold-hover: 45 85% 32%;
+  --accent-gold-muted: 45 40% 88%;
+  --accent-indigo: 45 85% 38%;
+  --accent-violet: 45 70% 35%;
+  --accent-cyan: 45 85% 38%;
 
   --success: 142 75% 35%;
-  --warning: 37 85% 40%;
+  --warning: 42 90% 38%;
   --danger: 346 80% 48%;
-  --info: 198 85% 48%;
+  --info: 198 85% 42%;
 }

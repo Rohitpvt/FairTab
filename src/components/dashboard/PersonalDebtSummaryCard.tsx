@@ -132,21 +132,21 @@ export const PersonalDebtSummaryCard: React.FC<PersonalDebtSummaryCardProps> = (
   return (
     <GlassPanel
       variant="standard"
-      className={`p-5 sm:p-6 rounded-2xl border border-white/10 shadow-lg relative overflow-hidden text-left ${className}`}
+      className={`p-5 sm:p-7 rounded-2xl sm:rounded-3xl border border-border-color bg-surface-primary/95 shadow-xl relative overflow-hidden text-left ${className}`}
     >
       {/* Background ambient lighting */}
       <div
-        className={`absolute -right-16 -top-16 w-48 h-48 rounded-full blur-3xl pointer-events-none opacity-20 ${
-          isNetPositive ? "bg-success" : isNetNegative ? "bg-danger" : "bg-accent-cyan"
+        className={`absolute -right-16 -top-16 w-56 h-56 rounded-full blur-3xl pointer-events-none opacity-15 ${
+          isNetPositive ? "bg-success" : isNetNegative ? "bg-danger" : "bg-[#E2C854]"
         }`}
       />
 
       {/* Main High-Level Summary */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-5">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border-color pb-5">
         <div>
           <div className="flex items-center gap-2">
-            <span className="text-xs uppercase font-bold tracking-wider text-text-muted">
-              {isGroupContext ? "Your Group Balance Summary" : "Your Overall Balance Summary"}
+            <span className="text-[11px] uppercase font-bold tracking-wider text-[#E2C854] bg-[#E2C854]/10 border border-[#E2C854]/25 px-2.5 py-0.5 rounded-full">
+              {isGroupContext ? "Group Balance" : "Net Financial Position"}
             </span>
             {isAllSettled && (
               <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-success bg-success/10 border border-success/20 px-2 py-0.5 rounded-full">
@@ -155,9 +155,9 @@ export const PersonalDebtSummaryCard: React.FC<PersonalDebtSummaryCardProps> = (
             )}
           </div>
 
-          <div className="mt-1.5 flex items-baseline gap-2">
+          <div className="mt-2.5 flex items-baseline gap-2">
             <h2
-              className={`text-2xl sm:text-3xl font-extrabold tracking-tight ${
+              className={`text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight ${
                 isNetPositive
                   ? "text-success"
                   : isNetNegative
@@ -175,13 +175,13 @@ export const PersonalDebtSummaryCard: React.FC<PersonalDebtSummaryCardProps> = (
         {/* Quick pill stats */}
         <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
           {totalOwedMinor > 0 && (
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-success/10 border border-success/20 text-success text-xs font-bold">
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-success/10 border border-success/20 text-success text-xs font-bold financial-number">
               <ArrowUpRight className="h-4 w-4 shrink-0" />
               <span>+{formatCurrency(totalOwedMinor, currency)}</span>
             </div>
           )}
           {totalOwesMinor > 0 && (
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-danger/10 border border-danger/20 text-danger text-xs font-bold">
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-danger/10 border border-danger/20 text-danger text-xs font-bold financial-number">
               <ArrowDownLeft className="h-4 w-4 shrink-0" />
               <span>-{formatCurrency(totalOwesMinor, currency)}</span>
             </div>

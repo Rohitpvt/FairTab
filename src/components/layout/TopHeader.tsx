@@ -35,7 +35,7 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ title, onSearchClick }) =>
 
       {/* Page / Context title */}
       <div className="flex items-center gap-3 relative z-10">
-        <h2 className="text-sm sm:text-base font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-accent-indigo via-accent-violet to-accent-cyan uppercase tracking-wider md:hidden">
+        <h2 className="text-sm sm:text-base font-extrabold text-[#E2C854] uppercase tracking-wider md:hidden">
           FairTab
         </h2>
         <span className="h-4 w-px bg-white/10 md:hidden" />
@@ -49,10 +49,10 @@ export const TopHeader: React.FC<TopHeaderProps> = ({ title, onSearchClick }) =>
         {/* Search launcher */}
         <button
           onClick={onSearchClick}
-          className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/[0.04] hover:bg-white/[0.08] active:scale-95 text-text-muted hover:text-text-primary text-xs transition-all duration-200 border border-white/10 cursor-pointer min-h-[38px] min-w-[38px] md:min-w-[190px] shadow-sm"
+          className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/[0.04] hover:bg-white/[0.08] active:scale-95 text-text-muted hover:text-text-primary text-xs transition-all duration-150 border border-white/10 cursor-pointer min-h-[38px] min-w-[38px] md:min-w-[190px] shadow-sm"
           aria-label="Open command search"
         >
-          <Search className="h-4 w-4 shrink-0 text-accent-cyan" />
+          <Search className="h-4 w-4 shrink-0 text-[#E2C854]" />
           <span className="hidden md:inline font-medium text-text-secondary">Search shortcuts...</span>
           <kbd className="hidden lg:inline-flex items-center justify-center h-5 px-1.5 rounded-md bg-white/5 border border-white/10 font-sans text-[10px] text-text-muted ml-auto font-medium">
             Ctrl K

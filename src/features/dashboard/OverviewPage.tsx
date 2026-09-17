@@ -42,6 +42,7 @@ export const OverviewPage: React.FC = () => {
   const { openAddExpense } = useAppActions();
 
   const [isLoading, setIsLoading] = useState(true);
+  const [filterSegment, setFilterSegment] = useState<"all" | "owed" | "owe" | "settled">("all");
   const [groups, setGroups] = useState<UserGroupIndexDocument[]>([]);
   const [expensesMap, setExpensesMap] = useState<Record<string, ExpenseDocument[]>>({});
   const [settlementsMap, setSettlementsMap] = useState<Record<string, SettlementDocument[]>>({});
@@ -380,11 +381,12 @@ export const OverviewPage: React.FC = () => {
   }
 
   const activeGroupCount = groups.filter(g => g.status === "active").length;
+  const userName = profile?.displayName || user?.displayName?.split(" ")[0] || "there";
 
   return (
     <PageContainer
-      title="Dashboard"
-      description="Every expense, fairly shared."
+      title={`Greetings, ${userName}!`}
+      description="Track shared balances, settle transactions and stay square."
       action={
         <div className="flex items-center gap-2">
           <Button variant="secondary" size="sm" onClick={triggerSync} className="flex gap-2">
@@ -398,7 +400,41 @@ export const OverviewPage: React.FC = () => {
         </div>
       }
     >
-      {/* Personal Detailed Debt Breakdown Card */}
+      {/* Segment Filter Chips */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar mb-2">
+        <button
+          onClick={() => setFilterSegment("all")}
+          className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all duration-150 cursor-pointer ${
+            filterSegment === "all"
+              ? "bg-[#E2C854] text-[#080808] shadow-sm"
+              : "bg-surface-primary border border-border-color text-text-secondary hover:text-text-primary hover:bg-surface-secondary"
+          }`}
+        >
+          All Activity
+        </button>
+        <button
+          onClick={() => setFilterSegment("owed")}
+          className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all duration-150 cursor-pointer ${
+            filterSegment === "owed"
+              ? "bg-success text-[#080808] font-bold shadow-sm"
+              : "bg-surface-primary border border-border-color text-text-secondary hover:text-text-primary hover:bg-surface-secondary"
+          }`}
+        >
+          Owed to You ({userBreakdowns.filter(b => b.type === "owed_to_user").length})
+        </button>
+        <button
+          onClick={() => setFilterSegment("owe")}
+          className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all duration-150 cursor-pointer ${
+            filterSegment === "owe"
+              ? "bg-danger text-white font-bold shadow-sm"
+              : "bg-surface-primary border border-border-color text-text-secondary hover:text-text-primary hover:bg-surface-secondary"
+          }`}
+        >
+          You Owe ({userBreakdowns.filter(b => b.type === "user_owes").length})
+        </button>
+      </div>
+
+      {/* Personal Detailed Debt Breakdown Featured Bento Card */}
       <PersonalDebtSummaryCard
         totalNetMinor={totalNetBalanceMinor}
         totalOwedMinor={totalOwedMinor}
@@ -408,8 +444,8 @@ export const OverviewPage: React.FC = () => {
         className="mb-6"
       />
 
-      {/* Balances Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {/* Compact Operational Bento Balances Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
         <BalanceCard amountMinor={totalNetBalanceMinor} currency={dashboardCurrency} />
         <BalanceCard amountMinor={totalOwedMinor} currency={dashboardCurrency} label="You are owed total" />
         <BalanceCard amountMinor={-totalOwesMinor} currency={dashboardCurrency} label="You owe total" />
@@ -419,7 +455,7 @@ export const OverviewPage: React.FC = () => {
         {/* Recent Expenses List */}
         <div className="lg:col-span-2 flex flex-col gap-4 text-left">
           <div className="flex items-center justify-between">
-            <h3 className="text-base font-bold text-text-primary uppercase tracking-wider">
+            <h3 className="text-sm sm:text-base font-bold text-text-primary uppercase tracking-wider">
               Recent Transactions
             </h3>
             <span className="text-xs text-text-muted">Showing last 5 entries</span>
@@ -429,7 +465,7 @@ export const OverviewPage: React.FC = () => {
               <EmptyState
                 title="No Transactions Logged"
                 description="Any shared group expenses or recorded settlements will reflect here."
-                icon={<DollarSign className="h-8 w-8 text-accent-indigo" />}
+                icon={<DollarSign className="h-8 w-8 text-[#E2C854]" />}
               />
             ) : (
               recentTransactions.map((tx) => (
