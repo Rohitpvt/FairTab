@@ -10,8 +10,17 @@ cleanupOutdatedCaches();
 precacheAndRoute(self.__WB_MANIFEST);
 
 self.addEventListener("install", () => {
-  // Force activation of the service worker immediately
-  self.skipWaiting();
+  // Do NOT call skipWaiting() here — let the user decide via the update prompt.
+  // The new service worker stays in "waiting" state until SKIP_WAITING is posted.
+  console.log("[SW] New service worker installed, waiting for user activation.");
+});
+
+// Listen for explicit activation from PwaUpdatePrompt ("Update Now" button)
+self.addEventListener("message", (event) => {
+  if (event.data && event.data.type === "SKIP_WAITING") {
+    console.log("[SW] SKIP_WAITING received — activating new service worker.");
+    self.skipWaiting();
+  }
 });
 
 self.addEventListener("activate", (event) => {
