@@ -27,7 +27,12 @@ export const CreateGroupPage: React.FC = () => {
       type: "trip",
       baseCurrency: "INR",
       simplifyDebts: true,
-      settlementStrategy: "preserve_relationships",
+      settlementStrategy:
+        (typeof window !== "undefined" &&
+          (localStorage.getItem("fairtab:default_settlement_strategy") as
+            | "minimum_transactions"
+            | "preserve_relationships")) ||
+        "preserve_relationships",
     },
   });
 

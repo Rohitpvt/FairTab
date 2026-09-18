@@ -13,7 +13,13 @@ import {
   RefreshCw,
   Smartphone,
   Send,
+  HandCoins,
+  Scale,
+  Sparkles,
+  HelpCircle,
 } from "lucide-react";
+import { collection, getDocs } from "firebase/firestore";
+import { db } from "../../infrastructure/firebase/firebase";
 import { PageContainer } from "../../components/layout/PageContainer";
 import { GlassPanel } from "../../components/ui/GlassPanel";
 import { Button } from "../../components/ui/Button";
@@ -49,6 +55,20 @@ export const SettingsPage: React.FC = () => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [deletePassword, setDeletePassword] = useState("");
   
+  // Balance Calculation / Settlement Strategy state
+  const [defaultStrategy, setDefaultStrategy] = useState<"preserve_relationships" | "minimum_transactions">(() => {
+    if (typeof window !== "undefined") {
+      return (
+        (localStorage.getItem("fairtab:default_settlement_strategy") as
+          | "minimum_transactions"
+          | "preserve_relationships") || "preserve_relationships"
+      );
+    }
+    return "preserve_relationships";
+  });
+  const [isApplyingStrategy, setIsApplyingStrategy] = useState(false);
+  const [showStrategyExplanation, setShowStrategyExplanation] = useState(false);
+
   // Profile editing state
   const [isEditingName, setIsEditingName] = useState(false);
   const [editName, setEditName] = useState(profile?.displayName || user?.displayName || "");
@@ -120,6 +140,45 @@ export const SettingsPage: React.FC = () => {
       toast.error("Failed to send test notification: " + e.message);
     } finally {
       setIsSendingTestNotif(false);
+    }
+  };
+
+  const handleSelectDefaultStrategy = (newStrategy: "preserve_relationships" | "minimum_transactions") => {
+    setDefaultStrategy(newStrategy);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("fairtab:default_settlement_strategy", newStrategy);
+    }
+    toast.success(
+      newStrategy === "preserve_relationships"
+        ? "Switched default to Preserve Relationships (shows direct debts)"
+        : "Switched default to Minimize Transfers (fewest total payments)"
+    );
+  };
+
+  const handleApplyStrategyToAllGroups = async () => {
+    if (!user) return;
+    setIsApplyingStrategy(true);
+    const toastId = toast.loading("Updating balance calculation across your active groups...");
+    try {
+      const indexSnap = await getDocs(collection(db, `userGroupIndex/${user.uid}/groups`));
+      let updatedCount = 0;
+      for (const idxDoc of indexSnap.docs) {
+        const data = idxDoc.data();
+        if (data.status === "active") {
+          try {
+            await groupService.updateGroup(idxDoc.id, { settlementStrategy: defaultStrategy }, 0);
+            updatedCount++;
+          } catch (e) {
+            console.warn(`Could not update group ${idxDoc.id}:`, e);
+          }
+        }
+      }
+      toast.success(`Updated balance calculation across ${updatedCount} active group(s)!`, { id: toastId });
+    } catch (err: any) {
+      console.error(err);
+      toast.error("Failed to update groups: " + err.message, { id: toastId });
+    } finally {
+      setIsApplyingStrategy(false);
     }
   };
 
@@ -365,6 +424,137 @@ export const SettingsPage: React.FC = () => {
             </div>
           </GlassPanel>
         )}
+
+          {/* Balance Calculation & Debt Strategy */}
+          <GlassPanel variant="standard" className="flex flex-col gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/5 pb-3">
+              <div className="flex items-center gap-2">
+                <HandCoins className="h-5 w-5 text-accent-gold" />
+                <h3 className="text-sm font-bold text-text-primary uppercase tracking-wider">
+                  Balance Calculation Strategy
+                </h3>
+              </div>
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-accent-gold/10 text-accent-gold border border-accent-gold/20 self-start sm:self-auto">
+                <Sparkles className="h-3 w-3" />
+                {defaultStrategy === "preserve_relationships"
+                  ? "Preserve Relationships"
+                  : "Minimize Transfers"}
+              </span>
+            </div>
+
+            <div className="flex flex-col gap-3">
+              <p className="text-xs text-text-muted leading-relaxed">
+                Choose your default calculation model for calculating balances and suggested repayments across groups.
+              </p>
+
+              {/* Strategy Selector Bento Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+                {/* Option 1: Preserve Relationships */}
+                <button
+                  type="button"
+                  onClick={() => handleSelectDefaultStrategy("preserve_relationships")}
+                  className={`p-4 rounded-xl border text-left transition-all cursor-pointer flex flex-col gap-2 relative ${
+                    defaultStrategy === "preserve_relationships"
+                      ? "bg-accent-gold/[0.08] border-accent-gold/40 shadow-[0_0_20px_rgba(235,189,76,0.08)]"
+                      : "bg-white/[0.02] border-white/5 hover:bg-white/[0.04] hover:border-white/10"
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Scale className={`h-4 w-4 ${defaultStrategy === "preserve_relationships" ? "text-accent-gold" : "text-text-muted"}`} />
+                      <span className={`text-xs font-bold ${defaultStrategy === "preserve_relationships" ? "text-accent-gold" : "text-text-primary"}`}>
+                        🔗 Preserve Relationships
+                      </span>
+                    </div>
+                    {defaultStrategy === "preserve_relationships" && (
+                      <span className="h-4 w-4 rounded-full bg-accent-gold text-black flex items-center justify-center text-[10px] font-black">
+                        ✓
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-text-muted leading-normal">
+                    Direct pairwise debts. Keeps debts tied strictly to actual expenses so you always see exactly who paid for whom without rerouting.
+                  </p>
+                </button>
+
+                {/* Option 2: Minimize Transfers */}
+                <button
+                  type="button"
+                  onClick={() => handleSelectDefaultStrategy("minimum_transactions")}
+                  className={`p-4 rounded-xl border text-left transition-all cursor-pointer flex flex-col gap-2 relative ${
+                    defaultStrategy === "minimum_transactions"
+                      ? "bg-accent-cyan/[0.08] border-accent-cyan/40 shadow-[0_0_20px_rgba(45,212,191,0.08)]"
+                      : "bg-white/[0.02] border-white/5 hover:bg-white/[0.04] hover:border-white/10"
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Sparkles className={`h-4 w-4 ${defaultStrategy === "minimum_transactions" ? "text-accent-cyan" : "text-text-muted"}`} />
+                      <span className={`text-xs font-bold ${defaultStrategy === "minimum_transactions" ? "text-accent-cyan" : "text-text-primary"}`}>
+                        ⚡ Minimize Transactions
+                      </span>
+                    </div>
+                    {defaultStrategy === "minimum_transactions" && (
+                      <span className="h-4 w-4 rounded-full bg-accent-cyan text-black flex items-center justify-center text-[10px] font-black">
+                        ✓
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-text-muted leading-normal">
+                    Mathematical debt simplification. Net balances across all group members to clear debts in the fewest total payments.
+                  </p>
+                </button>
+              </div>
+
+              {/* Strategy Details Toggle */}
+              <div className="rounded-lg bg-white/[0.02] border border-white/5 p-3 text-xs flex flex-col gap-2 mt-1">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 font-semibold text-text-secondary">
+                    <Info className="h-3.5 w-3.5 text-accent-gold" />
+                    <span>How calculation strategies work</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowStrategyExplanation(!showStrategyExplanation)}
+                    className="text-[10px] text-accent-gold hover:underline flex items-center gap-0.5 cursor-pointer"
+                  >
+                    <HelpCircle className="h-3 w-3" />
+                    {showStrategyExplanation ? "Hide Details" : "Learn More"}
+                  </button>
+                </div>
+
+                {showStrategyExplanation && (
+                  <div className="text-text-muted leading-relaxed text-[11px] flex flex-col gap-1.5 pt-1 border-t border-white/5">
+                    <p>
+                      <strong>Preserve Relationships:</strong> Pairwise obligations are created directly from expense splits. When you pay a member back, it settles that specific direct obligation.
+                    </p>
+                    <p>
+                      <strong>Minimum Transactions:</strong> Aggregates net balances and pairs largest debtors with largest creditors to minimize cross-transfers.
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Sync / Apply Action */}
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pt-2 border-t border-white/5 mt-1">
+                <p className="text-[10px] text-text-muted">
+                  Applied as the default for new groups and global debt overviews.
+                </p>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={handleApplyStrategyToAllGroups}
+                  isLoading={isApplyingStrategy}
+                  loadingText="Applying..."
+                  className="shrink-0 text-xs flex items-center gap-1.5"
+                >
+                  <RefreshCw className="h-3.5 w-3.5" />
+                  <span>Apply to All My Groups</span>
+                </Button>
+              </div>
+            </div>
+          </GlassPanel>
 
           {/* Sync & Local Storage parameters */}
           <GlassPanel variant="standard" className="flex flex-col gap-4">
