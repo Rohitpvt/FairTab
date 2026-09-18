@@ -63,17 +63,8 @@ export const PwaUpdatePrompt: React.FC = () => {
     };
   }, []);
 
-  // When a new waiting SW is found after user previously dismissed, re-show prompt
-  useEffect(() => {
-    if (needRefresh && dismissed) {
-      // A fresh needRefresh signal from useRegisterSW after the user previously
-      // clicked "Later" — re-surface the popup so they see the new version.
-      setDismissed(false);
-    }
-  }, [needRefresh]); // eslint-disable-line react-hooks/exhaustive-deps
-
   /**
-   * "Later" — hide the popup but do NOT clear the waiting service worker.
+   * "Later" — hide the popup for current session but do NOT clear the waiting service worker.
    * The waiting SW stays in "waiting" state so the prompt can re-appear later.
    */
   const handleLater = useCallback(() => {
