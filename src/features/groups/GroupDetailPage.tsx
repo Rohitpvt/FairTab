@@ -374,6 +374,9 @@ export const GroupDetailPage: React.FC = () => {
         totalOwesMinor={groupTotalOwes}
         currency={group.baseCurrency}
         breakdowns={groupUserBreakdowns}
+        expensesMap={{ [group.id]: expenses }}
+        settlementsMap={{ [group.id]: settlements }}
+        currentUserId={userMemberId}
         className="mb-6"
         isGroupContext={true}
       />

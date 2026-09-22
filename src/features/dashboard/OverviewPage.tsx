@@ -441,6 +441,9 @@ export const OverviewPage: React.FC = () => {
         totalOwesMinor={totalOwesMinor}
         currency={dashboardCurrency}
         breakdowns={userBreakdowns}
+        expensesMap={expensesMap}
+        settlementsMap={settlementsMap}
+        currentUserId={currentUserId}
         className="mb-6"
       />
 
