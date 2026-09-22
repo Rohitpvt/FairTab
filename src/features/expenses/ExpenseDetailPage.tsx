@@ -83,7 +83,19 @@ export const ExpenseDetailPage: React.FC = () => {
     };
   }, [groupId, expenseId]);
 
+  const isMemberCoveredUpfront = (memberId: string) => {
+    if (!expense) return false;
+    const paidUpfront = expense.payers
+      .filter((p) => p.memberId === memberId)
+      .reduce((sum, p) => sum + p.amountMinor, 0);
+    const splitAmount = expense.splits.find((s) => s.memberId === memberId)?.amountMinor || 0;
+    return paidUpfront >= splitAmount && splitAmount > 0;
+  };
+
   const isMemberPaid = (memberId: string) => {
+    if (isMemberCoveredUpfront(memberId)) {
+      return true;
+    }
     const payment = payments.find((p) => p.memberId === memberId);
     if (payment) {
       return payment.status === "paid";
@@ -386,6 +398,7 @@ export const ExpenseDetailPage: React.FC = () => {
               </div>
               <div className="flex flex-col gap-4">
                 {expense.splits.map((s) => {
+                  const isCoveredPayer = isMemberCoveredUpfront(s.memberId);
                   const isPaid = isMemberPaid(s.memberId);
                   const isUpdating = !!isUpdatingPayment[s.memberId];
                   return (
@@ -393,7 +406,11 @@ export const ExpenseDetailPage: React.FC = () => {
                       <div className="flex flex-col gap-1">
                         <span className="text-text-secondary font-medium">{getMemberName(s.memberId)}</span>
                         <div className="flex items-center gap-1.5">
-                          {isPaid ? (
+                          {isCoveredPayer ? (
+                            <span className="text-[10px] text-accent-cyan font-bold bg-accent-cyan/10 px-2 py-0.5 rounded-full flex items-center gap-1">
+                              ✓ Paid (Payer)
+                            </span>
+                          ) : isPaid ? (
                             <span className="text-[10px] text-green-400 font-bold bg-green-500/10 px-2 py-0.5 rounded-full flex items-center gap-1">
                               ✓ Paid
                             </span>
@@ -420,7 +437,7 @@ export const ExpenseDetailPage: React.FC = () => {
                             </span>
                           )}
                         </div>
-                        {isAuthorized && !isVoided && (
+                        {isAuthorized && !isVoided && !isCoveredPayer && (
                           <Button
                             variant="ghost"
                             size="sm"
