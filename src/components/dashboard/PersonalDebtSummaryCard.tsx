@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { ArrowUpRight, ArrowDownLeft, CheckCircle2, ChevronRight, User, Eye } from "lucide-react";
 import { GlassPanel } from "../ui/GlassPanel";
 import { formatCurrency } from "../../utils/format";
@@ -41,6 +42,8 @@ export const PersonalDebtSummaryCard: React.FC<PersonalDebtSummaryCardProps> = (
   settlementsMap = {},
   currentUserId = "",
 }) => {
+  const navigate = useNavigate();
+
   // Modal state for drilling into person's transactions
   const [selectedPerson, setSelectedPerson] = useState<{
     otherMemberName: string;
@@ -165,6 +168,30 @@ export const PersonalDebtSummaryCard: React.FC<PersonalDebtSummaryCardProps> = (
     });
   };
 
+  /**
+   * Navigate to the settlement recording page for a given group and member.
+   */
+  const handleNavigateToSettlement = (
+    itemType: "owed_to_user" | "user_owes",
+    otherMemberId: string,
+    amountMinor: number,
+    groupItems: IndividualDebtBreakdown[]
+  ) => {
+    // Determine the primary group to navigate to
+    const primaryGroup = groupItems[0];
+    if (!primaryGroup) return;
+
+    const fromId = itemType === "owed_to_user" ? otherMemberId : (currentUserId || "");
+    const toId = itemType === "owed_to_user" ? (currentUserId || "") : otherMemberId;
+    const amountVal = (amountMinor / 100).toFixed(2);
+
+    navigate(
+      `/groups/${primaryGroup.groupId}/settlements/new?from=${encodeURIComponent(
+        fromId
+      )}&to=${encodeURIComponent(toId)}&amount=${encodeURIComponent(amountVal)}`
+    );
+  };
+
   const isNetPositive = totalNetMinor > 0;
   const isNetNegative = totalNetMinor < 0;
   const isAllSettled = totalNetMinor === 0 && totalOwedMinor === 0 && totalOwesMinor === 0;
@@ -254,16 +281,15 @@ export const PersonalDebtSummaryCard: React.FC<PersonalDebtSummaryCardProps> = (
                     <div
                       key={item.id}
                       onClick={() =>
-                        openBreakdown(
-                          displayName,
+                        handleNavigateToSettlement(
+                          "owed_to_user",
                           item.otherMemberId,
                           item.totalAmountMinor,
-                          item.currency,
                           item.groupItems
                         )
                       }
                       className="p-3 rounded-xl bg-white/[0.03] border border-white/5 hover:border-success/40 hover:bg-white/[0.06] cursor-pointer transition-all flex flex-col gap-2 group"
-                      title={`Click to view shared expense breakdown with ${displayName}`}
+                      title={`Click to settle with ${displayName}`}
                     >
                       <div className="flex items-center justify-between gap-3">
                         <div className="flex items-center gap-2.5 min-w-0">
@@ -288,12 +314,26 @@ export const PersonalDebtSummaryCard: React.FC<PersonalDebtSummaryCardProps> = (
                           <span className="text-xs sm:text-sm font-extrabold text-success financial-number">
                             +{formatCurrency(item.totalAmountMinor, item.currency)}
                           </span>
-                          <div
-                            className="p-1 rounded-md bg-white/5 group-hover:bg-success/20 text-text-muted group-hover:text-success transition-all flex items-center gap-1 text-[10px] font-medium"
+                          {/* Dedicated Eye Button for Summary Modal */}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openBreakdown(
+                                displayName,
+                                item.otherMemberId,
+                                item.totalAmountMinor,
+                                item.currency,
+                                item.groupItems
+                              );
+                            }}
+                            className="p-1.5 rounded-lg bg-white/5 hover:bg-success/20 text-text-muted hover:text-success border border-white/5 hover:border-success/30 transition-all flex items-center gap-1 text-[10px] font-medium cursor-pointer"
+                            title={`View shared expense summary with ${displayName}`}
+                            aria-label={`View shared expenses with ${displayName}`}
                           >
-                            <Eye className="h-3 w-3" />
+                            <Eye className="h-3.5 w-3.5" />
                             <span className="hidden sm:inline">Details</span>
-                          </div>
+                          </button>
                         </div>
                       </div>
 
@@ -305,15 +345,14 @@ export const PersonalDebtSummaryCard: React.FC<PersonalDebtSummaryCardProps> = (
                               key={gi.id}
                               onClick={(e) => {
                                 e.stopPropagation();
-                                openBreakdown(
-                                  displayName,
+                                handleNavigateToSettlement(
+                                  "owed_to_user",
                                   gi.otherMemberId,
                                   gi.amountMinor,
-                                  gi.currency,
                                   [gi]
                                 );
                               }}
-                              className="flex justify-between items-center text-text-muted hover:text-text-secondary group/row"
+                              className="flex justify-between items-center text-text-muted hover:text-text-secondary group/row cursor-pointer"
                             >
                               <span className="hover:underline hover:text-accent-cyan truncate max-w-[160px]">
                                 {gi.groupName}
@@ -357,16 +396,15 @@ export const PersonalDebtSummaryCard: React.FC<PersonalDebtSummaryCardProps> = (
                     <div
                       key={item.id}
                       onClick={() =>
-                        openBreakdown(
-                          displayName,
+                        handleNavigateToSettlement(
+                          "user_owes",
                           item.otherMemberId,
-                          -item.totalAmountMinor,
-                          item.currency,
+                          item.totalAmountMinor,
                           item.groupItems
                         )
                       }
                       className="p-3 rounded-xl bg-white/[0.03] border border-white/5 hover:border-danger/40 hover:bg-white/[0.06] cursor-pointer transition-all flex flex-col gap-2 group"
-                      title={`Click to view shared expense breakdown with ${displayName}`}
+                      title={`Click to settle with ${displayName}`}
                     >
                       <div className="flex items-center justify-between gap-3">
                         <div className="flex items-center gap-2.5 min-w-0">
@@ -391,12 +429,26 @@ export const PersonalDebtSummaryCard: React.FC<PersonalDebtSummaryCardProps> = (
                           <span className="text-xs sm:text-sm font-extrabold text-danger financial-number">
                             -{formatCurrency(item.totalAmountMinor, item.currency)}
                           </span>
-                          <div
-                            className="p-1 rounded-md bg-white/5 group-hover:bg-danger/20 text-text-muted group-hover:text-danger transition-all flex items-center gap-1 text-[10px] font-medium"
+                          {/* Dedicated Eye Button for Summary Modal */}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openBreakdown(
+                                displayName,
+                                item.otherMemberId,
+                                -item.totalAmountMinor,
+                                item.currency,
+                                item.groupItems
+                              );
+                            }}
+                            className="p-1.5 rounded-lg bg-white/5 hover:bg-danger/20 text-text-muted hover:text-danger border border-white/5 hover:border-danger/30 transition-all flex items-center gap-1 text-[10px] font-medium cursor-pointer"
+                            title={`View shared expense summary with ${displayName}`}
+                            aria-label={`View shared expenses with ${displayName}`}
                           >
-                            <Eye className="h-3 w-3" />
+                            <Eye className="h-3.5 w-3.5" />
                             <span className="hidden sm:inline">Details</span>
-                          </div>
+                          </button>
                         </div>
                       </div>
 
@@ -408,15 +460,14 @@ export const PersonalDebtSummaryCard: React.FC<PersonalDebtSummaryCardProps> = (
                               key={gi.id}
                               onClick={(e) => {
                                 e.stopPropagation();
-                                openBreakdown(
-                                  displayName,
+                                handleNavigateToSettlement(
+                                  "user_owes",
                                   gi.otherMemberId,
-                                  -gi.amountMinor,
-                                  gi.currency,
+                                  gi.amountMinor,
                                   [gi]
                                 );
                               }}
-                              className="flex justify-between items-center text-text-muted hover:text-text-secondary group/row"
+                              className="flex justify-between items-center text-text-muted hover:text-text-secondary group/row cursor-pointer"
                             >
                               <span className="hover:underline hover:text-accent-cyan truncate max-w-[160px]">
                                 {gi.groupName}
