@@ -11,6 +11,7 @@ import {
   ChevronRight,
   TrendingUp,
   TrendingDown,
+  UserMinus,
 } from "lucide-react";
 import { Dialog } from "../ui/Dialogs";
 import { Button } from "../ui/Button";
@@ -23,6 +24,7 @@ import {
 import type { ExpenseDocument, SettlementDocument } from "@fairtab/domain";
 import type { GroupMemberDocument } from "../../features/groups/memberSchema";
 import { useMemberNameResolver } from "../../hooks/useMemberNameResolver";
+import { canChangeRole, canRemoveMember } from "../../features/groups/permissions";
 
 interface MemberLedgerModalProps {
   isOpen: boolean;
@@ -36,6 +38,9 @@ interface MemberLedgerModalProps {
   settlements: SettlementDocument[];
   settlementStrategy?: "minimum_transactions" | "preserve_relationships";
   currentUserRole?: "owner" | "admin" | "member" | "viewer";
+  currentUserUid?: string;
+  onRoleChange?: (member: GroupMemberDocument, newRole: "admin" | "member" | "viewer") => void;
+  onRemoveMember?: (member: GroupMemberDocument) => void;
 }
 
 export const MemberLedgerModal: React.FC<MemberLedgerModalProps> = ({
@@ -50,6 +55,9 @@ export const MemberLedgerModal: React.FC<MemberLedgerModalProps> = ({
   settlements,
   settlementStrategy = "preserve_relationships",
   currentUserRole = "member",
+  currentUserUid,
+  onRoleChange,
+  onRemoveMember,
 }) => {
   const { resolveName } = useMemberNameResolver(allMembers);
   const [filterTab, setFilterTab] = useState<"all" | "expenses" | "settlements">("all");
@@ -554,6 +562,45 @@ export const MemberLedgerModal: React.FC<MemberLedgerModalProps> = ({
             </div>
           )}
         </div>
+
+        {/* 4. Admin Management Section (if applicable) */}
+        {!isFormer && member.id !== currentUserUid && member.userId !== currentUserUid && (
+          <div className="p-3.5 bg-white/[0.02] border border-white/5 rounded-2xl flex items-center justify-between gap-3 flex-wrap">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold text-text-muted">Member Role:</span>
+              {member.kind === "account" && member.role !== "owner" && onRoleChange && canChangeRole(currentUserRole, member.role, "admin", false) ? (
+                <select
+                  value={member.role}
+                  onChange={(e) => onRoleChange(member, e.target.value as "admin" | "member" | "viewer")}
+                  className="bg-white/5 border border-white/10 rounded-lg px-2.5 py-1 text-xs text-text-primary focus:outline-none focus:border-accent-cyan transition-colors"
+                >
+                  <option value="member">Member</option>
+                  <option value="admin">Admin</option>
+                  <option value="viewer">Viewer</option>
+                </select>
+              ) : (
+                <span className="text-xs font-medium text-text-secondary capitalize">
+                  {member.kind === "placeholder" ? "Offline Placeholder" : member.role}
+                </span>
+              )}
+            </div>
+
+            {onRemoveMember && canRemoveMember(currentUserRole, member.role) && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  onClose();
+                  onRemoveMember(member);
+                }}
+                className="text-danger hover:bg-danger/10 text-xs py-1 px-2.5 h-auto flex items-center gap-1.5 border border-transparent hover:border-danger/20"
+              >
+                <UserMinus className="h-3.5 w-3.5" />
+                <span>Remove Member</span>
+              </Button>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="flex justify-between items-center gap-2 pt-3 border-t border-white/10 mt-3">

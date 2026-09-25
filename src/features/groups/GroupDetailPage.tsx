@@ -10,9 +10,8 @@ import {
   CloudOff,
   RefreshCw,
   LogOut,
-  UserMinus,
   HandCoins,
-  Eye,
+  ChevronRight,
 } from "lucide-react";
 import { PageContainer } from "../../components/layout/PageContainer";
 import { groupService } from "../../infrastructure/firebase/groupService";
@@ -27,7 +26,6 @@ import {
   canEditSettings,
   canInviteMember,
   canLeaveGroup,
-  canRemoveMember,
   canChangeRole
 } from "./permissions";
 
@@ -42,7 +40,6 @@ import { expenseService } from "../../infrastructure/firebase/expenseService";
 import { settlementService } from "../../infrastructure/firebase/settlementService";
 import { calculateBalances, simplifyMinimumTransactions, simplifyPreserveRelationships } from "@fairtab/domain";
 import type { ExpenseDocument, SettlementDocument } from "@fairtab/domain";
-import BalanceProjectionCard from "../expenses/BalanceProjectionCard";
 import ExpenseListPage from "../expenses/ExpenseListPage";
 import ConflictResolutionDialog from "../expenses/ConflictResolutionDialog";
 import { PersonalDebtSummaryCard } from "../../components/dashboard/PersonalDebtSummaryCard";
@@ -427,25 +424,23 @@ export const GroupDetailPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Right Side: Balance Projection & Members */}
+        {/* Right Side: Unified Members & Balances Card */}
         <div className="flex flex-col gap-6">
-          <BalanceProjectionCard
-            expenses={expenses}
-            settlements={settlements}
-            members={members}
-            baseCurrency={group.baseCurrency}
-            onSelectMember={(m) => setSelectedLedgerMember(m)}
-          />
-
-          <div className="glass-elevated border border-white/10 rounded-2xl p-6 text-left">
+          <div className="glass-elevated border border-white/10 rounded-2xl p-5 sm:p-6 text-left">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-base font-bold text-text-primary flex items-center gap-2">
-                <Users className="h-4 w-4 text-accent-cyan" />
-                Members ({group.activeMemberCount})
-              </h3>
+              <div>
+                <h3 className="text-base font-bold text-text-primary flex items-center gap-2">
+                  <Users className="h-4 w-4 text-accent-cyan" />
+                  Members ({group.activeMemberCount})
+                </h3>
+                <p className="text-[11px] text-text-muted mt-0.5">
+                  Tap any member to view their ledger & settlements
+                </p>
+              </div>
+
               {/* Quick Actions for Owner/Admins */}
               {canInviteMember(currentUserRole) && group.status === "active" && (
-                <div className="flex gap-1.5">
+                <div className="flex items-center gap-1.5 shrink-0">
                   <Button
                     onClick={() => {
                       if (group.memberUserIds.length >= 100) {
@@ -456,180 +451,149 @@ export const GroupDetailPage: React.FC = () => {
                     }}
                     variant="ghost"
                     size="sm"
-                    className="text-accent-cyan hover:bg-white/5"
+                    className="text-accent-cyan hover:bg-white/5 h-8 px-2.5"
                     title="Invite via URL link"
                   >
-                    <UserPlus className="h-4 w-4" />
+                    <UserPlus className="h-3.5 w-3.5 mr-1" />
+                    <span className="text-xs">Invite</span>
                   </Button>
-                <Button
-                  onClick={() => setIsPlaceholderOpen(true)}
-                  variant="ghost"
-                  size="sm"
-                  className="text-accent-indigo hover:bg-white/5"
-                  title="Add Placeholder Member"
-                >
-                  <Plus className="h-4 w-4" />
-                </Button>
-              </div>
-            )}
-          </div>
-
-          <div className="flex flex-col gap-3">
-            {activeMembers.map((member) => {
-              const isSelf = member.userId === currentUserUid;
-              const isOwnerTarget = member.role === "owner";
-              const memBalObj = balances.find((b) => b.memberId === member.id || (member.userId && b.memberId === member.userId));
-              const memNetMinor = memBalObj ? memBalObj.netBaseMinor : 0;
-              const isPositive = memNetMinor > 0;
-              const isNegative = memNetMinor < 0;
-
-              return (
-                <div
-                  key={member.id}
-                  className="flex items-center justify-between p-3 bg-white/[0.02] border border-white/5 rounded-xl transition-all hover:bg-white/[0.04]"
-                >
-                  {/* Name & Badge */}
-                  <div className="flex flex-col gap-0.5 text-left min-w-0 flex-1 pr-2">
-                    <span className="text-sm font-semibold text-text-primary flex items-center gap-1.5 truncate">
-                      <span className="truncate">{resolveName(member)}</span>
-                      {isSelf && (
-                        <span className="text-[9px] font-semibold bg-accent-cyan/10 border border-accent-cyan/20 px-1 rounded text-accent-cyan shrink-0">
-                          You
-                        </span>
-                      )}
-                    </span>
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] text-text-muted capitalize">
-                        {member.kind === "placeholder" ? "Offline Placeholder" : member.role}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Net Balance & Actions */}
-                  <div className="flex items-center gap-2 shrink-0">
-                    {/* Member Net Balance Pill */}
-                    <span
-                      className={`text-xs font-semibold px-2 py-0.5 rounded-lg border ${
-                        isPositive
-                          ? "bg-success/10 text-success border-success/20"
-                          : isNegative
-                          ? "bg-danger/10 text-danger border-danger/20"
-                          : "bg-white/5 text-text-muted border-white/10"
-                      }`}
-                    >
-                      {isPositive ? "+" : ""}
-                      {formatCurrency(memNetMinor, group.baseCurrency)}
-                    </span>
-
-                    {/* Ledger Inspector Eye Button */}
-                    <button
-                      type="button"
-                      onClick={() => setSelectedLedgerMember(member)}
-                      className="p-1.5 text-text-muted hover:text-accent-cyan rounded-lg hover:bg-white/5 transition-all"
-                      title={`View ${resolveName(member)}'s ledger & debts`}
-                    >
-                      <Eye className="h-4 w-4" />
-                    </button>
-
-                    {/* Member Admin Actions */}
-                    {group.status === "active" && (
-                      <>
-                        {/* Role dropdown for owner/admin */}
-                        {member.kind === "account" && !isOwnerTarget && !isSelf && (
-                          <select
-                            value={member.role}
-                            onChange={(e) => handleRoleChange(member, e.target.value as "admin" | "member" | "viewer")}
-                            className="bg-white/5 border border-white/10 rounded px-2 py-1 text-xs text-text-secondary focus:outline-none focus:border-accent-cyan transition-colors"
-                          >
-                            <option value="member">Member</option>
-                            <option value="admin">Admin</option>
-                            <option value="viewer">Viewer</option>
-                          </select>
-                        )}
-
-                        {/* Remove Button */}
-                        {canRemoveMember(currentUserRole, member.role) && !isSelf && (
-                          <button
-                            onClick={() =>
-                              setSelectedRemoveMember({
-                                id: member.id,
-                                displayName: resolveName(member),
-                                kind: member.kind
-                              })
-                            }
-                            className="p-1 text-text-muted hover:text-danger rounded hover:bg-danger/10 transition-all"
-                            title="Remove from group"
-                          >
-                            <UserMinus className="h-3.5 w-3.5" />
-                          </button>
-                        )}
-                      </>
-                    )}
-                  </div>
+                  <Button
+                    onClick={() => setIsPlaceholderOpen(true)}
+                    variant="ghost"
+                    size="sm"
+                    className="text-accent-indigo hover:bg-white/5 h-8 px-2"
+                    title="Add Placeholder Member"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
                 </div>
-              );
-            })}
+              )}
+            </div>
 
-            {/* Former / Inactive Members */}
-            {formerMembers.length > 0 && (
-              <div className="mt-2 pt-3 border-t border-white/5 flex flex-col gap-2">
-                <span className="text-[11px] font-semibold uppercase tracking-wider text-text-muted">
-                  Former Members ({formerMembers.length})
-                </span>
-                {formerMembers.map((member) => {
-                  const memBalObj = balances.find((b) => b.memberId === member.id || (member.userId && b.memberId === member.userId));
-                  const memNetMinor = memBalObj ? memBalObj.netBaseMinor : 0;
-                  const isPositive = memNetMinor > 0;
-                  const isNegative = memNetMinor < 0;
+            <div className="flex flex-col gap-2.5">
+              {activeMembers.map((member) => {
+                const isSelf = member.userId === currentUserUid;
+                const memBalObj = balances.find((b) => b.memberId === member.id || (member.userId && b.memberId === member.userId));
+                const memNetMinor = memBalObj ? memBalObj.netBaseMinor : 0;
+                const isPositive = memNetMinor > 0;
+                const isNegative = memNetMinor < 0;
 
-                  return (
-                    <div
-                      key={member.id}
-                      className="flex items-center justify-between p-2.5 bg-white/[0.01] border border-white/5 rounded-xl opacity-75"
-                    >
-                      <div className="flex flex-col gap-0.5 text-left min-w-0 flex-1 pr-2">
-                        <span className="text-sm font-medium text-text-secondary truncate">
-                          {resolveName(member)}
-                        </span>
-                        <span className="text-[10px] text-text-muted capitalize">
-                          {member.status === "left" ? "Left Group" : "Removed"}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2 shrink-0">
-                        {memNetMinor !== 0 && (
-                          <span
-                            className={`text-xs font-semibold px-2 py-0.5 rounded-lg border ${
-                              isPositive
-                                ? "bg-success/10 text-success border-success/20"
-                                : isNegative
-                                ? "bg-danger/10 text-danger border-danger/20"
-                                : "bg-white/5 text-text-muted border-white/10"
-                            }`}
-                          >
-                            {isPositive ? "+" : ""}
-                            {formatCurrency(memNetMinor, group.baseCurrency)}
-                          </span>
+                return (
+                  <div
+                    key={member.id}
+                    onClick={() => setSelectedLedgerMember(member)}
+                    className="flex items-center justify-between p-3 bg-white/[0.02] hover:bg-white/[0.06] border border-white/5 hover:border-white/15 rounded-2xl transition-all cursor-pointer group"
+                  >
+                    {/* Left: Avatar + Name + Role */}
+                    <div className="flex items-center gap-3 min-w-0 flex-1 pr-2">
+                      <div
+                        className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold text-xs shrink-0 ${
+                          member.kind === "placeholder"
+                            ? "bg-accent-indigo/15 text-accent-indigo border border-accent-indigo/25"
+                            : isSelf
+                            ? "bg-accent-cyan/15 text-accent-cyan border border-accent-cyan/25"
+                            : "bg-white/5 text-text-secondary border border-white/10"
+                        }`}
+                      >
+                        {member.kind === "placeholder" ? (
+                          <CloudOff className="h-4 w-4" />
+                        ) : (
+                          (resolveName(member).charAt(0) || "M").toUpperCase()
                         )}
-                        <button
-                          type="button"
-                          onClick={() => setSelectedLedgerMember(member)}
-                          className="p-1 text-text-muted hover:text-accent-cyan rounded hover:bg-white/5 transition-all"
-                          title={`View ${resolveName(member)}'s ledger & debts`}
-                        >
-                          <Eye className="h-3.5 w-3.5" />
-                        </button>
-                        <span className="text-[10px] bg-white/5 border border-white/10 px-1.5 py-0.5 rounded text-text-muted font-medium">
-                          Former
+                      </div>
+
+                      <div className="flex flex-col min-w-0">
+                        <span className="text-sm font-semibold text-text-primary flex items-center gap-1.5 truncate group-hover:text-accent-cyan transition-colors">
+                          <span className="truncate">{resolveName(member)}</span>
+                          {isSelf && (
+                            <span className="text-[9px] font-semibold bg-accent-cyan/10 border border-accent-cyan/20 px-1 rounded text-accent-cyan shrink-0">
+                              You
+                            </span>
+                          )}
+                        </span>
+                        <span className="text-[10px] text-text-muted capitalize truncate">
+                          {member.kind === "placeholder" ? "Offline Placeholder" : member.role}
                         </span>
                       </div>
                     </div>
-                  );
-                })}
-              </div>
-            )}
+
+                    {/* Right: Net Balance Pill + Chevron */}
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span
+                        className={`text-xs font-bold px-2.5 py-1 rounded-xl border ${
+                          isPositive
+                            ? "bg-success/10 text-success border-success/20"
+                            : isNegative
+                            ? "bg-danger/10 text-danger border-danger/20"
+                            : "bg-white/5 text-text-muted border-white/10"
+                        }`}
+                      >
+                        {isPositive ? "+" : ""}
+                        {formatCurrency(memNetMinor, group.baseCurrency)}
+                      </span>
+                      <ChevronRight className="h-4 w-4 text-text-muted opacity-40 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
+                    </div>
+                  </div>
+                );
+              })}
+
+              {/* Former / Inactive Members */}
+              {formerMembers.length > 0 && (
+                <div className="mt-2 pt-3 border-t border-white/5 flex flex-col gap-2">
+                  <span className="text-[11px] font-semibold uppercase tracking-wider text-text-muted">
+                    Former Members ({formerMembers.length})
+                  </span>
+                  {formerMembers.map((member) => {
+                    const memBalObj = balances.find((b) => b.memberId === member.id || (member.userId && b.memberId === member.userId));
+                    const memNetMinor = memBalObj ? memBalObj.netBaseMinor : 0;
+                    const isPositive = memNetMinor > 0;
+                    const isNegative = memNetMinor < 0;
+
+                    return (
+                      <div
+                        key={member.id}
+                        onClick={() => setSelectedLedgerMember(member)}
+                        className="flex items-center justify-between p-2.5 bg-white/[0.01] hover:bg-white/[0.04] border border-white/5 rounded-xl opacity-75 hover:opacity-100 transition-all cursor-pointer group"
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0 flex-1 pr-2">
+                          <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center font-bold text-xs text-text-muted shrink-0">
+                            {(resolveName(member).charAt(0) || "M").toUpperCase()}
+                          </div>
+                          <div className="flex flex-col min-w-0">
+                            <span className="text-sm font-medium text-text-secondary truncate group-hover:text-text-primary">
+                              {resolveName(member)}
+                            </span>
+                            <span className="text-[10px] text-text-muted capitalize">
+                              {member.status === "left" ? "Left Group" : "Removed"}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 shrink-0">
+                          {memNetMinor !== 0 && (
+                            <span
+                              className={`text-xs font-semibold px-2 py-0.5 rounded-lg border ${
+                                isPositive
+                                  ? "bg-success/10 text-success border-success/20"
+                                  : isNegative
+                                  ? "bg-danger/10 text-danger border-danger/20"
+                                  : "bg-white/5 text-text-muted border-white/10"
+                              }`}
+                            >
+                              {isPositive ? "+" : ""}
+                              {formatCurrency(memNetMinor, group.baseCurrency)}
+                            </span>
+                          )}
+                          <ChevronRight className="h-3.5 w-3.5 text-text-muted opacity-40 group-hover:opacity-100 transition-all" />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </div>
         </div>
-      </div>
     </div>
 
       {/* Activity Logs Timeline — Full Width at Bottom */}
@@ -707,6 +671,15 @@ export const GroupDetailPage: React.FC = () => {
           settlements={settlements}
           settlementStrategy={group.settlementStrategy}
           currentUserRole={currentUserRole}
+          currentUserUid={currentUserUid}
+          onRoleChange={handleRoleChange}
+          onRemoveMember={(m) =>
+            setSelectedRemoveMember({
+              id: m.id,
+              displayName: resolveName(m),
+              kind: m.kind,
+            })
+          }
         />
       )}
 
