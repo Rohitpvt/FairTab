@@ -1,4 +1,4 @@
-# Logs
+# Logs & Debugging
 logs
 *.log
 npm-debug.log*
@@ -6,16 +6,26 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
+job_logs.txt
+jobs.json
 
-node_modules
-dist
-dist-ssr
+# Dependencies & Build Output
+node_modules/
+dist/
+dist-ssr/
+lib/
+functions/lib/
 *.local
 
-# Editor directories and files
+# Test Artifacts & Coverage
+playwright-report/
+test-results/
+coverage/
+
+# Editor & System Files
 .vscode/*
 !.vscode/extensions.json
-.idea
+.idea/
 .DS_Store
 *.suo
 *.ntvs*
@@ -25,17 +35,21 @@ dist-ssr
 
 # Firebase & Local Env
 .firebase/
-firebase-debug.log
-firestore-debug.log
-storage-debug.log
-ui-debug.log
+firebase-debug.log*
+firestore-debug.log*
+storage-debug.log*
+ui-debug.log*
 .env
 .env.local
 .env.*.local
-lib/
-functions/lib/
-
-
-.vercel
 .env*
-Analysis Report/codeflow-report.md
+!.env.example
+
+# Vercel & Deployment
+.vercel/
+Analysis Report/
+
+# Temporary Root Screenshots
+/*.png
+!public/**
+!src/assets/**
