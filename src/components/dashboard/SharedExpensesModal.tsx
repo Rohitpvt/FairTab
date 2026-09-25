@@ -295,7 +295,7 @@ export const SharedExpensesModal: React.FC<SharedExpensesModalProps> = ({
             </p>
           </div>
         ) : (
-          <div className="flex flex-col gap-2 max-h-[50vh] overflow-y-auto pr-1 -mr-1">
+          <div className="flex flex-col gap-2">
             {transactions.map((tx) => {
               const isTxPositive = tx.impactMinor > 0;
               const isTxNegative = tx.impactMinor < 0;

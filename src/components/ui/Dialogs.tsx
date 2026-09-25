@@ -65,7 +65,7 @@ export const Dialog: React.FC<DialogProps> = ({
               </RadixDialog.Close>
             </div>
 
-            <div className="text-sm text-text-secondary max-h-[60vh] overflow-y-auto pr-1">
+            <div className="text-sm text-text-secondary max-h-[70vh] overflow-y-auto pr-1">
               {children}
             </div>
 

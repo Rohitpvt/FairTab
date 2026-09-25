@@ -286,7 +286,7 @@ export const MemberLedgerModal: React.FC<MemberLedgerModalProps> = ({
       description={`Overview of expenses, debt balances, and repayments in ${groupName}.`}
       className="max-w-2xl"
     >
-      <div className="flex flex-col gap-5 text-left max-h-[75vh] overflow-y-auto pr-1">
+      <div className="flex flex-col gap-5 text-left">
         {/* 1. Member Profile & Net Balance Hero Card */}
         <div
           className={`p-4 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${
