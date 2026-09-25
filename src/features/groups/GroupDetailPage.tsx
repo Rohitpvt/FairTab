@@ -12,6 +12,7 @@ import {
   LogOut,
   UserMinus,
   HandCoins,
+  Eye,
 } from "lucide-react";
 import { PageContainer } from "../../components/layout/PageContainer";
 import { groupService } from "../../infrastructure/firebase/groupService";
@@ -21,6 +22,7 @@ import type { GroupMemberDocument } from "./memberSchema";
 import type { ActivityDocument } from "./activitySchema";
 import { Button } from "../../components/ui/Button";
 import { Skeleton, BalanceCardSkeleton, ExpenseRowSkeleton, MemberRowSkeleton } from "../../components/ui/Skeleton";
+import { formatCurrency } from "../../utils/format";
 import {
   canEditSettings,
   canInviteMember,
@@ -44,6 +46,7 @@ import BalanceProjectionCard from "../expenses/BalanceProjectionCard";
 import ExpenseListPage from "../expenses/ExpenseListPage";
 import ConflictResolutionDialog from "../expenses/ConflictResolutionDialog";
 import { PersonalDebtSummaryCard } from "../../components/dashboard/PersonalDebtSummaryCard";
+import { MemberLedgerModal } from "../../components/dashboard/MemberLedgerModal";
 import { offlineDb } from "../../infrastructure/offline/db";
 import { syncManager } from "../../infrastructure/offline/syncManager";
 
@@ -73,6 +76,9 @@ export const GroupDetailPage: React.FC = () => {
     displayName: string;
     kind: "account" | "placeholder";
   } | null>(null);
+
+  // Member ledger inspector state
+  const [selectedLedgerMember, setSelectedLedgerMember] = useState<GroupMemberDocument | null>(null);
 
   const isOffline = !navigator.onLine;
   const { resolveName, memberNameMap } = useMemberNameResolver(members);
@@ -428,6 +434,7 @@ export const GroupDetailPage: React.FC = () => {
             settlements={settlements}
             members={members}
             baseCurrency={group.baseCurrency}
+            onSelectMember={(m) => setSelectedLedgerMember(m)}
           />
 
           <div className="glass-elevated border border-white/10 rounded-2xl p-6 text-left">
@@ -471,60 +478,94 @@ export const GroupDetailPage: React.FC = () => {
             {activeMembers.map((member) => {
               const isSelf = member.userId === currentUserUid;
               const isOwnerTarget = member.role === "owner";
+              const memBalObj = balances.find((b) => b.memberId === member.id || (member.userId && b.memberId === member.userId));
+              const memNetMinor = memBalObj ? memBalObj.netBaseMinor : 0;
+              const isPositive = memNetMinor > 0;
+              const isNegative = memNetMinor < 0;
+
               return (
                 <div
                   key={member.id}
                   className="flex items-center justify-between p-3 bg-white/[0.02] border border-white/5 rounded-xl transition-all hover:bg-white/[0.04]"
                 >
                   {/* Name & Badge */}
-                  <div className="flex flex-col gap-0.5 text-left">
-                    <span className="text-sm font-semibold text-text-primary flex items-center gap-1.5">
-                      {resolveName(member)}
+                  <div className="flex flex-col gap-0.5 text-left min-w-0 flex-1 pr-2">
+                    <span className="text-sm font-semibold text-text-primary flex items-center gap-1.5 truncate">
+                      <span className="truncate">{resolveName(member)}</span>
                       {isSelf && (
-                        <span className="text-[9px] font-semibold bg-accent-cyan/10 border border-accent-cyan/20 px-1 rounded text-accent-cyan">
+                        <span className="text-[9px] font-semibold bg-accent-cyan/10 border border-accent-cyan/20 px-1 rounded text-accent-cyan shrink-0">
                           You
                         </span>
                       )}
                     </span>
-                    <span className="text-[10px] text-text-muted capitalize flex items-center gap-1">
-                      {member.kind === "placeholder" ? "Offline Placeholder" : member.role}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] text-text-muted capitalize">
+                        {member.kind === "placeholder" ? "Offline Placeholder" : member.role}
+                      </span>
+                    </div>
                   </div>
 
-                  {/* Member Actions */}
-                  {group.status === "active" && (
-                    <div className="flex items-center gap-2">
-                      {/* Role dropdown for owner/admin */}
-                      {member.kind === "account" && !isOwnerTarget && !isSelf && (
-                        <select
-                          value={member.role}
-                          onChange={(e) => handleRoleChange(member, e.target.value as "admin" | "member" | "viewer")}
-                          className="bg-white/5 border border-white/10 rounded px-2 py-1 text-xs text-text-secondary focus:outline-none focus:border-accent-cyan transition-colors"
-                        >
-                          <option value="member">Member</option>
-                          <option value="admin">Admin</option>
-                          <option value="viewer">Viewer</option>
-                        </select>
-                      )}
+                  {/* Net Balance & Actions */}
+                  <div className="flex items-center gap-2 shrink-0">
+                    {/* Member Net Balance Pill */}
+                    <span
+                      className={`text-xs font-semibold px-2 py-0.5 rounded-lg border ${
+                        isPositive
+                          ? "bg-success/10 text-success border-success/20"
+                          : isNegative
+                          ? "bg-danger/10 text-danger border-danger/20"
+                          : "bg-white/5 text-text-muted border-white/10"
+                      }`}
+                    >
+                      {isPositive ? "+" : ""}
+                      {formatCurrency(memNetMinor, group.baseCurrency)}
+                    </span>
 
-                      {/* Remove Button */}
-                      {canRemoveMember(currentUserRole, member.role) && !isSelf && (
-                        <button
-                          onClick={() =>
-                            setSelectedRemoveMember({
-                              id: member.id,
-                              displayName: resolveName(member),
-                              kind: member.kind
-                            })
-                          }
-                          className="p-1 text-text-muted hover:text-danger rounded hover:bg-danger/10 transition-all"
-                          title="Remove from group"
-                        >
-                          <UserMinus className="h-3.5 w-3.5" />
-                        </button>
-                      )}
-                    </div>
-                  )}
+                    {/* Ledger Inspector Eye Button */}
+                    <button
+                      type="button"
+                      onClick={() => setSelectedLedgerMember(member)}
+                      className="p-1.5 text-text-muted hover:text-accent-cyan rounded-lg hover:bg-white/5 transition-all"
+                      title={`View ${resolveName(member)}'s ledger & debts`}
+                    >
+                      <Eye className="h-4 w-4" />
+                    </button>
+
+                    {/* Member Admin Actions */}
+                    {group.status === "active" && (
+                      <>
+                        {/* Role dropdown for owner/admin */}
+                        {member.kind === "account" && !isOwnerTarget && !isSelf && (
+                          <select
+                            value={member.role}
+                            onChange={(e) => handleRoleChange(member, e.target.value as "admin" | "member" | "viewer")}
+                            className="bg-white/5 border border-white/10 rounded px-2 py-1 text-xs text-text-secondary focus:outline-none focus:border-accent-cyan transition-colors"
+                          >
+                            <option value="member">Member</option>
+                            <option value="admin">Admin</option>
+                            <option value="viewer">Viewer</option>
+                          </select>
+                        )}
+
+                        {/* Remove Button */}
+                        {canRemoveMember(currentUserRole, member.role) && !isSelf && (
+                          <button
+                            onClick={() =>
+                              setSelectedRemoveMember({
+                                id: member.id,
+                                displayName: resolveName(member),
+                                kind: member.kind
+                              })
+                            }
+                            className="p-1 text-text-muted hover:text-danger rounded hover:bg-danger/10 transition-all"
+                            title="Remove from group"
+                          >
+                            <UserMinus className="h-3.5 w-3.5" />
+                          </button>
+                        )}
+                      </>
+                    )}
+                  </div>
                 </div>
               );
             })}
@@ -535,24 +576,55 @@ export const GroupDetailPage: React.FC = () => {
                 <span className="text-[11px] font-semibold uppercase tracking-wider text-text-muted">
                   Former Members ({formerMembers.length})
                 </span>
-                {formerMembers.map((member) => (
-                  <div
-                    key={member.id}
-                    className="flex items-center justify-between p-2.5 bg-white/[0.01] border border-white/5 rounded-xl opacity-75"
-                  >
-                    <div className="flex flex-col gap-0.5 text-left">
-                      <span className="text-sm font-medium text-text-secondary">
-                        {resolveName(member)}
-                      </span>
-                      <span className="text-[10px] text-text-muted capitalize">
-                        {member.status === "left" ? "Left Group" : "Removed"}
-                      </span>
+                {formerMembers.map((member) => {
+                  const memBalObj = balances.find((b) => b.memberId === member.id || (member.userId && b.memberId === member.userId));
+                  const memNetMinor = memBalObj ? memBalObj.netBaseMinor : 0;
+                  const isPositive = memNetMinor > 0;
+                  const isNegative = memNetMinor < 0;
+
+                  return (
+                    <div
+                      key={member.id}
+                      className="flex items-center justify-between p-2.5 bg-white/[0.01] border border-white/5 rounded-xl opacity-75"
+                    >
+                      <div className="flex flex-col gap-0.5 text-left min-w-0 flex-1 pr-2">
+                        <span className="text-sm font-medium text-text-secondary truncate">
+                          {resolveName(member)}
+                        </span>
+                        <span className="text-[10px] text-text-muted capitalize">
+                          {member.status === "left" ? "Left Group" : "Removed"}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        {memNetMinor !== 0 && (
+                          <span
+                            className={`text-xs font-semibold px-2 py-0.5 rounded-lg border ${
+                              isPositive
+                                ? "bg-success/10 text-success border-success/20"
+                                : isNegative
+                                ? "bg-danger/10 text-danger border-danger/20"
+                                : "bg-white/5 text-text-muted border-white/10"
+                            }`}
+                          >
+                            {isPositive ? "+" : ""}
+                            {formatCurrency(memNetMinor, group.baseCurrency)}
+                          </span>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => setSelectedLedgerMember(member)}
+                          className="p-1 text-text-muted hover:text-accent-cyan rounded hover:bg-white/5 transition-all"
+                          title={`View ${resolveName(member)}'s ledger & debts`}
+                        >
+                          <Eye className="h-3.5 w-3.5" />
+                        </button>
+                        <span className="text-[10px] bg-white/5 border border-white/10 px-1.5 py-0.5 rounded text-text-muted font-medium">
+                          Former
+                        </span>
+                      </div>
                     </div>
-                    <span className="text-[10px] bg-white/5 border border-white/10 px-1.5 py-0.5 rounded text-text-muted font-medium">
-                      Former
-                    </span>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
@@ -618,6 +690,23 @@ export const GroupDetailPage: React.FC = () => {
           kind={selectedRemoveMember.kind}
           activeMemberUserIds={activeMemberUserIds}
           groupVersion={group.version}
+        />
+      )}
+
+      {/* Member Ledger Modal */}
+      {selectedLedgerMember && (
+        <MemberLedgerModal
+          isOpen={!!selectedLedgerMember}
+          onClose={() => setSelectedLedgerMember(null)}
+          groupId={group.id}
+          groupName={group.name}
+          currency={group.baseCurrency}
+          member={selectedLedgerMember}
+          allMembers={members}
+          expenses={expenses}
+          settlements={settlements}
+          settlementStrategy={group.settlementStrategy}
+          currentUserRole={currentUserRole}
         />
       )}
 

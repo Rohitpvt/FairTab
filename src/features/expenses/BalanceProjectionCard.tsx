@@ -10,6 +10,7 @@ interface BalanceProjectionCardProps {
   settlements: SettlementDocument[];
   members: GroupMemberDocument[];
   baseCurrency: string;
+  onSelectMember?: (member: GroupMemberDocument) => void;
 }
 
 export const BalanceProjectionCard: React.FC<BalanceProjectionCardProps> = ({
@@ -17,6 +18,7 @@ export const BalanceProjectionCard: React.FC<BalanceProjectionCardProps> = ({
   settlements,
   members,
   baseCurrency,
+  onSelectMember,
 }) => {
   const { resolveName } = useMemberNameResolver(members);
   const activeExpenses = expenses.filter((e) => e.status !== "voided");
@@ -46,10 +48,15 @@ export const BalanceProjectionCard: React.FC<BalanceProjectionCardProps> = ({
 
   return (
     <div className="glass-elevated border border-white/10 rounded-2xl p-6 text-left">
-      <h3 className="text-base font-bold text-text-primary flex items-center gap-2 mb-4">
-        <Scale className="h-4 w-4 text-accent-cyan" />
-        Balance Projection ({baseCurrency})
-      </h3>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-base font-bold text-text-primary flex items-center gap-2">
+          <Scale className="h-4 w-4 text-accent-cyan" />
+          Balance Projection ({baseCurrency})
+        </h3>
+        {onSelectMember && (
+          <span className="text-[10px] text-text-muted">Click a member for ledger</span>
+        )}
+      </div>
 
       <div className="flex flex-col gap-3">
         {sortedMembers.map((member) => {
@@ -60,11 +67,22 @@ export const BalanceProjectionCard: React.FC<BalanceProjectionCardProps> = ({
           return (
             <div
               key={member.id}
-              className="flex items-center justify-between p-3 bg-white/[0.02] border border-white/5 rounded-xl"
+              onClick={() => onSelectMember?.(member)}
+              className={`flex items-center justify-between p-3 bg-white/[0.02] border border-white/5 rounded-xl transition-all ${
+                onSelectMember
+                  ? "cursor-pointer hover:bg-white/[0.06] hover:border-white/15"
+                  : ""
+              }`}
+              title={onSelectMember ? `View ${resolveName(member)}'s ledger & debts` : undefined}
             >
               <div className="flex flex-col">
-                <span className="text-sm font-semibold text-text-primary">
+                <span className="text-sm font-semibold text-text-primary flex items-center gap-1.5">
                   {resolveName(member)}
+                  {member.kind === "placeholder" && (
+                    <span className="text-[9px] font-semibold bg-accent-indigo/15 border border-accent-indigo/30 px-1 py-0.2 rounded text-accent-indigo">
+                      Offline
+                    </span>
+                  )}
                 </span>
                 <span className="text-[10px] text-text-muted capitalize">
                   {member.kind === "placeholder" ? "Offline Placeholder" : member.role}
