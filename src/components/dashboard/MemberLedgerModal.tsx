@@ -312,15 +312,27 @@ export const MemberLedgerModal: React.FC<MemberLedgerModalProps> = ({
             <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="font-bold text-base text-text-primary truncate">{memberName}</span>
-                <span
-                  className={`text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full border ${
-                    isPlaceholder
-                      ? "bg-accent-indigo/15 text-accent-indigo border-accent-indigo/30"
-                      : "bg-white/10 text-text-muted border-white/10"
-                  }`}
-                >
-                  {isPlaceholder ? "Offline Placeholder" : isFormer ? "Former Member" : member.role}
-                </span>
+                {!isFormer && member.id !== currentUserUid && member.userId !== currentUserUid && member.kind === "account" && member.role !== "owner" && onRoleChange && canChangeRole(currentUserRole, member.role, "admin", false) ? (
+                  <select
+                    value={member.role}
+                    onChange={(e) => onRoleChange(member, e.target.value as "admin" | "member" | "viewer")}
+                    className="bg-black/40 border border-white/15 hover:border-accent-cyan/40 rounded-lg px-2 py-0.5 text-[11px] font-semibold text-text-primary focus:outline-none focus:border-accent-cyan cursor-pointer transition-colors"
+                  >
+                    <option value="member">Member</option>
+                    <option value="admin">Admin</option>
+                    <option value="viewer">Viewer</option>
+                  </select>
+                ) : (
+                  <span
+                    className={`text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full border ${
+                      isPlaceholder
+                        ? "bg-accent-indigo/15 text-accent-indigo border-accent-indigo/30"
+                        : "bg-white/10 text-text-muted border-white/10"
+                    }`}
+                  >
+                    {isPlaceholder ? "Offline Placeholder" : isFormer ? "Former Member" : member.role}
+                  </span>
+                )}
               </div>
               <p className="text-xs text-text-muted mt-0.5">
                 {isPlaceholder
@@ -330,25 +342,41 @@ export const MemberLedgerModal: React.FC<MemberLedgerModalProps> = ({
             </div>
           </div>
 
-          <div className="text-left sm:text-right border-t sm:border-t-0 pt-2 sm:pt-0 border-white/5">
-            <div className="text-[11px] font-medium uppercase tracking-wider text-text-muted">
-              Current Net Balance
+          <div className="text-left sm:text-right border-t sm:border-t-0 pt-2 sm:pt-0 border-white/5 flex flex-col items-start sm:items-end justify-between">
+            <div>
+              <div className="text-[11px] font-medium uppercase tracking-wider text-text-muted">
+                Current Net Balance
+              </div>
+              <div
+                className={`text-xl font-black ${
+                  isPositive ? "text-success" : isNegative ? "text-danger" : "text-text-muted"
+                }`}
+              >
+                {isPositive ? "+" : ""}
+                {formatCurrency(netBalanceMinor, currency)}
+              </div>
+              <div className="text-[10px] font-medium text-text-muted mt-0.5">
+                {isPositive
+                  ? "Is owed money by others"
+                  : isNegative
+                  ? "Owes money in group"
+                  : "All balances settled"}
+              </div>
             </div>
-            <div
-              className={`text-xl font-black ${
-                isPositive ? "text-success" : isNegative ? "text-danger" : "text-text-muted"
-              }`}
-            >
-              {isPositive ? "+" : ""}
-              {formatCurrency(netBalanceMinor, currency)}
-            </div>
-            <div className="text-[10px] font-medium text-text-muted mt-0.5">
-              {isPositive
-                ? "Is owed money by others"
-                : isNegative
-                ? "Owes money in group"
-                : "All balances settled"}
-            </div>
+
+            {!isFormer && member.id !== currentUserUid && member.userId !== currentUserUid && onRemoveMember && canRemoveMember(currentUserRole, member.role) && (
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  onRemoveMember(member);
+                }}
+                className="text-[11px] text-danger/80 hover:text-danger hover:underline mt-2 flex items-center gap-1 transition-colors"
+              >
+                <UserMinus className="h-3 w-3" />
+                <span>Remove Member</span>
+              </button>
+            )}
           </div>
         </div>
 
@@ -562,45 +590,6 @@ export const MemberLedgerModal: React.FC<MemberLedgerModalProps> = ({
             </div>
           )}
         </div>
-
-        {/* 4. Admin Management Section (if applicable) */}
-        {!isFormer && member.id !== currentUserUid && member.userId !== currentUserUid && (
-          <div className="p-3.5 bg-white/[0.02] border border-white/5 rounded-2xl flex items-center justify-between gap-3 flex-wrap">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold text-text-muted">Member Role:</span>
-              {member.kind === "account" && member.role !== "owner" && onRoleChange && canChangeRole(currentUserRole, member.role, "admin", false) ? (
-                <select
-                  value={member.role}
-                  onChange={(e) => onRoleChange(member, e.target.value as "admin" | "member" | "viewer")}
-                  className="bg-white/5 border border-white/10 rounded-lg px-2.5 py-1 text-xs text-text-primary focus:outline-none focus:border-accent-cyan transition-colors"
-                >
-                  <option value="member">Member</option>
-                  <option value="admin">Admin</option>
-                  <option value="viewer">Viewer</option>
-                </select>
-              ) : (
-                <span className="text-xs font-medium text-text-secondary capitalize">
-                  {member.kind === "placeholder" ? "Offline Placeholder" : member.role}
-                </span>
-              )}
-            </div>
-
-            {onRemoveMember && canRemoveMember(currentUserRole, member.role) && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  onClose();
-                  onRemoveMember(member);
-                }}
-                className="text-danger hover:bg-danger/10 text-xs py-1 px-2.5 h-auto flex items-center gap-1.5 border border-transparent hover:border-danger/20"
-              >
-                <UserMinus className="h-3.5 w-3.5" />
-                <span>Remove Member</span>
-              </Button>
-            )}
-          </div>
-        )}
       </div>
 
       <div className="flex justify-between items-center gap-2 pt-3 border-t border-white/10 mt-3">
