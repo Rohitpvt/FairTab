@@ -16,8 +16,18 @@ import { buildPublicAppLink } from "../../utils/urlHelper";
 import { auth } from "./firebase";
 
 async function applyPersistence(rememberDevice?: boolean) {
-  if (rememberDevice !== undefined) {
-    await setPersistence(auth, rememberDevice ? browserLocalPersistence : browserSessionPersistence);
+  try {
+    if (rememberDevice === false) {
+      try {
+        await setPersistence(auth, browserSessionPersistence);
+        return;
+      } catch (sessErr) {
+        console.warn("browserSessionPersistence restricted by browser, falling back to local:", sessErr);
+      }
+    }
+    await setPersistence(auth, browserLocalPersistence);
+  } catch (err) {
+    console.warn("Firebase setPersistence warning:", err);
   }
 }
 

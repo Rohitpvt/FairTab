@@ -10,7 +10,7 @@ interface GoogleSignInButtonProps {
   rememberDevice?: boolean;
 }
 
-export const GoogleSignInButton: React.FC<GoogleSignInButtonProps> = ({ disabled = false, rememberDevice = false }) => {
+export const GoogleSignInButton: React.FC<GoogleSignInButtonProps> = ({ disabled = false, rememberDevice = true }) => {
   const [isLoading, setIsLoading] = useState(false);
   const { setTrustedDevicePreference } = useAuth();
 

@@ -32,7 +32,7 @@ export const RegisterForm: React.FC = () => {
       email: "",
       password: "",
       confirmPassword: "",
-      rememberDevice: false,
+      rememberDevice: true,
       acceptTerms: false as unknown as true,
     }
   });
@@ -74,7 +74,7 @@ export const RegisterForm: React.FC = () => {
           const path = pendingType === "global" ? `/join/${pendingToken}` : `/invite/${pendingToken}`;
           navigate(path);
         } else {
-          navigate("/dashboard");
+          navigate("/overview");
         }
       }
     } catch (err: unknown) {

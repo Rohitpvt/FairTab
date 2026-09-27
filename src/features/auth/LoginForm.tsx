@@ -30,7 +30,7 @@ export const LoginForm: React.FC = () => {
     defaultValues: {
       email: "",
       password: "",
-      rememberDevice: false
+      rememberDevice: true
     }
   });
 
@@ -45,8 +45,12 @@ export const LoginForm: React.FC = () => {
       // Ensure persistence is set BEFORE the sign-in operation
       await setTrustedDevicePreference(data.rememberDevice);
 
-      await authService.loginEmail(data.email, data.password, data.rememberDevice);
+      const userCredential = await authService.loginEmail(data.email, data.password, data.rememberDevice);
       toast.success("Successfully logged in!");
+
+      const loggedUser = userCredential.user;
+      const requireVerification = import.meta.env.VITE_REQUIRE_EMAIL_VERIFICATION !== "false";
+      const isEmailVerified = !requireVerification || loggedUser.emailVerified || loggedUser.providerData.some((p) => p.providerId === "google.com");
 
       // Check query redirect or pending invite token
       const searchParams = new URLSearchParams(location.search);
@@ -54,7 +58,9 @@ export const LoginForm: React.FC = () => {
       const pendingToken = sessionStorage.getItem("fairtab:pending-invite-token");
       const pendingType = sessionStorage.getItem("fairtab:pending-invite-type") || "email";
 
-      if (redirectParam && redirectParam.startsWith("/")) {
+      if (!isEmailVerified) {
+        navigate("/auth/verify-email");
+      } else if (redirectParam && redirectParam.startsWith("/")) {
         navigate(redirectParam);
       } else if (pendingToken) {
         sessionStorage.removeItem("fairtab:pending-invite-token");
