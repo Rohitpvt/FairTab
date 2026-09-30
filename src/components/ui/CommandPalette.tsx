@@ -1,19 +1,17 @@
 import React, { useEffect, useState, useRef } from "react";
-import { Search, Compass, DollarSign, Home, BarChart2, Bell, Settings, Wallet, Calculator } from "lucide-react";
+import { Search, Compass, DollarSign, Home, BarChart2, Bell, Settings, Wallet } from "lucide-react";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 
 export interface CommandPaletteProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   onNavigate: (route: string) => void;
-  onOpenCalculator?: () => void;
 }
 
 export const CommandPalette: React.FC<CommandPaletteProps> = ({
   isOpen,
   onOpenChange,
   onNavigate,
-  onOpenCalculator,
 }) => {
   const [query, setQuery] = useState("");
   const [activeIndex, setActiveIndex] = useState(0);
@@ -28,13 +26,6 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     { label: "Go to Budgets", route: "/budgets", icon: Wallet },
     { label: "Go to Notifications", route: "/notifications", icon: Bell },
     { label: "Go to Settings", route: "/settings", icon: Settings },
-    {
-      label: "Open Quick Split Calculator",
-      route: "action:calculator",
-      icon: Calculator,
-      isAction: true,
-      action: onOpenCalculator,
-    },
   ];
 
   const filteredItems = items.filter((item) =>
@@ -79,11 +70,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       e.preventDefault();
       const item = filteredItems[activeIndex];
       if (item) {
-        if (item.isAction && item.action) {
-          item.action();
-        } else {
-          onNavigate(item.route);
-        }
+        onNavigate(item.route);
         onOpenChange(false);
       }
     }
@@ -127,11 +114,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                   <button
                     key={item.route}
                     onClick={() => {
-                      if (item.isAction && item.action) {
-                        item.action();
-                      } else {
-                        onNavigate(item.route);
-                      }
+                      onNavigate(item.route);
                       onOpenChange(false);
                     }}
                     onMouseEnter={() => setActiveIndex(index)}
@@ -144,7 +127,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                       <span>{item.label}</span>
                     </div>
                     <span className={`text-[10px] uppercase font-semibold tracking-wider ${isActive ? "text-white/70" : "text-text-muted"}`}>
-                      {item.isAction ? "Run" : "Go"}
+                      Go
                     </span>
                   </button>
                 );

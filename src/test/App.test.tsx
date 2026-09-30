@@ -56,10 +56,6 @@ describe("App Shell and Layout", () => {
     const toggleBtn = screen.getByLabelText("Collapse sidebar");
     expect(toggleBtn).toBeInTheDocument();
 
-    // Verify desktop calculator button is in sidebar
-    const desktopCalcBtn = screen.getByRole("button", { name: "Open Quick Calculator" });
-    expect(desktopCalcBtn).toBeInTheDocument();
-
     // Toggle collapse
     fireEvent.click(toggleBtn);
 
@@ -103,14 +99,7 @@ describe("App Shell and Layout", () => {
     expect(screen.getByText("Quick access to all FairTab tools")).toBeInTheDocument();
     expect(screen.getByText("Balances & debt payoff")).toBeInTheDocument();
     expect(screen.getByText("Spending trends, AI insights & ledgers")).toBeInTheDocument();
-    expect(screen.getByText("Quick Calculator")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /sign out/i })).toBeInTheDocument();
-
-    // Clicking Quick Calculator opens calculator modal
-    const calcBtn = screen.getByRole("button", { name: /open quick calculator/i });
-    fireEvent.click(calcBtn);
-    expect(await screen.findByText("Quick Split Calculator")).toBeInTheDocument();
-    expect(screen.getByText("Calculate & split bill before adding")).toBeInTheDocument();
   });
 });
 

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import * as RadixDialog from "@radix-ui/react-dialog";
 import { NavLink } from "react-router-dom";
 import {
@@ -7,14 +7,12 @@ import {
   BarChart2,
   Wallet,
   Repeat,
-  Calculator,
   X,
   ChevronRight,
   LogOut,
 } from "lucide-react";
 import { useAuth } from "../../features/auth/AuthProvider";
 import { BrandLogo } from "../ui/BrandLogo";
-import { QuickCalculator } from "./QuickCalculator";
 import { triggerHaptic } from "../../utils/haptics";
 
 export interface MobileDrawerProps {
@@ -24,7 +22,6 @@ export interface MobileDrawerProps {
 
 export const MobileDrawer: React.FC<MobileDrawerProps> = ({ isOpen, onOpenChange }) => {
   const { signOut } = useAuth();
-  const [isCalculatorOpen, setIsCalculatorOpen] = useState(false);
 
   const menuItems = [
     {
@@ -149,36 +146,6 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({ isOpen, onOpenChange
               );
             })}
 
-            {/* Quick Calculator Item */}
-            <button
-              type="button"
-              onClick={() => {
-                triggerHaptic("medium");
-                onOpenChange(false);
-                setIsCalculatorOpen(true);
-              }}
-              className="flex items-center gap-3.5 px-3.5 py-3 rounded-2xl transition-all duration-200 group cursor-pointer border border-amber-400/15 bg-amber-400/[0.04] hover:bg-amber-400/[0.08] text-text-secondary hover:text-text-primary active:scale-[0.98] w-full text-left"
-              aria-label="Open Quick Calculator"
-            >
-              <div className="p-2 rounded-xl bg-amber-400/10 text-amber-400 group-hover:bg-amber-400/20 transition-colors">
-                <Calculator className="h-5 w-5 text-amber-400" />
-              </div>
-              <div className="flex-1 min-w-0 text-left">
-                <div className="flex items-center gap-2">
-                  <span className="block text-sm font-semibold text-text-primary">
-                    Quick Calculator
-                  </span>
-                  <span className="px-1.5 py-0.5 rounded-full text-[9px] font-extrabold uppercase tracking-wide bg-amber-400/20 text-amber-300 border border-amber-400/30">
-                    Split & Tip
-                  </span>
-                </div>
-                <span className="block text-xs text-text-muted truncate">
-                  Fast bill math, tip presets & split shortcuts
-                </span>
-              </div>
-              <ChevronRight className="h-4 w-4 shrink-0 opacity-40 group-hover:opacity-100 transition-opacity text-amber-400" />
-            </button>
-
             {/* Legal Links in Mobile Drawer */}
             <div className="flex items-center justify-center gap-3 pt-2 text-[11px] text-text-muted">
               <a
@@ -236,12 +203,6 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({ isOpen, onOpenChange
           </div>
         </RadixDialog.Content>
       </RadixDialog.Portal>
-
-      {/* Quick Calculator Modal */}
-      <QuickCalculator
-        isOpen={isCalculatorOpen}
-        onOpenChange={setIsCalculatorOpen}
-      />
     </RadixDialog.Root>
   );
 };
