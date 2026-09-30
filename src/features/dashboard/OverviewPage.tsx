@@ -158,8 +158,6 @@ export const OverviewPage: React.FC = () => {
   };
 
   // 4. Calculate Net Balances, Owed, Owe, and Detailed Person Breakdown
-  let totalOwedMinor = 0;
-  let totalOwesMinor = 0;
   let totalNetBalanceMinor = 0;
   let dashboardCurrency = "INR"; // Default fallback
   const userBreakdowns: {
@@ -203,8 +201,7 @@ export const OverviewPage: React.FC = () => {
           : simplifyPreserveRelationships(activeExpenses, groupSettlements, memberIds);
       recommendations.forEach((rec) => {
         if (rec.toMemberId === userMemberId || rec.toMemberId === currentUserId) {
-          // Other member owes the user
-          totalOwedMinor += rec.amountMinor;
+          // Other member owes the user in this group
           const otherName = getMemberName(g.groupId, rec.fromMemberId);
           userBreakdowns.push({
             id: `${g.groupId}:${rec.fromMemberId}->${rec.toMemberId}`,
@@ -217,8 +214,7 @@ export const OverviewPage: React.FC = () => {
             type: "owed_to_user",
           });
         } else if (rec.fromMemberId === userMemberId || rec.fromMemberId === currentUserId) {
-          // User owes other member
-          totalOwesMinor += rec.amountMinor;
+          // User owes other member in this group
           const otherName = getMemberName(g.groupId, rec.toMemberId);
           userBreakdowns.push({
             id: `${g.groupId}:${rec.fromMemberId}->${rec.toMemberId}`,
@@ -234,6 +230,25 @@ export const OverviewPage: React.FC = () => {
       });
     } catch (e) {
       console.warn(`Failed to compute balances for group ${g.groupId}:`, e);
+    }
+  });
+
+  // Calculate overall netted totals per person across all groups for dashboard stat cards
+  const personNetTotals = new Map<string, number>();
+  userBreakdowns.forEach((b) => {
+    const key = (b.otherMemberName || b.otherMemberId).trim().toLowerCase();
+    const current = personNetTotals.get(key) || 0;
+    const delta = b.type === "owed_to_user" ? b.amountMinor : -b.amountMinor;
+    personNetTotals.set(key, current + delta);
+  });
+
+  let totalOwedMinor = 0;
+  let totalOwesMinor = 0;
+  personNetTotals.forEach((netMinor) => {
+    if (netMinor > 0) {
+      totalOwedMinor += netMinor;
+    } else if (netMinor < 0) {
+      totalOwesMinor += Math.abs(netMinor);
     }
   });
 

@@ -54,95 +54,102 @@ export const PersonalDebtSummaryCard: React.FC<PersonalDebtSummaryCardProps> = (
     groupNames: Record<string, string>;
   } | null>(null);
 
-  // Aggregate multi-group breakdowns by person when not in a single group context
-  const aggregatedPeopleWhoOweYou = React.useMemo(() => {
-    const rawList = breakdowns.filter((b) => b.type === "owed_to_user" && b.amountMinor > 0);
+  // Aggregate multi-group breakdowns by person when not in a single group context (netted per person)
+  const { aggregatedPeopleWhoOweYou, aggregatedPeopleYouOwe } = React.useMemo(() => {
     if (isGroupContext) {
-      return rawList
+      const oweYou = breakdowns
+        .filter((b) => b.type === "owed_to_user" && b.amountMinor > 0)
         .map((item) => ({ ...item, totalAmountMinor: item.amountMinor, groupItems: [item] }))
         .sort((a, b) => b.totalAmountMinor - a.totalAmountMinor);
+
+      const youOwe = breakdowns
+        .filter((b) => b.type === "user_owes" && b.amountMinor > 0)
+        .map((item) => ({ ...item, totalAmountMinor: item.amountMinor, groupItems: [item] }))
+        .sort((a, b) => b.totalAmountMinor - a.totalAmountMinor);
+
+      return { aggregatedPeopleWhoOweYou: oweYou, aggregatedPeopleYouOwe: youOwe };
     }
 
-    const personMap = new Map<string, {
-      id: string;
-      otherMemberId: string;
-      otherMemberName: string;
-      totalAmountMinor: number;
-      currency: string;
-      groupItems: IndividualDebtBreakdown[];
-    }>();
+    // Net balances across all groups per person
+    const personMap = new Map<
+      string,
+      {
+        id: string;
+        otherMemberId: string;
+        otherMemberName: string;
+        netMinor: number;
+        currency: string;
+        groupItems: IndividualDebtBreakdown[];
+      }
+    >();
 
-    rawList.forEach((item) => {
+    breakdowns.forEach((item) => {
       const nameKey = (item.otherMemberName || item.otherMemberId).trim().toLowerCase();
+      const delta = item.type === "owed_to_user" ? item.amountMinor : -item.amountMinor;
       const existing = personMap.get(nameKey);
       if (existing) {
-        existing.totalAmountMinor += item.amountMinor;
+        existing.netMinor += delta;
         existing.groupItems.push(item);
       } else {
         personMap.set(nameKey, {
           id: item.id,
           otherMemberId: item.otherMemberId,
           otherMemberName: item.otherMemberName,
-          totalAmountMinor: item.amountMinor,
+          netMinor: delta,
           currency: item.currency,
           groupItems: [item],
         });
       }
     });
 
-    const result = Array.from(personMap.values());
-    // Sort descending by highest total amount owed to user
-    result.sort((a, b) => b.totalAmountMinor - a.totalAmountMinor);
-    // Sort sub-group breakdowns descending by amount
-    result.forEach((person) => {
-      person.groupItems.sort((a, b) => b.amountMinor - a.amountMinor);
-    });
-    return result;
-  }, [breakdowns, isGroupContext]);
-
-  const aggregatedPeopleYouOwe = React.useMemo(() => {
-    const rawList = breakdowns.filter((b) => b.type === "user_owes" && b.amountMinor > 0);
-    if (isGroupContext) {
-      return rawList
-        .map((item) => ({ ...item, totalAmountMinor: item.amountMinor, groupItems: [item] }))
-        .sort((a, b) => b.totalAmountMinor - a.totalAmountMinor);
-    }
-
-    const personMap = new Map<string, {
+    const oweYouList: {
       id: string;
       otherMemberId: string;
       otherMemberName: string;
       totalAmountMinor: number;
       currency: string;
       groupItems: IndividualDebtBreakdown[];
-    }>();
+    }[] = [];
 
-    rawList.forEach((item) => {
-      const nameKey = (item.otherMemberName || item.otherMemberId).trim().toLowerCase();
-      const existing = personMap.get(nameKey);
-      if (existing) {
-        existing.totalAmountMinor += item.amountMinor;
-        existing.groupItems.push(item);
-      } else {
-        personMap.set(nameKey, {
-          id: item.id,
-          otherMemberId: item.otherMemberId,
-          otherMemberName: item.otherMemberName,
-          totalAmountMinor: item.amountMinor,
-          currency: item.currency,
-          groupItems: [item],
+    const youOweList: {
+      id: string;
+      otherMemberId: string;
+      otherMemberName: string;
+      totalAmountMinor: number;
+      currency: string;
+      groupItems: IndividualDebtBreakdown[];
+    }[] = [];
+
+    personMap.forEach((p) => {
+      // Sort sub-group breakdowns descending by magnitude
+      p.groupItems.sort((a, b) => b.amountMinor - a.amountMinor);
+
+      if (p.netMinor > 0) {
+        oweYouList.push({
+          id: p.id,
+          otherMemberId: p.otherMemberId,
+          otherMemberName: p.otherMemberName,
+          totalAmountMinor: p.netMinor,
+          currency: p.currency,
+          groupItems: p.groupItems,
+        });
+      } else if (p.netMinor < 0) {
+        youOweList.push({
+          id: p.id,
+          otherMemberId: p.otherMemberId,
+          otherMemberName: p.otherMemberName,
+          totalAmountMinor: Math.abs(p.netMinor),
+          currency: p.currency,
+          groupItems: p.groupItems,
         });
       }
     });
 
-    const result = Array.from(personMap.values());
-    // Sort descending by highest total amount user owes
-    result.sort((a, b) => b.totalAmountMinor - a.totalAmountMinor);
-    // Sort sub-group breakdowns descending by amount
-    result.forEach((person) => {
-      person.groupItems.sort((a, b) => b.amountMinor - a.amountMinor);
-    });
-    return result;
+    // Sort descending by highest total amount
+    oweYouList.sort((a, b) => b.totalAmountMinor - a.totalAmountMinor);
+    youOweList.sort((a, b) => b.totalAmountMinor - a.totalAmountMinor);
+
+    return { aggregatedPeopleWhoOweYou: oweYouList, aggregatedPeopleYouOwe: youOweList };
   }, [breakdowns, isGroupContext]);
 
   const openBreakdown = (
@@ -340,31 +347,39 @@ export const PersonalDebtSummaryCard: React.FC<PersonalDebtSummaryCardProps> = (
                       {/* If across multiple groups, list each group's balance */}
                       {!isGroupContext && item.groupItems.length > 1 && (
                         <div className="pl-10.5 pt-1.5 border-t border-white/5 flex flex-col gap-1.5 text-[11px]">
-                          {item.groupItems.map((gi) => (
-                            <div
-                              key={gi.id}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleNavigateToSettlement(
-                                  "owed_to_user",
-                                  gi.otherMemberId,
-                                  gi.amountMinor,
-                                  [gi]
-                                );
-                              }}
-                              className="flex justify-between items-center text-text-muted hover:text-text-secondary group/row cursor-pointer"
-                            >
-                              <span className="hover:underline hover:text-accent-cyan truncate max-w-[160px]">
-                                {gi.groupName}
-                              </span>
-                              <div className="flex items-center gap-1.5">
-                                <span className="font-semibold text-success financial-number">
-                                  +{formatCurrency(gi.amountMinor, gi.currency)}
+                          {item.groupItems.map((gi) => {
+                            const isOwed = gi.type === "owed_to_user";
+                            return (
+                              <div
+                                key={gi.id}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleNavigateToSettlement(
+                                    gi.type,
+                                    gi.otherMemberId,
+                                    gi.amountMinor,
+                                    [gi]
+                                  );
+                                }}
+                                className="flex justify-between items-center text-text-muted hover:text-text-secondary group/row cursor-pointer"
+                              >
+                                <span className="hover:underline hover:text-accent-cyan truncate max-w-[160px]">
+                                  {gi.groupName}
                                 </span>
-                                <ChevronRight className="h-3 w-3 opacity-60 group-hover/row:opacity-100" />
+                                <div className="flex items-center gap-1.5">
+                                  <span
+                                    className={`font-semibold financial-number ${
+                                      isOwed ? "text-success" : "text-danger"
+                                    }`}
+                                  >
+                                    {isOwed ? "+" : "-"}
+                                    {formatCurrency(gi.amountMinor, gi.currency)}
+                                  </span>
+                                  <ChevronRight className="h-3 w-3 opacity-60 group-hover/row:opacity-100" />
+                                </div>
                               </div>
-                            </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       )}
                     </div>
@@ -455,31 +470,39 @@ export const PersonalDebtSummaryCard: React.FC<PersonalDebtSummaryCardProps> = (
                       {/* If across multiple groups, list each group's balance */}
                       {!isGroupContext && item.groupItems.length > 1 && (
                         <div className="pl-10.5 pt-1.5 border-t border-white/5 flex flex-col gap-1.5 text-[11px]">
-                          {item.groupItems.map((gi) => (
-                            <div
-                              key={gi.id}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleNavigateToSettlement(
-                                  "user_owes",
-                                  gi.otherMemberId,
-                                  gi.amountMinor,
-                                  [gi]
-                                );
-                              }}
-                              className="flex justify-between items-center text-text-muted hover:text-text-secondary group/row cursor-pointer"
-                            >
-                              <span className="hover:underline hover:text-accent-cyan truncate max-w-[160px]">
-                                {gi.groupName}
-                              </span>
-                              <div className="flex items-center gap-1.5">
-                                <span className="font-semibold text-danger financial-number">
-                                  -{formatCurrency(gi.amountMinor, gi.currency)}
+                          {item.groupItems.map((gi) => {
+                            const isOwed = gi.type === "owed_to_user";
+                            return (
+                              <div
+                                key={gi.id}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleNavigateToSettlement(
+                                    gi.type,
+                                    gi.otherMemberId,
+                                    gi.amountMinor,
+                                    [gi]
+                                  );
+                                }}
+                                className="flex justify-between items-center text-text-muted hover:text-text-secondary group/row cursor-pointer"
+                              >
+                                <span className="hover:underline hover:text-accent-cyan truncate max-w-[160px]">
+                                  {gi.groupName}
                                 </span>
-                                <ChevronRight className="h-3 w-3 opacity-60 group-hover/row:opacity-100" />
+                                <div className="flex items-center gap-1.5">
+                                  <span
+                                    className={`font-semibold financial-number ${
+                                      isOwed ? "text-success" : "text-danger"
+                                    }`}
+                                  >
+                                    {isOwed ? "+" : "-"}
+                                    {formatCurrency(gi.amountMinor, gi.currency)}
+                                  </span>
+                                  <ChevronRight className="h-3 w-3 opacity-60 group-hover/row:opacity-100" />
+                                </div>
                               </div>
-                            </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       )}
                     </div>
