@@ -1,7 +1,9 @@
 {
   "name": "fairtab",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
+  "description": "Offline-first group expense splitter that calculates fair shares and simplifies debts for roommates, travelers, and friends.",
+  "license": "MIT",
   "type": "module",
   "workspaces": [
     "packages/domain",

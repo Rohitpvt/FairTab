@@ -1,17 +1,25 @@
-# 🪙 FairTab — Intelligent, Offline-First Group Expense & Ledger App
+# 🪙 FairTab
+
+An offline-first group expense splitter for roommates, travelers, and friends that calculates fair shares and simplifies debts.
+
+```bash
+git clone https://github.com/Rohitpvt/FairTab.git && cd FairTab && npm install && npm run dev
+```
 
 <div align="center">
 
-[![Live App](https://img.shields.io/badge/Live%20Demo-fairtab--48340.web.app-00f2fe?style=for-the-badge&logo=firebase)](https://fairtab-48340.web.app)
-[![React](https://img.shields.io/badge/React%2019-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://react.dev/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Vite](https://img.shields.io/badge/Vite%206-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vitejs.dev/)
-[![TailwindCSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
+[![Live Demo](https://img.shields.io/badge/🚀%20Live%20Demo-fairtab--48340.web.app-00f2fe?style=for-the-badge&logo=firebase)](https://fairtab-48340.web.app)
+[![CI Status](https://img.shields.io/github/actions/workflow/status/Rohitpvt/FairTab/deploy-pages.yml?branch=main&label=CI&style=for-the-badge)](https://github.com/Rohitpvt/FairTab/actions)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
 [![PWA Ready](https://img.shields.io/badge/PWA-Installable%20%26%20Offline-4CAF50?style=for-the-badge&logo=pwa)](https://fairtab-48340.web.app)
 
-**FairTab** is a state-of-the-art, privacy-focused group expense splitter and debt optimization platform. Designed with an **offline-first PWA architecture**, AI-powered receipt scanning, and real-time ledger synchronization.
+<br/>
 
-[Features](#-key-features) • [Architecture](#-architecture) • [Getting Started](#-getting-started) • [Deployment](#-deployment) • [Contributing](#-contributing)
+![FairTab Demo](Docs/assets/demo.png)
+
+<br/>
+
+[Live Demo](https://fairtab-48340.web.app) • [Features](#-key-features) • [Tech Stack](#️-tech-stack) • [Getting Started](#-getting-started) • [Deployment](#-deployment) • [Contributing](CONTRIBUTING.md)
 
 </div>
 
@@ -146,6 +154,18 @@ Open `http://localhost:5173` in your browser.
 - **End-to-End Firestore Rules**: Strict validation ensuring users can only read or write expenses and groups they are active members of.
 - **Immutable Financial Records**: Void-and-reissue ledger patterns to preserve tamper-proof audit trails.
 - **Client Sanitization**: All client mutations pass Zod validation before submission to Firestore.
+
+---
+
+## 🤝 Contributing
+
+Contributions of all kinds are welcome! Please check out the [Contributing Guide](CONTRIBUTING.md) for details on:
+- Setting up the local development environment
+- Running tests (`npm test`) and linters (`npm run lint`)
+- Pull request and commit guidelines
+- Beginner-friendly issues tagged with [`good first issue`](https://github.com/Rohitpvt/FairTab/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
+
+> **Maintainer SLA**: We acknowledge and triage all newly opened issues and pull requests within 24 hours.
 
 ---
 
