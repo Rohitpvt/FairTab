@@ -13,6 +13,9 @@ import {
 
 import {
   handleCreateSettlement,
+  handleApproveSettlement,
+  handleRejectSettlement,
+  handleCancelSettlement,
   handleVoidSettlement,
   handleSettleExpenseSplit,
   handleUnsettleExpenseSplit,
@@ -56,6 +59,9 @@ export const updateExpense = functions.https.onCall(handleUpdateExpense);
 export const voidExpense = functions.https.onCall(handleVoidExpense);
 
 export const createSettlement = functions.https.onCall(handleCreateSettlement);
+export const approveSettlement = functions.https.onCall(handleApproveSettlement);
+export const rejectSettlement = functions.https.onCall(handleRejectSettlement);
+export const cancelSettlement = functions.https.onCall(handleCancelSettlement);
 export const voidSettlement = functions.https.onCall(handleVoidSettlement);
 export const settleExpenseSplit = functions.https.onCall(handleSettleExpenseSplit);
 export const unsettleExpenseSplit = functions.https.onCall(handleUnsettleExpenseSplit);

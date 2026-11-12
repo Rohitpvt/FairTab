@@ -138,7 +138,7 @@ export function simplifyPreserveRelationships(
     for (const s of exp.splits) allParticipantIds.add(s.memberId);
   }
   for (const set of settlements) {
-    if (set.status === "voided") continue;
+    if (set.status !== "active") continue;
     allParticipantIds.add(set.payerId);
     allParticipantIds.add(set.receiverId);
   }
@@ -200,7 +200,7 @@ export function simplifyPreserveRelationships(
 
   // 2. Process active settlements to reduce obligations
   for (const set of settlements) {
-    if (set.status === "voided") {
+    if (set.status !== "active") {
       continue;
     }
 

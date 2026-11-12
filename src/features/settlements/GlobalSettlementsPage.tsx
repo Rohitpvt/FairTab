@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { ArrowLeftRight, Check, ArrowUpRight, Scale } from "lucide-react";
+import { ArrowLeftRight, ArrowUpRight, Scale } from "lucide-react";
 import { PageContainer } from "../../components/layout/PageContainer";
 import { GlassPanel } from "../../components/ui/GlassPanel";
 import { Button } from "../../components/ui/Button";
@@ -11,10 +11,11 @@ import { expenseService } from "../../infrastructure/firebase/expenseService";
 import { settlementService } from "../../infrastructure/firebase/settlementService";
 import { calculateBalances, simplifyMinimumTransactions, simplifyPreserveRelationships } from "@fairtab/domain";
 import type { UserGroupIndexDocument } from "../groups/userGroupIndexSchema";
-import type { ExpenseDocument, SettlementDocument } from "@fairtab/domain";
+import type { ExpenseDocument, SettlementDocument, SettlementStatus } from "@fairtab/domain";
 import type { GroupMemberDocument } from "../groups/memberSchema";
 import { resolveMemberName } from "../../hooks/useMemberNameResolver";
 import { formatCurrency, formatTimestamp } from "../../utils/format";
+import { getSettlementStatusMeta } from "./settlementStatus";
 
 interface GroupData {
   groupId: string;
@@ -149,7 +150,7 @@ export const GlobalSettlementsPage: React.FC = () => {
       amountMinor: number;
       currency: string;
       createdAt: { seconds: number } | null | undefined;
-      status: "active" | "voided";
+      status: SettlementStatus;
     }[] = [];
 
     const memberLookup = (groupId: string, memberId: string): string => {
@@ -402,7 +403,9 @@ export const GlobalSettlementsPage: React.FC = () => {
                     <p className="text-xs text-text-muted">No settlements logged yet.</p>
                   </div>
                 ) : (
-                  recentSettlements.map((set) => (
+                  recentSettlements.map((set) => {
+                    const statusMeta = getSettlementStatusMeta(set.status);
+                    return (
                     <Link
                       key={set.id}
                       to={`/groups/${set.groupId}/settlements/${set.id}`}
@@ -430,20 +433,18 @@ export const GlobalSettlementsPage: React.FC = () => {
                             <span className="font-bold text-text-primary text-xs">
                               {formatCurrency(set.amountMinor, set.currency)}
                             </span>
-                            {set.status === "voided" ? (
-                              <div className="text-[9px] text-danger mt-0.5 font-semibold">Voided</div>
-                            ) : (
-                              <div className="flex items-center justify-end gap-1 text-[9px] text-success/80 mt-0.5">
-                                <Check className="h-3.5 w-3.5" />
-                                <span>Cleared</span>
-                              </div>
-                            )}
+                            <div className="mt-0.5 flex justify-end">
+                              <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-semibold ${statusMeta.badgeClass}`}>
+                                {statusMeta.label}
+                              </span>
+                            </div>
                           </div>
                           <ArrowUpRight className="h-4 w-4 text-text-muted group-hover:text-text-primary transition-colors" />
                         </div>
                       </GlassPanel>
                     </Link>
-                  ))
+                    );
+                  })
                 )}
               </div>
             </div>

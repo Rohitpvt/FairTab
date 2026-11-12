@@ -13,6 +13,7 @@ import { auth } from "../../infrastructure/firebase/firebase";
 import { formatCurrency } from "../../utils/format";
 import {
   simplifyPreserveRelationships,
+  getCurrencyMetadata,
 } from "@fairtab/domain";
 import type { ExpenseDocument, SettlementDocument } from "@fairtab/domain";
 import type { GroupDocument } from "../groups/groupSchema";
@@ -50,6 +51,7 @@ export const RecordSettlementFlow: React.FC = () => {
   const [selectedReceiverId, setSelectedReceiverId] = useState<string | null>(prefillTo || null);
   const [amount, setAmount] = useState(prefillAmount);
   const [currency, setCurrency] = useState("");
+  const [paymentReference, setPaymentReference] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [confirmOverpayment, setConfirmOverpayment] = useState(false);
 
@@ -121,14 +123,13 @@ export const RecordSettlementFlow: React.FC = () => {
 
   const isPayerPlaceholder = payerMember?.kind === "placeholder";
   const isReceiverPlaceholder = receiverMember?.kind === "placeholder";
-  const isInvolvedInPlaceholder = isPayerPlaceholder || isReceiverPlaceholder;
 
   const isOwnerOrAdmin = currentUserRole === "owner" || currentUserRole === "admin";
   const isViewer = currentUserRole === "viewer";
 
   // Permission Checks:
   // 1. Viewers cannot record
-  // 2. Normal member cannot record settlements involving placeholders
+  // 2. Placeholder payers can only be recorded by Owners/Admins
   // 3. Normal member can only record settlements involving themselves
   let permissionError = "";
   if (group.status === "archived") {
@@ -137,15 +138,22 @@ export const RecordSettlementFlow: React.FC = () => {
     permissionError = "This Group is read-only (archived or deleted).";
   } else if (isViewer) {
     permissionError = "Viewers are read-only and cannot record repayments.";
-  } else if (isInvolvedInPlaceholder && !isOwnerOrAdmin) {
+  } else if (isPayerPlaceholder && !isOwnerOrAdmin) {
     permissionError = "Only group Owners or Admins can record settlements involving placeholders.";
   } else if (!isOwnerOrAdmin && payerMember && receiverMember) {
-    const isPayerSelf = payerMember.userId === auth.currentUser?.uid;
-    const isReceiverSelf = receiverMember.userId === auth.currentUser?.uid;
+    const isPayerSelf = !isPayerPlaceholder && payerMember.userId === auth.currentUser?.uid;
+    const isReceiverSelf = !isReceiverPlaceholder && receiverMember.userId === auth.currentUser?.uid;
     if (!isPayerSelf && !isReceiverSelf) {
       permissionError = "A normal member can only record settlements involving themselves.";
     }
   }
+
+  const willAutoApprove = Boolean(
+    receiverMember &&
+      (receiverMember.kind === "placeholder"
+        ? isOwnerOrAdmin
+        : receiverMember.userId === auth.currentUser?.uid)
+  );
 
   const isOffline = !navigator.onLine;
 
@@ -160,7 +168,10 @@ export const RecordSettlementFlow: React.FC = () => {
     }
   }
 
-  const amountMinor = Math.round(parseFloat(amount || "0") * 100);
+  const effectiveCurrency = currency || group.baseCurrency;
+  const currencyMeta = getCurrencyMetadata(effectiveCurrency);
+  const scaleFactor = Math.pow(10, currencyMeta.minorUnit);
+  const amountMinor = Math.round(parseFloat(amount || "0") * scaleFactor);
   const isOverpayment = amountMinor > suggestedDebtMinor;
 
   const handleRecord = async (e: React.FormEvent) => {
@@ -188,6 +199,7 @@ export const RecordSettlementFlow: React.FC = () => {
     setIsSubmitting(true);
     const settlementId = generateRandomId("set");
     const clientOperationId = generateRandomId("op");
+    const trimmedReference = paymentReference.trim();
 
     const payload = {
       clientOperationId,
@@ -196,9 +208,10 @@ export const RecordSettlementFlow: React.FC = () => {
       payerId,
       receiverId,
       amountMinor,
-      currency,
+      currency: effectiveCurrency,
       fxNumerator: 1,
       fxDenominator: 1,
+      ...(trimmedReference ? { paymentReference: trimmedReference } : {}),
     };
 
     try {
@@ -206,7 +219,9 @@ export const RecordSettlementFlow: React.FC = () => {
       toast.success(
         isOffline
           ? "Repayment queued in outbox. It will sync automatically when online!"
-          : "Repayment recorded successfully!"
+          : willAutoApprove
+          ? "Repayment recorded and cleared!"
+          : "Settlement request submitted! Waiting for recipient approval."
       );
       navigate(`/groups/${groupId}/settlements`);
     } catch (error: unknown) {
@@ -303,9 +318,9 @@ export const RecordSettlementFlow: React.FC = () => {
                   id="amount"
                   type="number"
                   required
-                  min="0.01"
-                  step="0.01"
-                  placeholder="e.g. 10.00"
+                  min={currencyMeta.minorUnit === 0 ? "1" : "0.01"}
+                  step={currencyMeta.minorUnit === 0 ? "1" : "0.01"}
+                  placeholder={currencyMeta.minorUnit === 0 ? "e.g. 1000" : "e.g. 10.00"}
                   value={amount}
                   disabled={isSubmitting}
                   onChange={(e) => setAmount(e.target.value)}
@@ -332,13 +347,50 @@ export const RecordSettlementFlow: React.FC = () => {
               </div>
             </div>
 
+            {/* Payment Reference / Note */}
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="payment-reference" className="text-xs font-semibold text-text-secondary">
+                Payment Reference / Note (Optional)
+              </label>
+              <input
+                id="payment-reference"
+                type="text"
+                maxLength={200}
+                placeholder="e.g. UPI ref #4312, GPay, Cash at dinner"
+                value={paymentReference}
+                disabled={isSubmitting}
+                onChange={(e) => setPaymentReference(e.target.value)}
+                className="px-3.5 py-2.5 bg-surface-primary border border-white/10 rounded-lg text-sm text-text-primary focus:outline-none focus:border-accent-cyan"
+              />
+              <p className="text-[10px] text-text-muted">
+                Helpful for the recipient to verify the transfer before confirming.
+              </p>
+            </div>
+
             {/* Suggested Obligation Info */}
             {payerId && receiverId && payerId !== receiverId && (
-              <div className="p-3 bg-white/5 border border-white/5 rounded-lg text-[11px] text-text-secondary">
-                Suggested Debt from {payerMember ? resolveName(payerMember) : ""} to {receiverMember ? resolveName(receiverMember) : ""}:{" "}
-                <span className="font-bold text-text-primary">
-                  {formatCurrency(suggestedDebtMinor, group.baseCurrency)}
-                </span>
+              <div className="p-3 bg-white/5 border border-white/5 rounded-lg text-[11px] text-text-secondary flex flex-col gap-1.5">
+                <div>
+                  Suggested Debt from {payerMember ? resolveName(payerMember) : ""} to {receiverMember ? resolveName(receiverMember) : ""}:{" "}
+                  <span className="font-bold text-text-primary">
+                    {formatCurrency(suggestedDebtMinor, group.baseCurrency)}
+                  </span>
+                </div>
+                {!permissionError && (
+                  <div className={willAutoApprove ? "text-success" : "text-warning"}>
+                    {willAutoApprove
+                      ? receiverMember?.kind === "placeholder"
+                        ? "As group Owner/Admin recording for a placeholder recipient, this settlement will clear immediately."
+                        : "As the recipient, this settlement will be confirmed and cleared immediately."
+                      : `Approval Required: This request will stay pending until ${
+                          receiverMember?.kind === "placeholder"
+                            ? "a group Admin or Owner"
+                            : receiverMember
+                            ? resolveName(receiverMember)
+                            : "the recipient"
+                        } confirms receipt. Balances will not change until approved.`}
+                  </div>
+                )}
               </div>
             )}
 

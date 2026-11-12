@@ -246,6 +246,12 @@ export const MemberLedgerModal: React.FC<MemberLedgerModalProps> = ({
 
       if (set.status === "voided") {
         roleDescription = `[Voided] ${roleDescription}`;
+      } else if (set.status === "pending_approval") {
+        roleDescription = `[Pending Approval] ${roleDescription}`;
+      } else if (set.status === "rejected") {
+        roleDescription = `[Rejected] ${roleDescription}`;
+      } else if (set.status === "cancelled") {
+        roleDescription = `[Cancelled] ${roleDescription}`;
       }
 
       list.push({

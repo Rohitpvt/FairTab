@@ -1,3 +1,5 @@
+import type { SettlementStatus } from "./types.js";
+
 export interface BalancePayer {
   memberId: string;
   baseAmountMinor: number;
@@ -15,7 +17,7 @@ export interface BalanceExpense {
 }
 
 export interface BalanceSettlement {
-  status: "active" | "voided";
+  status: SettlementStatus;
   payerId: string;
   receiverId: string;
   baseAmountMinor: number;
@@ -72,9 +74,9 @@ export function calculateBalances(
     }
   }
 
-  // Process only active settlements
+  // Process only active settlements (pending_approval, rejected, cancelled, and voided do not affect balances)
   for (const set of actualSettlements) {
-    if (set.status === "voided") {
+    if (set.status !== "active") {
       continue;
     }
 

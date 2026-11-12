@@ -92,26 +92,37 @@ export const ExpenseDetailPage: React.FC = () => {
     return paidUpfront >= splitAmount && splitAmount > 0;
   };
 
-  const isMemberPaid = (memberId: string) => {
+  const getMemberPaymentStatus = (memberId: string): "paid" | "pending_approval" | "unpaid" => {
     if (isMemberCoveredUpfront(memberId)) {
-      return true;
+      return "paid";
     }
     const payment = payments.find((p) => p.memberId === memberId);
     if (payment) {
-      return payment.status === "paid";
+      return payment.status;
     }
-    return settlements.some(
-      (set) =>
-        set.relatedExpenseId === expenseId &&
-        set.relatedMemberId === memberId &&
-        set.status === "active"
+    const linked = settlements.filter(
+      (set) => set.relatedExpenseId === expenseId && set.relatedMemberId === memberId
     );
+    if (linked.some((set) => set.status === "active")) {
+      return "paid";
+    }
+    if (linked.some((set) => set.status === "pending_approval")) {
+      return "pending_approval";
+    }
+    return "unpaid";
   };
+
+  const isMemberPaid = (memberId: string) => getMemberPaymentStatus(memberId) === "paid";
 
   const togglePaymentStatus = async (memberId: string) => {
     if (!groupId || !expenseId) return;
-    const isPaid = isMemberPaid(memberId);
+    const currentStatus = getMemberPaymentStatus(memberId);
+    const shouldUnsettle = currentStatus === "paid" || currentStatus === "pending_approval";
     const previousPayments = [...payments];
+
+    const optimisticStatus: "paid" | "pending_approval" | "unpaid" = shouldUnsettle
+      ? "unpaid"
+      : "pending_approval";
 
     // Optimistic update
     setPayments((prev) => {
@@ -119,7 +130,7 @@ export const ExpenseDetailPage: React.FC = () => {
       if (existing) {
         return prev.map((p) =>
           p.memberId === memberId
-            ? { ...p, status: isPaid ? "unpaid" : "paid", markedAt: new Date() }
+            ? { ...p, status: optimisticStatus, markedAt: new Date() }
             : p
         );
       }
@@ -127,7 +138,7 @@ export const ExpenseDetailPage: React.FC = () => {
         ...prev,
         {
           memberId,
-          status: isPaid ? "unpaid" : "paid",
+          status: optimisticStatus,
           settlementIds: [],
           markedBy: auth.currentUser?.uid || "",
           markedAt: new Date(),
@@ -146,12 +157,26 @@ export const ExpenseDetailPage: React.FC = () => {
         memberId,
       };
       const { fairtabApi } = await import("../../infrastructure/api/fairtabApi");
-      if (isPaid) {
+      if (shouldUnsettle) {
         await fairtabApi.settlements.unsettleSplit(payload);
-        toast.success("Split payment reverted successfully.");
+        toast.success(
+          currentStatus === "pending_approval"
+            ? "Pending split settlement cancelled."
+            : "Split payment reverted successfully."
+        );
       } else {
-        await fairtabApi.settlements.settleSplit(payload);
-        toast.success("Split marked as paid successfully.");
+        const res = (await fairtabApi.settlements.settleSplit(payload)) as {
+          status?: "paid" | "pending_approval";
+        };
+        const resolvedStatus = res?.status === "paid" ? "paid" : "pending_approval";
+        setPayments((prev) =>
+          prev.map((p) => (p.memberId === memberId ? { ...p, status: resolvedStatus } : p))
+        );
+        toast.success(
+          resolvedStatus === "paid"
+            ? "Split marked as paid successfully."
+            : "Split settlement requested! Waiting for recipient approval."
+        );
       }
     } catch (err: any) {
       // Revert optimistic update on failure
@@ -399,8 +424,16 @@ export const ExpenseDetailPage: React.FC = () => {
               <div className="flex flex-col gap-4">
                 {expense.splits.map((s) => {
                   const isCoveredPayer = isMemberCoveredUpfront(s.memberId);
-                  const isPaid = isMemberPaid(s.memberId);
+                  const splitStatus = getMemberPaymentStatus(s.memberId);
+                  const isPaid = splitStatus === "paid";
+                  const isPendingSplit = splitStatus === "pending_approval";
                   const isUpdating = !!isUpdatingPayment[s.memberId];
+                  const isViewer = currentMember?.role === "viewer";
+                  const isSelfSplit = Boolean(currentMember && s.memberId === currentMember.id);
+                  const isExpenseCreditor = Boolean(
+                    currentMember && expense.payers.some((p) => p.memberId === currentMember.id)
+                  );
+                  const canToggleSplit = !isViewer && (isAuthorized || isSelfSplit || isExpenseCreditor);
                   return (
                     <div key={s.memberId} className="flex justify-between items-center text-xs border-b border-white/5 pb-3 last:border-0 last:pb-0">
                       <div className="flex flex-col gap-1">
@@ -413,6 +446,10 @@ export const ExpenseDetailPage: React.FC = () => {
                           ) : isPaid ? (
                             <span className="text-[10px] text-green-400 font-bold bg-green-500/10 px-2 py-0.5 rounded-full flex items-center gap-1">
                               ✓ Paid
+                            </span>
+                          ) : isPendingSplit ? (
+                            <span className="text-[10px] text-warning font-bold bg-warning/10 px-2 py-0.5 rounded-full flex items-center gap-1">
+                              ⏳ Pending Approval
                             </span>
                           ) : (
                             <span className="text-[10px] text-text-muted bg-white/5 px-2 py-0.5 rounded-full">
@@ -437,14 +474,14 @@ export const ExpenseDetailPage: React.FC = () => {
                             </span>
                           )}
                         </div>
-                        {isAuthorized && !isVoided && !isCoveredPayer && (
+                        {canToggleSplit && !isVoided && !isCoveredPayer && (
                           <Button
                             variant="ghost"
                             size="sm"
                             disabled={isUpdating}
                             onClick={() => togglePaymentStatus(s.memberId)}
                             className={`px-3 py-1.5 h-8 text-[11px] rounded-lg border font-semibold inline-flex items-center gap-1.5 transition-all ${
-                              isPaid
+                              isPaid || isPendingSplit
                                 ? "border-red-500/30 text-red-400 hover:bg-red-500/10 hover:border-red-500/50"
                                 : "border-accent-cyan/30 text-accent-cyan hover:bg-accent-cyan/10 hover:border-accent-cyan/50"
                             }`}
@@ -455,6 +492,11 @@ export const ExpenseDetailPage: React.FC = () => {
                               <>
                                 <Undo2 className="h-3 w-3" />
                                 Undo
+                              </>
+                            ) : isPendingSplit ? (
+                              <>
+                                <Undo2 className="h-3 w-3" />
+                                Cancel
                               </>
                             ) : (
                               <>

@@ -21,6 +21,7 @@ describe("Domain Calculations - Balances with Settlements", () => {
 
     // Bob settles 30.00 to Alice (active)
     // Charlie settles 50.00 to Alice but it is voided
+    // Non-active statuses (pending_approval, rejected, cancelled) must not affect balances
     const settlements: BalanceSettlement[] = [
       {
         status: "active",
@@ -33,6 +34,24 @@ describe("Domain Calculations - Balances with Settlements", () => {
         payerId: "charlie",
         receiverId: "alice",
         baseAmountMinor: 5000,
+      },
+      {
+        status: "pending_approval",
+        payerId: "charlie",
+        receiverId: "alice",
+        baseAmountMinor: 2500,
+      },
+      {
+        status: "rejected",
+        payerId: "bob",
+        receiverId: "alice",
+        baseAmountMinor: 1000,
+      },
+      {
+        status: "cancelled",
+        payerId: "charlie",
+        receiverId: "alice",
+        baseAmountMinor: 1500,
       },
     ];
 
@@ -108,13 +127,31 @@ describe("Domain Calculations - Debt Simplification", () => {
       },
     ];
 
-    // Settlement: Bob paid Alice 10.00 (active)
+    // Settlement: Bob paid Alice 10.00 (active); pending/rejected/cancelled/voided ignored
     const settlements: BalanceSettlement[] = [
       {
         status: "active",
         payerId: "bob",
         receiverId: "alice",
         baseAmountMinor: 1000,
+      },
+      {
+        status: "pending_approval",
+        payerId: "charlie",
+        receiverId: "alice",
+        baseAmountMinor: 3000,
+      },
+      {
+        status: "rejected",
+        payerId: "charlie",
+        receiverId: "bob",
+        baseAmountMinor: 2000,
+      },
+      {
+        status: "cancelled",
+        payerId: "bob",
+        receiverId: "alice",
+        baseAmountMinor: 500,
       },
     ];
 

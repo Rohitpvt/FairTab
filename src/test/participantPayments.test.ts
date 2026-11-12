@@ -286,16 +286,24 @@ describe("Integration: Participant Payment Status & Proportional Splits", () => 
   });
 
   test("unauthorized user cannot mark splits paid", async () => {
-    // Authenticate as Bob (member, but not group owner or admin or expense creator)
+    // Authenticate as Bob (member, net 0 on this expense, not owner/admin/creator)
     await signInWithEmailAndPassword(auth, bobEmail, password);
 
-    const clientOperationId = "op-settle-unauth";
     await expect(
       settleExpenseSplitFn({
-        clientOperationId,
+        clientOperationId: "op-settle-unauth-placeholder",
         groupId,
         expenseId,
         memberId: placeholderId,
+      })
+    ).rejects.toThrow("Only Owner/Admin can mark settlements involving placeholder debtors.");
+
+    await expect(
+      settleExpenseSplitFn({
+        clientOperationId: "op-settle-unauth-charlie",
+        groupId,
+        expenseId,
+        memberId: charlieId,
       })
     ).rejects.toThrow("You are not authorized to mark this participant split as paid.");
   });
@@ -328,6 +336,51 @@ describe("Integration: Participant Payment Status & Proportional Splits", () => 
       const setSnap = await getDoc(doc(dbAdmin, "groups", groupId, "settlements", linkedSettlementId));
       const setData = setSnap.data() as SettlementDocument;
       expect(setData.status).toBe("voided");
+    });
+  });
+
+  test("debtor self-settling split starts pending_approval and syncs to paid once creditor approves", async () => {
+    await signInWithEmailAndPassword(auth, charlieEmail, password);
+
+    const settleRes = await settleExpenseSplitFn({
+      clientOperationId: "op-charlie-self-settle",
+      groupId,
+      expenseId,
+      memberId: charlieId,
+      paymentReference: "GPay-split-123",
+    });
+    expect(settleRes.status).toBe("pending_approval");
+
+    const settlementId = settleRes.settlementIds[0];
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      const dbAdmin = context.firestore();
+      const trackingSnap = await getDoc(doc(dbAdmin, "groups", groupId, "expenses", expenseId, "payments", charlieId));
+      expect((trackingSnap.data() as ParticipantPaymentDocument).status).toBe("pending_approval");
+
+      const setSnap = await getDoc(doc(dbAdmin, "groups", groupId, "settlements", settlementId));
+      expect((setSnap.data() as SettlementDocument).status).toBe("pending_approval");
+      expect((setSnap.data() as SettlementDocument).paymentReference).toBe("GPay-split-123");
+    });
+
+    // Alice (creditor) approves -> settlement active and tracking status syncs to "paid"
+    await signInWithEmailAndPassword(auth, aliceEmail, password);
+    const approveHandler = (await import("../../api/settlements/approve.js")).default;
+    const token = await auth.currentUser?.getIdToken();
+    const approveRes = await executeVercelHandler(approveHandler, {
+      headers: { authorization: `Bearer ${token}` },
+      body: {
+        clientOperationId: "op-alice-approve-charlie-split",
+        groupId,
+        settlementId,
+        expectedVersion: 3, // 1 initial + 1 voided (unsettle) + 1 re-requested
+      },
+    });
+    expect(approveRes.status).toBe("active");
+
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      const dbAdmin = context.firestore();
+      const trackingSnap = await getDoc(doc(dbAdmin, "groups", groupId, "expenses", expenseId, "payments", charlieId));
+      expect((trackingSnap.data() as ParticipantPaymentDocument).status).toBe("paid");
     });
   });
 });

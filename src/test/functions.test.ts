@@ -698,7 +698,37 @@ describe("Cloud Functions Integration Tests", () => {
       const token = await auth.currentUser?.getIdToken();
       const res = await executeVercelHandler(handler, {
         headers: { authorization: `Bearer ${token}` },
-        body: data
+        body: data,
+      });
+      return { data: res };
+    };
+
+    const approveSettlementFn = async (data: any) => {
+      const handler = (await import("../../api/settlements/approve.js")).default;
+      const token = await auth.currentUser?.getIdToken();
+      const res = await executeVercelHandler(handler, {
+        headers: { authorization: `Bearer ${token}` },
+        body: data,
+      });
+      return { data: res };
+    };
+
+    const rejectSettlementFn = async (data: any) => {
+      const handler = (await import("../../api/settlements/reject.js")).default;
+      const token = await auth.currentUser?.getIdToken();
+      const res = await executeVercelHandler(handler, {
+        headers: { authorization: `Bearer ${token}` },
+        body: data,
+      });
+      return { data: res };
+    };
+
+    const cancelSettlementFn = async (data: any) => {
+      const handler = (await import("../../api/settlements/cancel.js")).default;
+      const token = await auth.currentUser?.getIdToken();
+      const res = await executeVercelHandler(handler, {
+        headers: { authorization: `Bearer ${token}` },
+        body: data,
       });
       return { data: res };
     };
@@ -708,18 +738,18 @@ describe("Cloud Functions Integration Tests", () => {
       const token = await auth.currentUser?.getIdToken();
       const res = await executeVercelHandler(handler, {
         headers: { authorization: `Bearer ${token}` },
-        body: data
+        body: data,
       });
       return { data: res };
     };
 
-    test("createSettlement succeeds for member participant and enforces zero-sum", async () => {
-      // Sign in as Bob
-      await signInWithEmailAndPassword(auth, bobEmail, bobPassword);
+    test("receiver-initiated settlement clears immediately as active and stores paymentReference", async () => {
+      // Alice is Receiver and Owner -> auto-approves immediately
+      await signInWithEmailAndPassword(auth, aliceEmail, alicePassword);
 
-      const settlementId = "set-bob-alice-test";
+      const settlementId = "set-alice-receives-auto";
       const payload = {
-        clientOperationId: "op-create-set-1",
+        clientOperationId: "op-create-set-auto",
         groupId,
         settlementId,
         payerId: bobUid,
@@ -728,13 +758,14 @@ describe("Cloud Functions Integration Tests", () => {
         currency: "USD",
         fxNumerator: 1,
         fxDenominator: 1,
+        paymentReference: "Cash handed at dinner",
       };
 
       const result = await createSettlementFn(payload);
       expect(result.data.settlementId).toBe(settlementId);
       expect(result.data.version).toBe(1);
+      expect(result.data.status).toBe("active");
 
-      // Verify DB document created
       await testEnv.withSecurityRulesDisabled(async (context) => {
         const db = context.firestore();
         const snap = await getDoc(doc(db, `groups/${groupId}/settlements/${settlementId}`));
@@ -744,15 +775,249 @@ describe("Cloud Functions Integration Tests", () => {
         expect(data.receiverId).toBe(aliceUid);
         expect(data.baseAmountMinor).toBe(1000);
         expect(data.status).toBe("active");
+        expect(data.paymentReference).toBe("Cash handed at dinner");
+        expect(data.approvedBy).toBe(aliceUid);
 
-        // Verify revision 1 created
         const revSnap = await getDoc(doc(db, `groups/${groupId}/settlements/${settlementId}/revisions/1`));
         expect(revSnap.exists()).toBe(true);
+        expect(revSnap.data()!.paymentReference).toBe("Cash handed at dinner");
 
-        // Verify receipt created
-        const recSnap = await getDoc(doc(db, `groups/${groupId}/settlementOperations/op-create-set-1`));
+        const recSnap = await getDoc(doc(db, `groups/${groupId}/settlementOperations/op-create-set-auto`));
         expect(recSnap.exists()).toBe(true);
       });
+    });
+
+    test("payer-initiated settlement enters pending_approval until receiver approves", async () => {
+      await signInWithEmailAndPassword(auth, bobEmail, bobPassword);
+
+      const settlementId = "set-bob-alice-pending";
+      const createRes = await createSettlementFn({
+        clientOperationId: "op-create-set-pending",
+        groupId,
+        settlementId,
+        payerId: bobUid,
+        receiverId: aliceUid,
+        amountMinor: 1200,
+        currency: "USD",
+        fxNumerator: 1,
+        fxDenominator: 1,
+        paymentReference: "UPI-REF-9911",
+      });
+      expect(createRes.data.settlementId).toBe(settlementId);
+      expect(createRes.data.version).toBe(1);
+      expect(createRes.data.status).toBe("pending_approval");
+
+      // Bob (payer) cannot approve his own outgoing request
+      try {
+        await approveSettlementFn({
+          clientOperationId: "op-bob-self-approve",
+          groupId,
+          settlementId,
+          expectedVersion: 1,
+        });
+        expect.fail("Should have failed with permission-denied");
+      } catch (err: any) {
+        expect(err.code).toMatch(/permission-denied/);
+      }
+
+      // Alice (receiver) approves -> transitions to active (version 2)
+      await signInWithEmailAndPassword(auth, aliceEmail, alicePassword);
+      const approveRes = await approveSettlementFn({
+        clientOperationId: "op-alice-approve-1",
+        groupId,
+        settlementId,
+        expectedVersion: 1,
+      });
+      expect(approveRes.data.status).toBe("active");
+      expect(approveRes.data.version).toBe(2);
+
+      await testEnv.withSecurityRulesDisabled(async (context) => {
+        const db = context.firestore();
+        const snap = await getDoc(doc(db, `groups/${groupId}/settlements/${settlementId}`));
+        expect(snap.data()!.status).toBe("active");
+        expect(snap.data()!.paymentReference).toBe("UPI-REF-9911");
+        expect(snap.data()!.approvedBy).toBe(aliceUid);
+
+        const rev2 = await getDoc(doc(db, `groups/${groupId}/settlements/${settlementId}/revisions/2`));
+        expect(rev2.exists()).toBe(true);
+        expect(rev2.data()!.action).toBe("approve");
+      });
+    });
+
+    test("pending settlement can be rejected by receiver or cancelled by payer", async () => {
+      await signInWithEmailAndPassword(auth, bobEmail, bobPassword);
+      const rejectId = "set-bob-alice-reject";
+      await createSettlementFn({
+        clientOperationId: "op-create-reject-case",
+        groupId,
+        settlementId: rejectId,
+        payerId: bobUid,
+        receiverId: aliceUid,
+        amountMinor: 750,
+        currency: "USD",
+        fxNumerator: 1,
+        fxDenominator: 1,
+      });
+
+      await signInWithEmailAndPassword(auth, aliceEmail, alicePassword);
+      const rejectRes = await rejectSettlementFn({
+        clientOperationId: "op-alice-reject-case",
+        groupId,
+        settlementId: rejectId,
+        expectedVersion: 1,
+        reason: "Not received in bank",
+      });
+      expect(rejectRes.data.status).toBe("rejected");
+      expect(rejectRes.data.version).toBe(2);
+
+      await signInWithEmailAndPassword(auth, bobEmail, bobPassword);
+      const cancelId = "set-bob-alice-cancel";
+      await createSettlementFn({
+        clientOperationId: "op-create-cancel-case",
+        groupId,
+        settlementId: cancelId,
+        payerId: bobUid,
+        receiverId: aliceUid,
+        amountMinor: 500,
+        currency: "USD",
+        fxNumerator: 1,
+        fxDenominator: 1,
+      });
+      const cancelRes = await cancelSettlementFn({
+        clientOperationId: "op-bob-cancel-case",
+        groupId,
+        settlementId: cancelId,
+        expectedVersion: 1,
+      });
+      expect(cancelRes.data.status).toBe("cancelled");
+      expect(cancelRes.data.version).toBe(2);
+
+      await testEnv.withSecurityRulesDisabled(async (context) => {
+        const db = context.firestore();
+        const rejectedSnap = await getDoc(doc(db, `groups/${groupId}/settlements/${rejectId}`));
+        expect(rejectedSnap.data()!.status).toBe("rejected");
+        expect(rejectedSnap.data()!.rejectionReason).toBe("Not received in bank");
+
+        const cancelledSnap = await getDoc(doc(db, `groups/${groupId}/settlements/${cancelId}`));
+        expect(cancelledSnap.data()!.status).toBe("cancelled");
+      });
+    });
+
+    test("strict rule blocks owner/admin from bypassing receiver approval for real users while allowing owner/admin approval for placeholder receivers", async () => {
+      const daveUid = "dave-member-strict-test";
+      const placeholderId = "placeholder-eve-strict-test";
+      await testEnv.withSecurityRulesDisabled(async (context) => {
+        const db = context.firestore();
+        await setDoc(doc(db, `groups/${groupId}/members`, daveUid), {
+          id: daveUid,
+          groupId,
+          kind: "account",
+          userId: daveUid,
+          displayName: "Dave Member",
+          displayNameLower: "dave member",
+          role: "member",
+          status: "active",
+          version: 1,
+          schemaVersion: 1,
+        });
+        await setDoc(doc(db, `groups/${groupId}/members`, placeholderId), {
+          id: placeholderId,
+          groupId,
+          kind: "placeholder",
+          displayName: "Eve Placeholder",
+          displayNameLower: "eve placeholder",
+          role: "member",
+          status: "active",
+          version: 1,
+          schemaVersion: 1,
+        });
+      });
+
+      // 1. Alice (Owner) must NOT be allowed to initiate third-party non-placeholder settlements
+      await signInWithEmailAndPassword(auth, aliceEmail, alicePassword);
+      try {
+        await createSettlementFn({
+          clientOperationId: "op-owner-third-party-block",
+          groupId,
+          settlementId: "set-owner-third-party-block",
+          payerId: bobUid,
+          receiverId: daveUid,
+          amountMinor: 500,
+          currency: "USD",
+          fxNumerator: 1,
+          fxDenominator: 1,
+        });
+        expect.fail("Owner should be blocked from creating third-party non-placeholder settlement");
+      } catch (err: any) {
+        expect(err.code).toMatch(/permission-denied/);
+      }
+
+      // 2. Bob initiates Bob -> Dave (pending_approval). Owner Alice tries to approve -> DENIED!
+      await signInWithEmailAndPassword(auth, bobEmail, bobPassword);
+      const bobDaveId = "set-bob-dave-strict";
+      await createSettlementFn({
+        clientOperationId: "op-bob-dave-create",
+        groupId,
+        settlementId: bobDaveId,
+        payerId: bobUid,
+        receiverId: daveUid,
+        amountMinor: 400,
+        currency: "USD",
+        fxNumerator: 1,
+        fxDenominator: 1,
+      });
+
+      await signInWithEmailAndPassword(auth, aliceEmail, alicePassword);
+      try {
+        await approveSettlementFn({
+          clientOperationId: "op-owner-approve-dave-block",
+          groupId,
+          settlementId: bobDaveId,
+          expectedVersion: 1,
+        });
+        expect.fail("Owner should NOT be allowed to approve a settlement for a real-user receiver");
+      } catch (err: any) {
+        expect(err.code).toMatch(/permission-denied/);
+      }
+
+      // 3. Placeholder receiver: Bob initiates Bob -> placeholder -> pending_approval -> Bob cannot approve -> Owner Alice CAN approve!
+      await signInWithEmailAndPassword(auth, bobEmail, bobPassword);
+      const bobPlaceholderId = "set-bob-placeholder-approve";
+      const phCreateRes = await createSettlementFn({
+        clientOperationId: "op-bob-placeholder-create",
+        groupId,
+        settlementId: bobPlaceholderId,
+        payerId: bobUid,
+        receiverId: placeholderId,
+        amountMinor: 600,
+        currency: "USD",
+        fxNumerator: 1,
+        fxDenominator: 1,
+        paymentReference: "Cash via friend",
+      });
+      expect(phCreateRes.data.status).toBe("pending_approval");
+
+      try {
+        await approveSettlementFn({
+          clientOperationId: "op-bob-approve-placeholder-block",
+          groupId,
+          settlementId: bobPlaceholderId,
+          expectedVersion: 1,
+        });
+        expect.fail("Regular member payer must NOT approve placeholder settlement");
+      } catch (err: any) {
+        expect(err.code).toMatch(/permission-denied/);
+      }
+
+      await signInWithEmailAndPassword(auth, aliceEmail, alicePassword);
+      const ownerApprovePh = await approveSettlementFn({
+        clientOperationId: "op-owner-approve-placeholder",
+        groupId,
+        settlementId: bobPlaceholderId,
+        expectedVersion: 1,
+      });
+      expect(ownerApprovePh.data.status).toBe("active");
+      expect(ownerApprovePh.data.version).toBe(2);
     });
 
     test("createSettlement blocks non-participant member writes", async () => {
@@ -804,8 +1069,8 @@ describe("Cloud Functions Integration Tests", () => {
       }
     });
 
-    test("voidSettlement succeeds for creator-participant and fails for non-creator", async () => {
-      // Sign in as Bob, create a settlement
+    test("voidSettlement succeeds for authorized participant on active settlement and fails for non-participant or pending settlement", async () => {
+      // Sign in as Bob, create a settlement (starts pending_approval)
       await signInWithEmailAndPassword(auth, bobEmail, bobPassword);
       const settlementId = "set-void-flow-test";
       const createPayload = {
@@ -821,13 +1086,36 @@ describe("Cloud Functions Integration Tests", () => {
       };
       await createSettlementFn(createPayload);
 
+      // Cannot void a pending settlement before approval
+      try {
+        await voidSettlementFn({
+          clientOperationId: "op-void-pending-fail",
+          groupId,
+          settlementId,
+          expectedVersion: 1,
+          voidReason: "Pending void attempt",
+        });
+        expect.fail("Should have failed with failed-precondition on pending settlement");
+      } catch (err: any) {
+        expect(err.code).toMatch(/failed-precondition/);
+      }
+
+      // Alice approves -> becomes active (version 2)
+      await signInWithEmailAndPassword(auth, aliceEmail, alicePassword);
+      await approveSettlementFn({
+        clientOperationId: "op-void-flow-approve",
+        groupId,
+        settlementId,
+        expectedVersion: 1,
+      });
+
       // Try to void it as Charlie (non-creator, non-participant) -> fail
       await signInWithEmailAndPassword(auth, charlieEmail, charliePassword);
       const voidPayload = {
         clientOperationId: "op-void-flow-void",
         groupId,
         settlementId,
-        expectedVersion: 1,
+        expectedVersion: 2,
         voidReason: "Accidental settlement",
       };
       try {
@@ -841,7 +1129,7 @@ describe("Cloud Functions Integration Tests", () => {
       await signInWithEmailAndPassword(auth, bobEmail, bobPassword);
       const result = await voidSettlementFn(voidPayload);
       expect(result.data.settlementId).toBe(settlementId);
-      expect(result.data.version).toBe(2);
+      expect(result.data.version).toBe(3);
 
       // Verify DB document status is voided
       await testEnv.withSecurityRulesDisabled(async (context) => {
@@ -853,8 +1141,8 @@ describe("Cloud Functions Integration Tests", () => {
     });
 
     test("voidSettlement enforces expectedVersion lock check", async () => {
-      // Create a settlement
-      await signInWithEmailAndPassword(auth, bobEmail, bobPassword);
+      // Alice (receiver) creates active settlement directly
+      await signInWithEmailAndPassword(auth, aliceEmail, alicePassword);
       const settlementId = "set-void-version-test";
       const createPayload = {
         clientOperationId: "op-void-version-create",

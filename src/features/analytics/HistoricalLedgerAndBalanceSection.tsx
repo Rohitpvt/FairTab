@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { GlassPanel } from "../../components/ui/GlassPanel";
 import { formatCurrency, formatTimestamp } from "../../utils/format";
+import { getSettlementStatusMeta } from "../settlements/settlementStatus";
 import {
   calculateBalances,
   simplifyPreserveRelationships,
@@ -153,7 +154,8 @@ export const HistoricalLedgerAndBalanceSection: React.FC<HistoricalLedgerAndBala
       const matchesStatus =
         statusFilter === "all" ||
         (statusFilter === "active" && set.status === "active") ||
-        (statusFilter === "voided" && set.status === "voided");
+        (statusFilter === "voided" &&
+          (set.status === "voided" || set.status === "rejected" || set.status === "cancelled"));
 
       return matchesSearch && matchesStatus;
     });
@@ -493,13 +495,14 @@ export const HistoricalLedgerAndBalanceSection: React.FC<HistoricalLedgerAndBala
                   filteredSettlements.map((set) => {
                     const payerName = getMemberDisplayName(set.payerId);
                     const receiverName = getMemberDisplayName(set.receiverId);
-                    const isVoided = set.status === "voided";
+                    const statusMeta = getSettlementStatusMeta(set.status);
+                    const isInactive = set.status !== "active" && set.status !== "pending_approval";
 
                     return (
                       <tr
                         key={set.id}
                         className={`hover:bg-surface-hover/50 transition-colors ${
-                          isVoided ? "opacity-50 line-through" : ""
+                          isInactive ? "opacity-50 line-through" : ""
                         }`}
                       >
                         <td className="py-3 px-4 text-text-muted whitespace-nowrap">
@@ -519,13 +522,9 @@ export const HistoricalLedgerAndBalanceSection: React.FC<HistoricalLedgerAndBala
                         </td>
                         <td className="py-3 px-4 text-center whitespace-nowrap">
                           <span
-                            className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
-                              isVoided
-                                ? "bg-danger/10 text-danger border border-danger/20"
-                                : "bg-success/10 text-success border border-success/20"
-                            }`}
+                            className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${statusMeta.badgeClass}`}
                           >
-                            {set.status}
+                            {statusMeta.label}
                           </span>
                         </td>
                       </tr>

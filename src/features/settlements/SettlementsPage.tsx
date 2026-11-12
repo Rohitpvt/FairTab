@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { ArrowLeftRight, Check, HandCoins, History, ArrowLeft, ArrowUpRight, Clock } from "lucide-react";
+import { ArrowLeftRight, Check, HandCoins, History, ArrowLeft, ArrowUpRight, Clock, X } from "lucide-react";
+import { toast } from "sonner";
 import { PageContainer } from "../../components/layout/PageContainer";
 import { GlassPanel } from "../../components/ui/GlassPanel";
 import { Button, GradientButton } from "../../components/ui/Button";
@@ -17,6 +18,11 @@ import type { ExpenseDocument, SettlementDocument } from "@fairtab/domain";
 import { useMemberNameResolver } from "../../hooks/useMemberNameResolver";
 import { useAuth } from "../auth/AuthProvider";
 import { canEditSettings } from "../groups/permissions";
+import {
+  getSettlementStatusMeta,
+  canApproveOrRejectSettlement,
+  canCancelPendingSettlement,
+} from "./settlementStatus";
 
 export const SettlementsPage: React.FC = () => {
   const { user } = useAuth();
@@ -28,6 +34,7 @@ export const SettlementsPage: React.FC = () => {
   const [expenses, setExpenses] = useState<ExpenseDocument[]>([]);
   const [settlements, setSettlements] = useState<SettlementDocument[]>([]);
   const [settlementFilter, setSettlementFilter] = useState<"me" | "all">("me");
+  const [processingSettlementId, setProcessingSettlementId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [syncStatus, setSyncStatus] = useState({
     isOnline: navigator.onLine,
@@ -119,6 +126,46 @@ export const SettlementsPage: React.FC = () => {
   const canManage = canEditSettings(currentUserRole);
   const isArchived = group.status === "archived";
 
+  const actionablePending = settlements.filter(
+    (s) =>
+      group.status === "active" &&
+      (canApproveOrRejectSettlement(s, user?.uid, currentUserRole, members) ||
+        canCancelPendingSettlement(s, user?.uid, currentUserRole, members))
+  );
+
+  const handleQuickAction = async (
+    set: SettlementDocument,
+    action: "approve" | "reject" | "cancel"
+  ) => {
+    if (!groupId) return;
+    setProcessingSettlementId(`${set.id}_${action}`);
+    try {
+      const clientOperationId = `op-${crypto.randomUUID()}`;
+      const payload = {
+        clientOperationId,
+        groupId,
+        settlementId: set.id,
+        expectedVersion: set.version,
+        ...(action === "reject" ? { reason: "Payment not received" } : {}),
+      };
+      if (action === "approve") {
+        await settlementService.approveSettlement(payload);
+        toast.success("Settlement approved and balances updated!");
+      } else if (action === "reject") {
+        await settlementService.rejectSettlement(payload);
+        toast.success("Settlement request declined.");
+      } else {
+        await settlementService.cancelSettlement(payload);
+        toast.success("Pending settlement request cancelled.");
+      }
+    } catch (error: unknown) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      toast.error(err.message || `Failed to ${action} settlement.`);
+    } finally {
+      setProcessingSettlementId(null);
+    }
+  };
+
   return (
     <PageContainer
       title={`${group.name} - Settlements`}
@@ -150,6 +197,89 @@ export const SettlementsPage: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Suggested Settlement Plans Panel */}
         <div className="lg:col-span-2 flex flex-col gap-4">
+          {actionablePending.length > 0 && (
+            <GlassPanel variant="standard" className="p-4 flex flex-col gap-3 border border-warning/25 bg-warning/5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-xs font-bold text-warning uppercase tracking-wider">
+                  <Clock className="h-4 w-4 shrink-0" />
+                  <span>Pending Settlement Approvals ({actionablePending.length})</span>
+                </div>
+              </div>
+              <div className="flex flex-col gap-2.5">
+                {actionablePending.map((set) => {
+                  const canApprove = canApproveOrRejectSettlement(set, user?.uid, currentUserRole, members);
+                  const canCancel = canCancelPendingSettlement(set, user?.uid, currentUserRole, members);
+                  const isBusy = processingSettlementId?.startsWith(`${set.id}_`);
+
+                  return (
+                    <div
+                      key={set.id}
+                      className="p-3 rounded-xl bg-white/[0.03] border border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
+                    >
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5 font-semibold text-text-primary flex-wrap">
+                          <span>{getMemberName(set.payerId)}</span>
+                          <ArrowLeftRight className="h-3 w-3 text-text-muted shrink-0" />
+                          <span>{getMemberName(set.receiverId)}</span>
+                          <span className="font-bold text-accent-cyan financial-number ml-1">
+                            {formatCurrency(set.amountMinor, set.currency)}
+                          </span>
+                        </div>
+                        {set.paymentReference && (
+                          <p className="text-[11px] text-text-secondary mt-1 truncate">
+                            Ref: {set.paymentReference}
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                        {canApprove && (
+                          <>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-7 px-2.5 text-[11px] text-danger hover:bg-danger/10"
+                              disabled={!syncStatus.isOnline || !!isBusy}
+                              onClick={() => handleQuickAction(set, "reject")}
+                            >
+                              <X className="h-3.5 w-3.5 mr-1" />
+                              Reject
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="gradient"
+                              className="h-7 px-2.5 text-[11px]"
+                              disabled={!syncStatus.isOnline || !!isBusy}
+                              onClick={() => handleQuickAction(set, "approve")}
+                            >
+                              <Check className="h-3.5 w-3.5 mr-1" />
+                              Approve
+                            </Button>
+                          </>
+                        )}
+                        {canCancel && (
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            className="h-7 px-2.5 text-[11px]"
+                            disabled={!syncStatus.isOnline || !!isBusy}
+                            onClick={() => handleQuickAction(set, "cancel")}
+                          >
+                            Cancel Request
+                          </Button>
+                        )}
+                        <Link to={`/groups/${groupId}/settlements/${set.id}`}>
+                          <Button size="sm" variant="ghost" className="h-7 px-2 text-[11px]">
+                            Details
+                          </Button>
+                        </Link>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </GlassPanel>
+          )}
+
           <DebtSimplificationPanel
             groupId={groupId!}
             expenses={expenses}
@@ -221,7 +351,9 @@ export const SettlementsPage: React.FC = () => {
                 );
               }
 
-              return displayedSettlements.map((set) => (
+              return displayedSettlements.map((set) => {
+                const statusMeta = getSettlementStatusMeta(set.status);
+                return (
                 <Link
                   key={set.id}
                   to={`/groups/${groupId}/settlements/${set.id}`}
@@ -240,32 +372,35 @@ export const SettlementsPage: React.FC = () => {
                       <div className="flex items-center gap-2 mt-1 text-[10px] text-text-muted">
                         <span>
                           {set.currency !== group.baseCurrency
-                            ? `${set.amountMinor / 100} ${set.currency}`
+                            ? formatCurrency(set.amountMinor, set.currency)
                             : "Direct Transfer"}
                         </span>
                         <span>•</span>
                         <span>{formatTimestamp(set.createdAt)}</span>
                       </div>
+                      {set.paymentReference && (
+                        <div className="text-[10px] text-accent-cyan/90 mt-1 truncate max-w-[220px]">
+                          Ref: {set.paymentReference}
+                        </div>
+                      )}
                     </div>
                     <div className="text-right flex-shrink-0 flex items-center gap-3">
                       <div>
                         <span className="font-bold text-text-primary financial-number">
                           {formatCurrency(set.baseAmountMinor, group.baseCurrency)}
                         </span>
-                        {set.status === "voided" ? (
-                          <div className="text-[10px] text-danger mt-0.5 font-semibold">Voided</div>
-                        ) : (
-                          <div className="flex items-center justify-end gap-1 text-[10px] text-success/80 mt-0.5">
-                            <Check className="h-3 w-3" />
-                            <span>Cleared</span>
-                          </div>
-                        )}
+                        <div className="mt-0.5 flex justify-end">
+                          <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-semibold ${statusMeta.badgeClass}`}>
+                            {statusMeta.label}
+                          </span>
+                        </div>
                       </div>
                       <ArrowUpRight className="h-4 w-4 text-text-muted group-hover:text-text-primary transition-colors" />
                     </div>
                   </GlassPanel>
                 </Link>
-              ));
+                );
+              });
             })()}
           </div>
         </div>

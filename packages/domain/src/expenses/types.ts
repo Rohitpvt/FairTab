@@ -104,6 +104,8 @@ export interface ExpenseOperationReceipt {
   };
 }
 
+export type SettlementStatus = "pending_approval" | "active" | "rejected" | "cancelled" | "voided";
+
 export interface SettlementDocument {
   id: string;
   groupId: string;
@@ -113,8 +115,16 @@ export interface SettlementDocument {
   currency: string;
   baseAmountMinor: number; // in group base currency
   fx: ExpenseFX;
-  status: "active" | "voided";
+  status: SettlementStatus;
+  paymentReference?: string;
   voidReason?: string;
+  rejectionReason?: string;
+  approvedAt?: any;
+  approvedBy?: string; // uid
+  rejectedAt?: any;
+  rejectedBy?: string; // uid
+  cancelledAt?: any;
+  cancelledBy?: string; // uid
   createdAt: any;
   createdBy: string; // uid
   updatedAt: any;
@@ -136,8 +146,10 @@ export interface SettlementRevision {
   currency: string;
   baseAmountMinor: number;
   fx: ExpenseFX;
-  status: "active" | "voided";
+  status: SettlementStatus;
+  paymentReference?: string;
   voidReason?: string;
+  rejectionReason?: string;
   version: number;
   schemaVersion: number;
   operationId: string;
@@ -150,7 +162,7 @@ export interface SettlementRevision {
 export interface SettlementOperationReceipt {
   clientOperationId: string;
   groupId: string;
-  type: "create" | "void";
+  type: "create" | "approve" | "reject" | "cancel" | "void";
   actorUid: string;
   settlementId: string;
   payloadHash: string;
@@ -158,6 +170,7 @@ export interface SettlementOperationReceipt {
   result: {
     settlementId: string;
     version: number;
+    status?: SettlementStatus;
   };
 }
 
@@ -290,7 +303,7 @@ export interface RecurringOccurrenceDocument {
 
 export interface ParticipantPaymentDocument {
   memberId: string;
-  status: "paid" | "unpaid";
+  status: "paid" | "pending_approval" | "unpaid";
   settlementIds: string[];
   markedBy: string;
   markedAt: any;

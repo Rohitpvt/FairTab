@@ -1,26 +1,42 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect } from "react";
-import { Bell, UserPlus, Check, X, CheckCircle, XCircle, Smartphone, Settings, Send } from "lucide-react";
+import { Bell, UserPlus, Check, X, CheckCircle, XCircle, Smartphone, Settings, Send, HandCoins } from "lucide-react";
 import { Link } from "react-router-dom";
 import { PageContainer } from "../../components/layout/PageContainer";
 import { EmptyState } from "../../components/feedback/FeedbackStates";
 import { auth, db } from "../../infrastructure/firebase/firebase";
 import { collection, query, orderBy, onSnapshot } from "firebase/firestore";
 import { fairtabApi } from "../../infrastructure/api/fairtabApi";
+import { settlementService } from "../../infrastructure/firebase/settlementService";
 import { Button } from "../../components/ui/Button";
 import { NotificationItemSkeleton } from "../../components/ui/Skeleton";
 import { toast } from "sonner";
 import { webNotificationService } from "../../infrastructure/notifications/webNotificationService";
+import { formatCurrency } from "../../utils/format";
 
 interface NotificationItem {
   id: string;
-  type: "join_request" | "join_request_approved" | "join_request_declined";
-  status: "pending" | "approved" | "declined" | "read";
+  type:
+    | "join_request"
+    | "join_request_approved"
+    | "join_request_declined"
+    | "settlement_approval_request"
+    | "settlement_approved"
+    | "settlement_rejected";
+  status: "pending" | "approved" | "declined" | "cancelled" | "read";
   groupId: string;
   groupName: string;
   applicantUid?: string;
   applicantName?: string;
   requestedRole?: string;
+  settlementId?: string;
+  payerName?: string;
+  receiverName?: string;
+  amountMinor?: number;
+  currency?: string;
+  paymentReference?: string;
+  rejectionReason?: string;
+  actedByName?: string;
   createdAt?: any;
 }
 
@@ -100,6 +116,44 @@ export const NotificationsPage: React.FC = () => {
     }
   };
 
+  const handleSettlementResolution = async (
+    notif: NotificationItem,
+    action: "approve" | "reject"
+  ) => {
+    if (!notif.settlementId) return;
+    setProcessingId(`${notif.id}_${action}`);
+    try {
+      const live = await settlementService.getSettlement(notif.groupId, notif.settlementId);
+      if (!live) {
+        toast.info("Settlement record no longer exists.");
+        return;
+      }
+      if (live.status !== "pending_approval") {
+        toast.info(`This settlement was already marked as ${live.status}.`);
+        return;
+      }
+      const clientOperationId = `op-${crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2)}`;
+      const payload = {
+        clientOperationId,
+        groupId: notif.groupId,
+        settlementId: notif.settlementId,
+        expectedVersion: live.version,
+        ...(action === "reject" ? { reason: "Payment not received" } : {}),
+      };
+      if (action === "approve") {
+        await settlementService.approveSettlement(payload);
+        toast.success("Settlement approved and balances updated!");
+      } else {
+        await settlementService.rejectSettlement(payload);
+        toast.success("Settlement request declined.");
+      }
+    } catch (err: any) {
+      toast.error(err.message || `Failed to ${action} settlement.`);
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
   return (
     <PageContainer
       title="Notifications"
@@ -164,6 +218,7 @@ export const NotificationsPage: React.FC = () => {
           <div className="flex flex-col gap-3">
             {notifications.map((notif) => {
               const isPending = notif.status === "pending";
+              const isSettlementNotif = notif.type.startsWith("settlement_");
 
               return (
                 <div
@@ -171,7 +226,7 @@ export const NotificationsPage: React.FC = () => {
                   className="glass-elevated border border-white/10 rounded-2xl p-4 md:p-5 flex items-start gap-4 transition-all hover:border-white/15"
                 >
                   <div className="p-2.5 bg-accent-cyan/10 rounded-xl text-accent-cyan shrink-0 mt-0.5">
-                    <UserPlus className="h-5 w-5" />
+                    {isSettlementNotif ? <HandCoins className="h-5 w-5" /> : <UserPlus className="h-5 w-5" />}
                   </div>
 
                   <div className="flex-1 flex flex-col md:flex-row md:items-center justify-between gap-3 text-left">
@@ -194,13 +249,54 @@ export const NotificationsPage: React.FC = () => {
                             Your request to join group <span className="font-semibold text-text-primary">"{notif.groupName}"</span> has been approved!
                           </p>
                         </>
-                      ) : (
+                      ) : notif.type === "join_request_declined" ? (
                         <>
                           <h4 className="text-sm font-bold text-text-primary">
                             Request Declined
                           </h4>
                           <p className="text-xs text-text-secondary mt-1">
                             Your request to join group <span className="font-semibold text-text-primary">"{notif.groupName}"</span> was declined.
+                          </p>
+                        </>
+                      ) : notif.type === "settlement_approval_request" ? (
+                        <>
+                          <h4 className="text-sm font-bold text-text-primary">
+                            Settlement Approval Needed: {notif.payerName} → {notif.receiverName}
+                          </h4>
+                          <p className="text-xs text-text-secondary mt-1">
+                            <span className="font-semibold text-text-primary">
+                              {notif.amountMinor && notif.currency
+                                ? formatCurrency(notif.amountMinor, notif.currency)
+                                : "Repayment"}
+                            </span>{" "}
+                            in <span className="font-semibold text-text-primary">"{notif.groupName}"</span>.
+                            {notif.paymentReference ? ` Ref: ${notif.paymentReference}` : ""}
+                          </p>
+                        </>
+                      ) : notif.type === "settlement_approved" ? (
+                        <>
+                          <h4 className="text-sm font-bold text-text-primary">
+                            Settlement Confirmed ✓
+                          </h4>
+                          <p className="text-xs text-text-secondary mt-1">
+                            {notif.actedByName || notif.receiverName} confirmed{" "}
+                            <span className="font-semibold text-text-primary">
+                              {notif.amountMinor && notif.currency
+                                ? formatCurrency(notif.amountMinor, notif.currency)
+                                : "your repayment"}
+                            </span>{" "}
+                            in <span className="font-semibold text-text-primary">"{notif.groupName}"</span>.
+                          </p>
+                        </>
+                      ) : (
+                        <>
+                          <h4 className="text-sm font-bold text-text-primary">
+                            Settlement Declined
+                          </h4>
+                          <p className="text-xs text-text-secondary mt-1">
+                            {notif.actedByName || notif.receiverName} declined your repayment request in{" "}
+                            <span className="font-semibold text-text-primary">"{notif.groupName}"</span>
+                            {notif.rejectionReason ? `: "${notif.rejectionReason}"` : "."}
                           </p>
                         </>
                       )}
@@ -244,6 +340,59 @@ export const NotificationsPage: React.FC = () => {
                           </span>
                         )}
                       </div>
+                    )}
+
+                    {notif.type === "settlement_approval_request" && (
+                      <div className="flex gap-2 shrink-0 self-end md:self-center">
+                        {isPending ? (
+                          <>
+                            <Button
+                              onClick={() => handleSettlementResolution(notif, "reject")}
+                              variant="ghost"
+                              className="px-3 py-1.5 h-8 text-xs text-danger hover:bg-danger/5 border border-white/5"
+                              isLoading={processingId === `${notif.id}_reject`}
+                              disabled={processingId !== null}
+                            >
+                              <X className="h-3.5 w-3.5 mr-1" /> Reject
+                            </Button>
+                            <Button
+                              onClick={() => handleSettlementResolution(notif, "approve")}
+                              variant="gradient"
+                              className="px-3 py-1.5 h-8 text-xs"
+                              isLoading={processingId === `${notif.id}_approve`}
+                              disabled={processingId !== null}
+                            >
+                              <Check className="h-3.5 w-3.5 mr-1" /> Approve
+                            </Button>
+                          </>
+                        ) : (
+                          <Link
+                            to={`/groups/${notif.groupId}/settlements/${notif.settlementId}`}
+                            className="flex items-center gap-1 text-xs text-text-muted hover:text-text-primary"
+                          >
+                            {notif.status === "approved" ? (
+                              <>
+                                <CheckCircle className="h-3.5 w-3.5 text-success" /> Approved
+                              </>
+                            ) : notif.status === "cancelled" ? (
+                              <span>Cancelled</span>
+                            ) : (
+                              <>
+                                <XCircle className="h-3.5 w-3.5 text-danger" /> Declined
+                              </>
+                            )}
+                          </Link>
+                        )}
+                      </div>
+                    )}
+
+                    {(notif.type === "settlement_approved" || notif.type === "settlement_rejected") && notif.settlementId && (
+                      <Link
+                        to={`/groups/${notif.groupId}/settlements/${notif.settlementId}`}
+                        className="text-xs text-accent-cyan hover:underline shrink-0 self-end md:self-center"
+                      >
+                        View Record
+                      </Link>
                     )}
                   </div>
                 </div>

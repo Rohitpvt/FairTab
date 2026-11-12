@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, HandCoins, AlertTriangle, History, Trash2, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, HandCoins, AlertTriangle, History, Trash2, CheckCircle2, Clock, Check, X } from "lucide-react";
 import { toast } from "sonner";
 import { PageContainer } from "../../components/layout/PageContainer";
 import { GlassPanel } from "../../components/ui/GlassPanel";
@@ -16,6 +16,11 @@ import type { GroupDocument } from "../groups/groupSchema";
 import type { GroupMemberDocument } from "../groups/memberSchema";
 import type { SettlementDocument, SettlementRevision } from "@fairtab/domain";
 import { useMemberNameResolver } from "../../hooks/useMemberNameResolver";
+import {
+  canApproveOrRejectSettlement,
+  canCancelPendingSettlement,
+  canVoidActiveSettlement,
+} from "./settlementStatus";
 
 export const SettlementDetailPage: React.FC = () => {
   const { groupId, settlementId } = useParams<{ groupId: string; settlementId: string }>();
@@ -30,6 +35,8 @@ export const SettlementDetailPage: React.FC = () => {
   // Dialog State
   const [isVoidOpen, setIsVoidOpen] = useState(false);
   const [voidReason, setVoidReason] = useState("");
+  const [isRejectOpen, setIsRejectOpen] = useState(false);
+  const [rejectReason, setRejectReason] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const isOffline = !navigator.onLine;
@@ -126,41 +133,82 @@ export const SettlementDetailPage: React.FC = () => {
   };
 
   const activeMembers = members.filter((m) => m.status === "active");
-  const currentUserMember = activeMembers.find((m) => m.userId === auth.currentUser?.uid);
+  const currentUid = auth.currentUser?.uid;
+  const currentUserMember = activeMembers.find((m) => m.userId === currentUid);
   const currentUserRole = currentUserMember?.role || "viewer";
 
-  const payerMember = activeMembers.find((m) => m.id === settlement.payerId);
-  const receiverMember = activeMembers.find((m) => m.id === settlement.receiverId);
+  const canApproveOrReject =
+    group.status === "active" &&
+    canApproveOrRejectSettlement(settlement, currentUid, currentUserRole, members);
+  const canCancel =
+    group.status === "active" &&
+    canCancelPendingSettlement(settlement, currentUid, currentUserRole, members);
+  const canVoid =
+    group.status === "active" &&
+    canVoidActiveSettlement(settlement, currentUid, currentUserRole, members);
 
-  const isPayerPlaceholder = payerMember?.kind === "placeholder";
-  const isReceiverPlaceholder = receiverMember?.kind === "placeholder";
-  const isPlaceholderInvolved = isPayerPlaceholder || isReceiverPlaceholder;
-
-  const isOwnerOrAdmin = currentUserRole === "owner" || currentUserRole === "admin";
-  const isViewer = currentUserRole === "viewer";
-
-  // Voiding Permission Check:
-  // 1. Viewers cannot void
-  // 2. Placeholder involved: only Admin/Owner can void
-  // 3. Non-placeholder: Admin/Owner can void any. Normal member can only void if:
-  //    - They created it (createdBy === auth.uid)
-  //    AND
-  //    - They are involved in it (payer.userId === auth.uid or receiver.userId === auth.uid)
-  let canVoid = false;
-  if (!isViewer && settlement.status === "active") {
-    if (isOwnerOrAdmin) {
-      canVoid = true;
-    } else if (!isPlaceholderInvolved) {
-      const isCreator = settlement.createdBy === auth.currentUser?.uid;
-      const isParticipant =
-        (payerMember && payerMember.userId === auth.currentUser?.uid) ||
-        (receiverMember && receiverMember.userId === auth.currentUser?.uid);
-
-      if (isCreator && isParticipant) {
-        canVoid = true;
-      }
+  const handleApprove = async () => {
+    if (!canApproveOrReject || !groupId || !settlementId) return;
+    setIsSubmitting(true);
+    try {
+      const clientOperationId = `op-${crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2)}`;
+      await settlementService.approveSettlement({
+        clientOperationId,
+        groupId,
+        settlementId,
+        expectedVersion: settlement.version,
+      });
+      toast.success("Settlement approved and balances updated!");
+    } catch (error: unknown) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      toast.error(err.message || "Failed to approve settlement.");
+    } finally {
+      setIsSubmitting(false);
     }
-  }
+  };
+
+  const handleReject = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!canApproveOrReject || !groupId || !settlementId) return;
+    setIsSubmitting(true);
+    try {
+      const clientOperationId = `op-${crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2)}`;
+      await settlementService.rejectSettlement({
+        clientOperationId,
+        groupId,
+        settlementId,
+        expectedVersion: settlement.version,
+        reason: rejectReason.trim() || "Payment not received",
+      });
+      toast.success("Settlement request rejected.");
+      setIsRejectOpen(false);
+    } catch (error: unknown) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      toast.error(err.message || "Failed to reject settlement.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleCancel = async () => {
+    if (!canCancel || !groupId || !settlementId) return;
+    setIsSubmitting(true);
+    try {
+      const clientOperationId = `op-${crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2)}`;
+      await settlementService.cancelSettlement({
+        clientOperationId,
+        groupId,
+        settlementId,
+        expectedVersion: settlement.version,
+      });
+      toast.success("Pending settlement request cancelled.");
+    } catch (error: unknown) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      toast.error(err.message || "Failed to cancel settlement request.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const handleVoid = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -197,7 +245,7 @@ export const SettlementDetailPage: React.FC = () => {
     }
   };
 
-  const isVoided = settlement.status === "voided";
+  const status = settlement.status;
 
   return (
     <PageContainer
@@ -205,7 +253,7 @@ export const SettlementDetailPage: React.FC = () => {
       description="Detailed ledger audit trail and revision log."
     >
       <div className="max-w-3xl mx-auto flex flex-col gap-6">
-        <div className="flex justify-between items-center">
+        <div className="flex flex-wrap justify-between items-center gap-2">
           <Button
             variant="ghost"
             size="sm"
@@ -216,17 +264,57 @@ export const SettlementDetailPage: React.FC = () => {
             Back
           </Button>
 
-          {canVoid && (
-            <Button
-              variant="danger"
-              size="sm"
-              className="flex items-center gap-1.5"
-              onClick={() => setIsVoidOpen(true)}
-            >
-              <Trash2 className="h-4 w-4" />
-              Void Settlement
-            </Button>
-          )}
+          <div className="flex items-center gap-2">
+            {canApproveOrReject && (
+              <>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="flex items-center gap-1.5 text-danger hover:bg-danger/10"
+                  disabled={isSubmitting || isOffline}
+                  onClick={() => setIsRejectOpen(true)}
+                >
+                  <X className="h-4 w-4" />
+                  Reject
+                </Button>
+                <Button
+                  variant="gradient"
+                  size="sm"
+                  className="flex items-center gap-1.5"
+                  disabled={isSubmitting || isOffline}
+                  onClick={handleApprove}
+                >
+                  <Check className="h-4 w-4" />
+                  Approve Receipt
+                </Button>
+              </>
+            )}
+
+            {canCancel && (
+              <Button
+                variant="secondary"
+                size="sm"
+                className="flex items-center gap-1.5"
+                disabled={isSubmitting || isOffline}
+                onClick={handleCancel}
+              >
+                <X className="h-4 w-4" />
+                Cancel Request
+              </Button>
+            )}
+
+            {canVoid && (
+              <Button
+                variant="danger"
+                size="sm"
+                className="flex items-center gap-1.5"
+                onClick={() => setIsVoidOpen(true)}
+              >
+                <Trash2 className="h-4 w-4" />
+                Void Settlement
+              </Button>
+            )}
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -249,7 +337,41 @@ export const SettlementDetailPage: React.FC = () => {
               </div>
 
               {/* Status Banner */}
-              {isVoided ? (
+              {status === "pending_approval" ? (
+                <div className="p-4 rounded-lg bg-warning/10 border border-warning/20 text-warning text-xs flex gap-2.5">
+                  <Clock className="h-4 w-4 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-bold">Pending Recipient Confirmation</p>
+                    <p className="text-text-muted mt-1">
+                      Waiting for{" "}
+                      {members.find((m) => m.id === settlement.receiverId)?.kind === "placeholder"
+                        ? "a group Admin or Owner"
+                        : getMemberName(settlement.receiverId)}{" "}
+                      to confirm receipt. Balances are not updated until approved.
+                    </p>
+                  </div>
+                </div>
+              ) : status === "rejected" ? (
+                <div className="p-4 rounded-lg bg-danger/10 border border-danger/10 text-danger text-xs flex gap-2.5">
+                  <AlertTriangle className="h-4 w-4 shrink-0" />
+                  <div>
+                    <p className="font-bold">Settlement Request Rejected</p>
+                    <p className="text-text-muted mt-1">
+                      Reason: "{settlement.rejectionReason || "No reason provided"}"
+                    </p>
+                  </div>
+                </div>
+              ) : status === "cancelled" ? (
+                <div className="p-4 rounded-lg bg-white/5 border border-white/10 text-text-secondary text-xs flex gap-2.5">
+                  <AlertTriangle className="h-4 w-4 shrink-0" />
+                  <div>
+                    <p className="font-bold text-text-primary">Settlement Request Cancelled</p>
+                    <p className="text-text-muted mt-1">
+                      This request was withdrawn before approval and did not affect balances.
+                    </p>
+                  </div>
+                </div>
+              ) : status === "voided" ? (
                 <div className="p-4 rounded-lg bg-danger/10 border border-danger/10 text-danger text-xs flex gap-2.5">
                   <AlertTriangle className="h-4 w-4 shrink-0" />
                   <div>
@@ -277,6 +399,14 @@ export const SettlementDetailPage: React.FC = () => {
                   <span className="text-text-secondary">Receiver (Recipient)</span>
                   <span className="font-semibold text-text-primary">{getMemberName(settlement.receiverId)}</span>
                 </div>
+                {settlement.paymentReference && (
+                  <div className="flex justify-between gap-4 border-b border-white/5 pb-2">
+                    <span className="text-text-secondary shrink-0">Payment Reference</span>
+                    <span className="font-semibold text-accent-cyan text-right break-words">
+                      {settlement.paymentReference}
+                    </span>
+                  </div>
+                )}
                 <div className="flex justify-between border-b border-white/5 pb-2">
                   <span className="text-text-secondary">Transfer Currency</span>
                   <span className="font-semibold text-text-primary">{settlement.currency}</span>
@@ -332,9 +462,27 @@ export const SettlementDetailPage: React.FC = () => {
                     </span>
                   </div>
                   <div className="text-text-muted flex justify-between">
-                    <span>Action: {rev.status === "voided" ? "Voided" : "Created"}</span>
+                    <span>
+                      Action:{" "}
+                      {rev.status === "pending_approval"
+                        ? "Requested"
+                        : rev.status === "active"
+                        ? rev.version === 1
+                          ? "Created"
+                          : "Approved"
+                        : rev.status === "rejected"
+                        ? "Rejected"
+                        : rev.status === "cancelled"
+                        ? "Cancelled"
+                        : "Voided"}
+                    </span>
                     <span>By: {getMemberName(rev.createdBy)}</span>
                   </div>
+                  {rev.rejectionReason && (
+                    <div className="text-[10px] text-danger mt-1 bg-danger/5 p-1.5 rounded border border-danger/10">
+                      Rejection Reason: "{rev.rejectionReason}"
+                    </div>
+                  )}
                   {rev.voidReason && (
                     <div className="text-[10px] text-danger mt-1 bg-danger/5 p-1.5 rounded border border-danger/10">
                       Void Reason: "{rev.voidReason}"
@@ -376,6 +524,41 @@ export const SettlementDetailPage: React.FC = () => {
               placeholder="e.g. Accidental transfer duplication"
               value={voidReason}
               onChange={(e) => setVoidReason(e.target.value)}
+              className="px-3.5 py-2.5 bg-surface-primary border border-white/10 rounded-lg text-sm text-text-primary focus:outline-none focus:border-accent-cyan"
+            />
+          </div>
+        </form>
+      </Dialog>
+
+      {/* Reject Dialog */}
+      <Dialog
+        isOpen={isRejectOpen}
+        onOpenChange={setIsRejectOpen}
+        title="Reject Settlement Request"
+        description="Decline this settlement request if you have not received the payment yet."
+        footer={
+          <div className="flex gap-2 w-full justify-end">
+            <Button variant="ghost" onClick={() => setIsRejectOpen(false)} disabled={isSubmitting} size="sm">
+              Back
+            </Button>
+            <Button variant="danger" onClick={handleReject} disabled={isSubmitting} size="sm">
+              {isSubmitting ? "Rejecting..." : "Confirm Reject"}
+            </Button>
+          </div>
+        }
+      >
+        <form onSubmit={handleReject} className="flex flex-col gap-3.5 mt-2">
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="reject-reason" className="text-xs font-semibold text-text-secondary">
+              Reason (Optional)
+            </label>
+            <input
+              id="reject-reason"
+              type="text"
+              maxLength={200}
+              placeholder="e.g. Payment not received in bank/UPI yet"
+              value={rejectReason}
+              onChange={(e) => setRejectReason(e.target.value)}
               className="px-3.5 py-2.5 bg-surface-primary border border-white/10 rounded-lg text-sm text-text-primary focus:outline-none focus:border-accent-cyan"
             />
           </div>

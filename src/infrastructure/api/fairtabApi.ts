@@ -28,6 +28,9 @@ const mapPathToFunction = (path: string): string => {
     }
     if (category === "settlements") {
       if (action === "create") return "createSettlement";
+      if (action === "approve") return "approveSettlement";
+      if (action === "reject") return "rejectSettlement";
+      if (action === "cancel") return "cancelSettlement";
       if (action === "void") return "voidSettlement";
       if (action === "settle-split") return "settleExpenseSplit";
       if (action === "unsettle-split") return "unsettleExpenseSplit";
@@ -199,6 +202,9 @@ export const fairtabApi = {
   },
   settlements: {
     create: (data: unknown) => postRequest<unknown, unknown>("/api/settlements/create", data),
+    approve: (data: unknown) => postRequest<unknown, unknown>("/api/settlements/approve", data),
+    reject: (data: unknown) => postRequest<unknown, unknown>("/api/settlements/reject", data),
+    cancel: (data: unknown) => postRequest<unknown, unknown>("/api/settlements/cancel", data),
     void: (data: unknown) => postRequest<unknown, unknown>("/api/settlements/void", data),
     settleSplit: (data: unknown) => postRequest<unknown, unknown>("/api/settlements/settle-split", data),
     unsettleSplit: (data: unknown) => postRequest<unknown, unknown>("/api/settlements/unsettle-split", data),

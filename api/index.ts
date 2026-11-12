@@ -14,6 +14,9 @@ import {
 } from "../functions/src/recurringOperations.js";
 import {
   handleCreateSettlement,
+  handleApproveSettlement,
+  handleRejectSettlement,
+  handleCancelSettlement,
   handleVoidSettlement,
   handleSettleExpenseSplit,
   handleUnsettleExpenseSplit,
@@ -115,6 +118,9 @@ const standardHandlers: Record<string, (data: any, context: any) => Promise<any>
   "/api/recurring/skip-occurrence": handleSkipRecurringOccurrence,
   "/api/recurring/update-template": handleUpdateRecurringTemplate,
   "/api/settlements/create": handleCreateSettlement,
+  "/api/settlements/approve": handleApproveSettlement,
+  "/api/settlements/reject": handleRejectSettlement,
+  "/api/settlements/cancel": handleCancelSettlement,
   "/api/settlements/void": handleVoidSettlement,
   "/api/settlements/settle-split": handleSettleExpenseSplit,
   "/api/settlements/unsettle-split": handleUnsettleExpenseSplit,
