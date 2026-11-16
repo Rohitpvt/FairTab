@@ -9,7 +9,7 @@ export const Skeleton: React.FC<SkeletonProps> = ({ className = "", ...props }) 
     <div
       role="presentation"
       aria-hidden="true"
-      className={`bg-surface-elevated animate-pulse motion-reduce:animate-none rounded-md ${className}`}
+      className={`bg-surface-elevated skeleton-shimmer motion-reduce:animate-none rounded-md ${className}`}
       {...props}
     />
   );

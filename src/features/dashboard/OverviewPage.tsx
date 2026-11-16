@@ -419,9 +419,9 @@ export const OverviewPage: React.FC = () => {
       <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar mb-2">
         <button
           onClick={() => setFilterSegment("all")}
-          className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all duration-150 cursor-pointer ${
+          className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 active:scale-95 cursor-pointer ${
             filterSegment === "all"
-              ? "bg-[#E2C854] text-[#080808] shadow-sm"
+              ? "bg-accent-gold text-bg-base font-bold shadow-sm"
               : "bg-surface-primary border border-border-color text-text-secondary hover:text-text-primary hover:bg-surface-secondary"
           }`}
         >
@@ -429,7 +429,7 @@ export const OverviewPage: React.FC = () => {
         </button>
         <button
           onClick={() => setFilterSegment("owed")}
-          className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all duration-150 cursor-pointer ${
+          className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 active:scale-95 cursor-pointer ${
             filterSegment === "owed"
               ? "bg-success text-[#080808] font-bold shadow-sm"
               : "bg-surface-primary border border-border-color text-text-secondary hover:text-text-primary hover:bg-surface-secondary"
@@ -439,7 +439,7 @@ export const OverviewPage: React.FC = () => {
         </button>
         <button
           onClick={() => setFilterSegment("owe")}
-          className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all duration-150 cursor-pointer ${
+          className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 active:scale-95 cursor-pointer ${
             filterSegment === "owe"
               ? "bg-danger text-white font-bold shadow-sm"
               : "bg-surface-primary border border-border-color text-text-secondary hover:text-text-primary hover:bg-surface-secondary"

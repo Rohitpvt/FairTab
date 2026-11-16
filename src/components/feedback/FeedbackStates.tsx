@@ -20,10 +20,25 @@ export const RoutePending: React.FC = () => {
     <div
       role="status"
       aria-live="polite"
-      className="flex flex-col items-center justify-center min-h-[400px] w-full gap-4 text-text-muted"
+      className="w-full max-w-6xl mx-auto px-4 py-6 md:px-8 md:py-8 flex flex-col gap-6 animate-fade-in"
     >
-      <CoolLoader size="sm" />
-      <span className="text-xs font-semibold tracking-wider uppercase text-text-muted">Loading Section...</span>
+      {/* Top glowing navigation progress bar */}
+      <div className="fixed top-0 left-0 right-0 h-[2.5px] z-[100] bg-white/5 overflow-hidden">
+        <div className="h-full bg-gradient-to-r from-accent-cyan via-accent-gold to-accent-violet animate-[shimmer_1.5s_infinite_linear] w-[60%]" />
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <div className="skeleton-shimmer h-7 w-48 rounded-lg" />
+        <div className="skeleton-shimmer h-4 w-72 rounded-md opacity-60" />
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="skeleton-shimmer h-24 rounded-2xl" />
+        <div className="skeleton-shimmer h-24 rounded-2xl" />
+        <div className="skeleton-shimmer h-24 rounded-2xl" />
+      </div>
+
+      <div className="skeleton-shimmer h-64 rounded-2xl w-full" />
     </div>
   );
 };

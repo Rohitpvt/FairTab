@@ -80,11 +80,11 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     <DialogPrimitive.Root open={isOpen} onOpenChange={onOpenChange}>
       <DialogPrimitive.Portal>
         {/* Backdrop overlay */}
-        <DialogPrimitive.Overlay className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 transition-opacity" />
+        <DialogPrimitive.Overlay className="dialog-overlay fixed inset-0 bg-black/60 backdrop-blur-sm z-50 transition-opacity" />
         
         {/* Command dialog container */}
         <DialogPrimitive.Content
-          className="fixed top-[15%] left-1/2 -translate-x-1/2 w-[90vw] max-w-lg glass-elevated rounded-xl border border-white/10 shadow-2xl focus:outline-none z-50 overflow-hidden"
+          className="command-palette-content fixed top-[15%] left-1/2 -translate-x-1/2 w-[90vw] max-w-lg glass-elevated rounded-xl border border-white/10 shadow-2xl focus:outline-none z-50 overflow-hidden"
           onOpenAutoFocus={(e) => e.preventDefault()}
         >
           {/* Header search bar */}

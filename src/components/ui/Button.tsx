@@ -27,12 +27,12 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       "relative inline-flex items-center justify-center font-medium transition-all duration-150 ease-out focus-visible:outline-2 focus-visible:outline-accent-gold focus-visible:outline-offset-2 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none disabled:active:scale-100";
 
     const variantStyles = {
-      primary: "bg-[#E2C854] text-[#080808] hover:bg-[#ebd56c] font-semibold border border-[#E2C854]/40 shadow-sm",
+      primary: "bg-accent-gold text-bg-base hover:bg-accent-gold-hover font-semibold border border-accent-gold/40 shadow-sm",
       secondary: "glass-subtle text-text-primary hover:bg-surface-hover hover:border-border-color border border-border-color/80 shadow-sm",
       danger: "bg-danger text-white hover:bg-opacity-90 border border-transparent shadow-sm",
       ghost: "text-text-secondary hover:bg-surface-hover hover:text-text-primary border border-transparent",
       gradient:
-        "bg-[#E2C854] text-[#080808] hover:bg-[#ebd56c] font-semibold border border-[#E2C854]/40 shadow-sm",
+        "bg-accent-gold text-bg-base hover:bg-accent-gold-hover font-semibold border border-accent-gold/40 shadow-sm",
     };
 
     const sizeStyles = {

@@ -65,12 +65,12 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({ isOpen, onOpenChange
     <RadixDialog.Root open={isOpen} onOpenChange={onOpenChange}>
       <RadixDialog.Portal>
         {/* Backdrop Overlay */}
-        <RadixDialog.Overlay className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 transition-all duration-300" />
+        <RadixDialog.Overlay className="dialog-overlay fixed inset-0 bg-black/60 backdrop-blur-sm z-40" />
 
         {/* Bottom Sheet / Drawer Content */}
         <RadixDialog.Content
           aria-describedby={undefined}
-          className="fixed bottom-0 left-0 right-0 max-h-[85vh] z-50 overflow-hidden rounded-t-3xl border-t border-white/15 bg-surface-primary/95 backdrop-blur-2xl text-text-primary shadow-2xl focus:outline-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom duration-300 flex flex-col"
+          className="drawer-content fixed bottom-0 left-0 right-0 max-h-[85vh] z-50 overflow-hidden rounded-t-3xl border-t border-white/15 bg-surface-primary/95 backdrop-blur-2xl text-text-primary shadow-2xl focus:outline-none flex flex-col"
         >
           {/* Grab Handle */}
           <div className="flex justify-center pt-3 pb-1">
@@ -106,6 +106,7 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({ isOpen, onOpenChange
                 <NavLink
                   key={item.path}
                   to={item.path}
+                  viewTransition
                   onClick={() => {
                     triggerHaptic("selection");
                     onOpenChange(false);

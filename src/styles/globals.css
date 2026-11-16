@@ -46,6 +46,12 @@
 }
 
 /* Custom Base Styles */
+html {
+  scroll-behavior: smooth;
+  overscroll-behavior-y: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
 body {
   margin: 0;
   font-family: Inter, Geist, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -55,6 +61,182 @@ body {
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
   transition: background-color var(--duration-standard) var(--ease-standard), color var(--duration-standard) var(--ease-standard);
+}
+
+/* =========================================
+   View Transitions API (Smooth Route Morphing)
+   ========================================= */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 180ms;
+  animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+::view-transition-old(root) {
+  animation-name: fadeOut;
+}
+
+::view-transition-new(root) {
+  animation-name: fadeIn;
+}
+
+/* =========================================
+   Hardware-Accelerated Animation Keyframes
+   ========================================= */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes dialogZoomIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -48%) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+@keyframes dialogZoomOut {
+  from {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translate(-50%, -48%) scale(0.96);
+  }
+}
+
+@keyframes drawerSlideIn {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes drawerSlideOut {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(100%);
+  }
+}
+
+@keyframes commandPaletteIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -10px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+}
+
+@keyframes commandPaletteOut {
+  from {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translate(-50%, -10px) scale(0.98);
+  }
+}
+
+/* Animation utility classes */
+.animate-fade-in {
+  animation: fadeIn 200ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-fade-out {
+  animation: fadeOut 150ms ease-in forwards;
+}
+
+/* Radix Dialog Backdrop Overlay */
+.dialog-overlay[data-state="open"],
+[data-state="open"] > .dialog-overlay,
+[data-state="open"].dialog-overlay {
+  animation: fadeIn 180ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.dialog-overlay[data-state="closed"],
+[data-state="closed"] > .dialog-overlay,
+[data-state="closed"].dialog-overlay {
+  animation: fadeOut 140ms ease-in forwards;
+}
+
+/* Radix Dialog Content (Centered Pop) */
+.dialog-content[data-state="open"],
+[data-state="open"].dialog-content {
+  animation: dialogZoomIn 220ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.dialog-content[data-state="closed"],
+[data-state="closed"].dialog-content {
+  animation: dialogZoomOut 150ms ease-in forwards;
+}
+
+/* Mobile Bottom Sheet Drawer */
+.drawer-content[data-state="open"],
+[data-state="open"].drawer-content {
+  animation: drawerSlideIn 280ms cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+.drawer-content[data-state="closed"],
+[data-state="closed"].drawer-content {
+  animation: drawerSlideOut 200ms ease-in forwards;
+}
+
+/* Command Palette Dialog */
+.command-palette-content[data-state="open"],
+[data-state="open"].command-palette-content {
+  animation: commandPaletteIn 180ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.command-palette-content[data-state="closed"],
+[data-state="closed"].command-palette-content {
+  animation: commandPaletteOut 140ms ease-in forwards;
+}
+
+/* Shimmer Skeleton Wave */
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    hsl(var(--surface-elevated)) 0%,
+    hsl(var(--surface-hover)) 50%,
+    hsl(var(--surface-elevated)) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.8s infinite linear;
+}
+
+/* Accessible Soft Glow Focus */
+input:not([type="checkbox"]):not([type="radio"]):focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: none;
+  border-color: hsl(var(--accent-gold));
+  box-shadow: 0 0 0 3px hsl(var(--accent-gold) / 0.18);
 }
 
 /* App Background Composition */
@@ -223,6 +405,7 @@ body {
   pointer-events: none;
   z-index: 0;
   overflow: hidden;
+  contain: strict;
 }
 
 .ambient-blob {
@@ -232,6 +415,7 @@ body {
   opacity: 0.15;
   animation: ambientFloat 24s infinite alternate cubic-bezier(0.45, 0.05, 0.55, 0.95);
   will-change: transform;
+  transform: translate3d(0, 0, 0);
 }
 
 .light .ambient-blob {

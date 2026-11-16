@@ -73,10 +73,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <NavLink
               key={item.path}
               to={item.path}
+              viewTransition
               className={({ isActive }) =>
                 `flex items-center px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 group relative ${
                   isActive
-                    ? "bg-[#E2C854] text-[#080808] font-bold shadow-sm"
+                    ? "bg-accent-gold text-bg-base font-bold shadow-sm"
                     : "text-text-secondary hover:bg-surface-hover hover:text-text-primary active:scale-[0.98]"
                 } ${isCollapsed ? "justify-center" : "gap-3"}`
               }

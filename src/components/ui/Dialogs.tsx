@@ -25,11 +25,11 @@ export const Dialog: React.FC<DialogProps> = ({
     <RadixDialog.Root open={isOpen} onOpenChange={onOpenChange}>
       <RadixDialog.Portal>
         {/* Overlay backdrop */}
-        <RadixDialog.Overlay className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 transition-opacity duration-150 data-[state=open]:animate-fade-in data-[state=closed]:animate-fade-out" />
+        <RadixDialog.Overlay className="dialog-overlay fixed inset-0 bg-black/60 backdrop-blur-sm z-50 transition-opacity duration-150" />
         
         {/* Central desktop/mobile dialog overlay */}
         <RadixDialog.Content
-          className={`fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[94vw] sm:w-[90vw] max-w-lg glass-elevated p-4 sm:p-6 rounded-2xl border border-white/10 shadow-2xl focus:outline-none z-50 transition-all duration-180 ease-out data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 max-h-[90vh] flex flex-col ${className}`}
+          className={`dialog-content fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[94vw] sm:w-[90vw] max-w-lg glass-elevated p-4 sm:p-6 rounded-2xl border border-white/10 shadow-2xl focus:outline-none z-50 max-h-[90vh] flex flex-col ${className}`}
           onCloseAutoFocus={(e) => {
             const dashboardTrigger = Array.from(document.querySelectorAll("button")).find(b => b.textContent?.trim() === "New Expense");
             const mobileTrigger = document.querySelector('button[aria-label="Add new expense"]') as HTMLButtonElement;
@@ -96,11 +96,11 @@ export const BottomSheet: React.FC<DialogProps> = ({
     <RadixDialog.Root open={isOpen} onOpenChange={onOpenChange}>
       <RadixDialog.Portal>
         {/* Overlay backdrop */}
-        <RadixDialog.Overlay className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50" />
+        <RadixDialog.Overlay className="dialog-overlay fixed inset-0 bg-black/60 backdrop-blur-sm z-50" />
         
         {/* Bottom sheet optimized for mobile viewports */}
         <RadixDialog.Content
-          className={`fixed bottom-0 left-0 right-0 w-full max-h-[85vh] glass-elevated p-6 rounded-t-2xl border-t border-white/10 shadow-2xl focus:outline-none z-50 transition-transform duration-200 ease-out transform translate-y-0 data-[state=closed]:translate-y-full ${className}`}
+          className={`drawer-content fixed bottom-0 left-0 right-0 w-full max-h-[85vh] glass-elevated p-6 rounded-t-2xl border-t border-white/10 shadow-2xl focus:outline-none z-50 flex flex-col ${className}`}
         >
           <div className="flex flex-col gap-4">
             {/* Visual handle for swiping/pulling */}
