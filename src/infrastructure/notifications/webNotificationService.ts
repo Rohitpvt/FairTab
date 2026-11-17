@@ -181,9 +181,16 @@ export class WebNotificationService {
         data: { ...options?.data, url: targetUrl },
       });
 
-      notif.onclick = () => {
-        window.focus();
-        window.location.href = targetUrl;
+      notif.onclick = (e) => {
+        try {
+          e.preventDefault();
+          window.focus();
+          if (window.location.href !== targetUrl) {
+            window.location.href = targetUrl;
+          }
+        } catch (focusErr) {
+          console.warn("Fallback notification focus error:", focusErr);
+        }
       };
       return true;
     } catch (err) {

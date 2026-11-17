@@ -91,8 +91,9 @@ self.addEventListener("push", (event) => {
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
 
+  const baseUrl = self.location.origin;
   const rawUrl = event.notification.data?.url;
-  let targetUrl = "https://fairtab-48340.web.app/#/overview";
+  let targetUrl = `${baseUrl}/#/overview`;
 
   if (rawUrl) {
     if (rawUrl.startsWith("http://") || rawUrl.startsWith("https://")) {
@@ -100,35 +101,44 @@ self.addEventListener("notificationclick", (event) => {
       if (rawUrl.includes("rohitpvt.github.io")) {
         const hashIdx = rawUrl.indexOf("#");
         const hashPart = hashIdx !== -1 ? rawUrl.substring(hashIdx) : "#/overview";
-        targetUrl = `https://fairtab-48340.web.app/${hashPart}`;
+        targetUrl = `${baseUrl}/${hashPart}`;
       } else {
         targetUrl = rawUrl;
       }
     } else if (rawUrl.startsWith("#")) {
-      targetUrl = `https://fairtab-48340.web.app/${rawUrl}`;
+      targetUrl = `${baseUrl}/${rawUrl}`;
     } else if (rawUrl.startsWith("/")) {
-      targetUrl = `https://fairtab-48340.web.app${rawUrl}`;
+      targetUrl = `${baseUrl}${rawUrl}`;
     }
   }
 
   event.waitUntil(
-    self.clients
-      .matchAll({ type: "window", includeUncontrolled: true })
-      .then((clientList) => {
-        // If a window is already open, focus it and navigate
-        for (const client of clientList) {
-          if ("focus" in client) {
-            client.focus();
-            if (targetUrl && "navigate" in client) {
-              (client as WindowClient).navigate(targetUrl);
+    (async () => {
+      // Match all window clients including uncontrolled ones under this origin/scope
+      const clientList = await self.clients.matchAll({
+        type: "window",
+        includeUncontrolled: true,
+      });
+
+      // 1. If an existing tab/window is open, focus it and bring it forward immediately
+      for (const client of clientList) {
+        if ("focus" in client) {
+          try {
+            const focusedClient = await (client as WindowClient).focus();
+            if (targetUrl && "navigate" in focusedClient && focusedClient.url !== targetUrl) {
+              await focusedClient.navigate(targetUrl);
             }
-            return;
+            return focusedClient;
+          } catch (err) {
+            console.warn("[SW] Focus failed on client, trying next:", err);
           }
         }
-        // Otherwise, open a new window
-        if (self.clients.openWindow) {
-          return self.clients.openWindow(targetUrl);
-        }
-      })
+      }
+
+      // 2. Otherwise, open a new window and bring it to the foreground
+      if (self.clients.openWindow) {
+        return await self.clients.openWindow(targetUrl);
+      }
+    })()
   );
 });
