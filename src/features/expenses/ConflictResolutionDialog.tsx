@@ -35,8 +35,8 @@ export const ConflictResolutionDialog: React.FC<ConflictResolutionDialogProps> =
   return (
     <Dialog.Root open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 bg-background-primary/80 backdrop-blur-sm z-50 transition-opacity" />
-        <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-4xl max-h-[90vh] overflow-y-auto bg-surface-primary border border-white/10 rounded-2xl p-6 shadow-2xl z-50 text-left flex flex-col gap-6">
+        <Dialog.Overlay className="dialog-overlay fixed inset-0 bg-background-primary/80 backdrop-blur-sm z-50 transition-opacity" />
+        <Dialog.Content className="dialog-content fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[95vw] max-w-4xl max-h-[90vh] overflow-y-auto bg-surface-primary border border-white/10 rounded-2xl p-6 shadow-2xl z-50 text-left flex flex-col gap-6">
           
           {/* Header */}
           <div className="flex justify-between items-start">
