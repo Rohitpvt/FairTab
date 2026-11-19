@@ -4,7 +4,7 @@ import { ArrowLeft, HandCoins, AlertTriangle, Info } from "lucide-react";
 import { toast } from "sonner";
 import { PageContainer } from "../../components/layout/PageContainer";
 import { GlassPanel } from "../../components/ui/GlassPanel";
-import { Button, GradientButton } from "../../components/ui/Button";
+import { Button } from "../../components/ui/Button";
 import { groupService } from "../../infrastructure/firebase/groupService";
 import { expenseService } from "../../infrastructure/firebase/expenseService";
 import { settlementService } from "../../infrastructure/firebase/settlementService";
@@ -433,7 +433,8 @@ export const RecordSettlementFlow: React.FC = () => {
               >
                 Cancel
               </Button>
-              <GradientButton
+              <Button
+                variant="gradient"
                 type="submit"
                 disabled={
                   isSubmitting ||
@@ -443,7 +444,7 @@ export const RecordSettlementFlow: React.FC = () => {
                 }
               >
                 {isSubmitting ? "Recording..." : "Save Settlement"}
-              </GradientButton>
+              </Button>
             </div>
           </form>
         </GlassPanel>

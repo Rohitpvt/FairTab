@@ -13,19 +13,19 @@ export const triggerHaptic = (style: HapticStyle = "light"): void => {
       switch (style) {
         case "selection":
         case "light":
-          navigator.vibrate(8); // Ultra-light tactile tick
+          navigator.vibrate(8);
           break;
         case "medium":
-          navigator.vibrate(18); // Definite click feel
+          navigator.vibrate(18);
           break;
         case "heavy":
-          navigator.vibrate(30); // Prominent impact
+          navigator.vibrate(30);
           break;
         case "success":
-          navigator.vibrate([10, 30, 15]); // Double tap burst
+          navigator.vibrate([10, 30, 15]);
           break;
         case "warning":
-          navigator.vibrate([20, 40, 20]); // Alert vibration
+          navigator.vibrate([20, 40, 20]);
           break;
       }
     }

@@ -78,11 +78,8 @@ export default defineConfig({
       "@/app": path.resolve(__dirname, "./src/app"),
       "@/components": path.resolve(__dirname, "./src/components"),
       "@/features": path.resolve(__dirname, "./src/features"),
-      "@/domain": path.resolve(__dirname, "./src/domain"),
       "@/infrastructure": path.resolve(__dirname, "./src/infrastructure"),
-      "@/services": path.resolve(__dirname, "./src/services"),
       "@/styles": path.resolve(__dirname, "./src/styles"),
-      "@/types": path.resolve(__dirname, "./src/types")
     }
   }
 });

@@ -22,6 +22,7 @@ import { RecurringOccurrenceSkeleton, RecurringTemplateSkeleton } from "../../co
 import { useMemberNameResolver } from "../../hooks/useMemberNameResolver";
 import { groupService } from "../../infrastructure/firebase/groupService";
 import { recurringService } from "../../infrastructure/firebase/recurringService";
+import { fairtabApi } from "../../infrastructure/api/fairtabApi";
 import { syncManager } from "../../infrastructure/offline/syncManager";
 import { formatCurrency } from "../../utils/format";
 import type {
@@ -143,7 +144,7 @@ export const RecurringPage: React.FC = () => {
     toast.loading("Scanning for due recurring occurrence drafts...", { id: "scan-toast" });
 
     try {
-      const res = await recurringService.generateRecurringDrafts({ groupId: selectedGroupId }) as { createdCount?: number };
+      const res = await fairtabApi.recurring.generateDrafts({ groupId: selectedGroupId }) as { createdCount?: number };
       const count = res.createdCount || 0;
       toast.success(
         count > 0
@@ -175,7 +176,7 @@ export const RecurringPage: React.FC = () => {
     try {
       if (syncStatus.isOnline) {
         toast.loading(`${newStatus === "active" ? "Resuming" : "Pausing"} template...`, { id: "toggle-toast" });
-        await recurringService.updateRecurringTemplate(payload);
+        await fairtabApi.recurring.updateTemplate(payload);
         toast.success(`Template ${newStatus === "active" ? "resumed" : "paused"} successfully.`, { id: "toggle-toast" });
       } else {
         await syncManager.queueUpdateRecurringTemplate(selectedGroupId, payload);
@@ -200,7 +201,7 @@ export const RecurringPage: React.FC = () => {
     try {
       if (syncStatus.isOnline) {
         toast.loading("Skipping occurrence...", { id: "skip-toast" });
-        await recurringService.skipRecurringOccurrence(payload);
+        await fairtabApi.recurring.skipOccurrence(payload);
         toast.success(`Occurrence ${occ.occurrenceDate} skipped.`, { id: "skip-toast" });
       } else {
         await syncManager.queueSkipRecurringDraft(selectedGroupId, payload);
@@ -229,7 +230,7 @@ export const RecurringPage: React.FC = () => {
     try {
       if (syncStatus.isOnline) {
         toast.loading("Posting recurring expense...", { id: "appr-toast" });
-        await recurringService.approveRecurringDraft(payload);
+        await fairtabApi.recurring.approveDraft(payload);
         toast.success("Recurring draft posted to ledger!", { id: "appr-toast" });
       } else {
         await syncManager.queueApproveRecurringDraft(selectedGroupId, payload);
@@ -515,7 +516,7 @@ export const RecurringPage: React.FC = () => {
 
               if (syncStatus.isOnline) {
                 toast.loading("Creating recurring template...", { id: "create-toast" });
-                await recurringService.createRecurringTemplate(fullPayload);
+                await fairtabApi.recurring.createTemplate(fullPayload);
                 toast.success("Recurring template created!", { id: "create-toast" });
               } else {
                 await syncManager.queueCreateRecurringTemplate(selectedGroupId, fullPayload);

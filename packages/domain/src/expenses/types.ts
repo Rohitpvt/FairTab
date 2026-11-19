@@ -310,4 +310,102 @@ export interface ParticipantPaymentDocument {
   version: number;
 }
 
+export type GroupRole = "owner" | "admin" | "member" | "viewer";
+export type GroupStatus = "active" | "archived" | "deleted";
+export type GroupType = "trip" | "home" | "couple" | "event" | "project" | "other";
+export type SettlementStrategy = "minimum_transactions" | "preserve_relationships";
+
+export interface GroupDocument {
+  id: string;
+  name: string;
+  nameLower: string;
+  description?: string;
+  type: GroupType;
+  baseCurrency: string;
+  ownerUserId: string;
+  memberUserIds: string[];
+  activeMemberCount: number;
+  simplifyDebts: boolean;
+  settlementStrategy: SettlementStrategy;
+  status: GroupStatus;
+  latestActivityAt: any;
+  createdAt: any;
+  createdBy: string;
+  updatedAt: any;
+  updatedBy: string;
+  version: number;
+  schemaVersion: number;
+  initialActivityId?: string;
+}
+
+export interface GroupMemberDocument {
+  id: string;
+  groupId: string;
+  kind: "account" | "placeholder";
+  userId?: string;
+  displayName: string;
+  displayNameLower: string;
+  avatarURL?: string;
+  role: GroupRole;
+  status: "active" | "invited" | "removed" | "left";
+  joinedViaInvitationId?: string;
+  joinedAt?: any;
+  createdAt: any;
+  createdBy: string;
+  updatedAt: any;
+  updatedBy: string;
+  version: number;
+  schemaVersion: number;
+  activityId?: string;
+}
+
+export interface UserGroupIndexDocument {
+  groupId: string;
+  groupName: string;
+  role: GroupRole;
+  status: "active" | "archived" | "left" | "removed";
+  settlementStrategy?: SettlementStrategy;
+  latestActivityAt: any;
+  updatedAt: any;
+}
+
+export interface ActivityDocument {
+  id: string;
+  groupId: string;
+  type:
+    | "group_created"
+    | "group_updated"
+    | "member_invited"
+    | "member_joined"
+    | "member_removed"
+    | "member_left"
+    | "placeholder_added"
+    | "role_changed"
+    | "group_archived"
+    | "expense_created"
+    | "expense_updated"
+    | "expense_voided";
+  actorUserId: string;
+  entityType?: "group" | "member" | "expense" | "settlement";
+  entityId?: string;
+  summary: string;
+  createdAt: any;
+}
+
+export interface InvitationDocument {
+  id: string;
+  groupId: string;
+  groupName: string;
+  invitedEmailLower?: string;
+  invitedUserId?: string;
+  invitedBy: string;
+  proposedRole: "admin" | "member" | "viewer";
+  status: "pending" | "accepted" | "declined" | "revoked" | "expired";
+  createdAt: any;
+  expiresAt: any;
+  acceptedAt?: any;
+  acceptedBy?: string;
+  acceptedActivityId?: string;
+}
+
 

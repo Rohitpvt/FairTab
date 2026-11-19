@@ -28,7 +28,7 @@ import { Dialog } from "../../components/ui/Dialogs";
 import { SyncIndicator } from "../../components/feedback/FeedbackStates";
 import { useAuth } from "../auth/AuthProvider";
 import { profileService } from "../../infrastructure/firebase/profileService";
-import { accountService } from "../../infrastructure/firebase/accountService";
+import { fairtabApi } from "../../infrastructure/api/fairtabApi";
 import { groupService } from "../../infrastructure/firebase/groupService";
 import {
   EmailAuthProvider,
@@ -293,7 +293,7 @@ export const SettingsPage: React.FC = () => {
       // 3. Call deleteAccount Cloud Function for server-side group cleanup and tombstone
       toast.loading("Running server-side group and profile cleanups...", { id: toastId });
       try {
-        await accountService.deleteAccount({});
+        await fairtabApi.accounts.delete({});
       } catch (apiErr: any) {
         console.warn("Backend deleteAccount API error (falling back to client cleanup):", apiErr);
       }

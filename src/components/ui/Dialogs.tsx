@@ -24,10 +24,7 @@ export const Dialog: React.FC<DialogProps> = ({
   return (
     <RadixDialog.Root open={isOpen} onOpenChange={onOpenChange}>
       <RadixDialog.Portal>
-        {/* Overlay backdrop */}
         <RadixDialog.Overlay className="dialog-overlay fixed inset-0 bg-black/60 backdrop-blur-sm z-50 transition-opacity duration-150" />
-        
-        {/* Central desktop/mobile dialog overlay */}
         <RadixDialog.Content
           className={`dialog-content fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[94vw] sm:w-[90vw] max-w-lg glass-elevated p-4 sm:p-6 rounded-2xl border border-white/10 shadow-2xl focus:outline-none z-50 max-h-[90vh] flex flex-col ${className}`}
           onCloseAutoFocus={(e) => {
@@ -81,8 +78,6 @@ export const Dialog: React.FC<DialogProps> = ({
   );
 };
 
-export const Modal = Dialog;
-
 export const BottomSheet: React.FC<DialogProps> = ({
   isOpen,
   onOpenChange,
@@ -95,15 +90,11 @@ export const BottomSheet: React.FC<DialogProps> = ({
   return (
     <RadixDialog.Root open={isOpen} onOpenChange={onOpenChange}>
       <RadixDialog.Portal>
-        {/* Overlay backdrop */}
         <RadixDialog.Overlay className="dialog-overlay fixed inset-0 bg-black/60 backdrop-blur-sm z-50" />
-        
-        {/* Bottom sheet optimized for mobile viewports */}
         <RadixDialog.Content
           className={`drawer-content fixed bottom-0 left-0 right-0 w-full max-h-[85vh] glass-elevated p-6 rounded-t-2xl border-t border-white/10 shadow-2xl focus:outline-none z-50 flex flex-col ${className}`}
         >
           <div className="flex flex-col gap-4">
-            {/* Visual handle for swiping/pulling */}
             <div className="w-12 h-1.5 bg-white/10 rounded-full mx-auto mb-2 shrink-0" />
             
             <div className="flex items-start justify-between">

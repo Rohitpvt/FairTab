@@ -13,10 +13,13 @@ import {
   arrayUnion,
 } from "firebase/firestore";
 import { db, auth } from "./firebase";
-import type { InvitationDocument, InvitationFormData } from "../../features/invitations/invitationSchema";
-import type { GroupMemberDocument } from "../../features/groups/memberSchema";
-import type { UserGroupIndexDocument } from "../../features/groups/userGroupIndexSchema";
-import type { ActivityDocument } from "../../features/groups/activitySchema";
+import type {
+  InvitationDocument,
+  GroupMemberDocument,
+  UserGroupIndexDocument,
+  ActivityDocument,
+} from "@fairtab/domain";
+import type { InvitationFormData } from "../../features/invitations/invitationSchema";
 
 function wrapError(message: string, cause: unknown): Error {
   return new Error(message, { cause });

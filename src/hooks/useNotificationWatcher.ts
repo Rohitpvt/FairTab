@@ -7,6 +7,7 @@ import { settlementService } from "../infrastructure/firebase/settlementService"
 import { collection, query, orderBy, limit, onSnapshot } from "firebase/firestore";
 import { webNotificationService } from "../infrastructure/notifications/webNotificationService";
 import { buildPublicAppLink } from "../utils/urlHelper";
+import { parseTimestamp } from "../utils/format";
 import type { ExpenseDocument, SettlementDocument, BudgetDocument } from "@fairtab/domain";
 
 /**
@@ -49,11 +50,8 @@ export function useNotificationWatcher() {
             if (!isInitializedRef.current) return;
 
             expenses.forEach((exp) => {
-              const expTime = exp.createdAt?.seconds
-                ? exp.createdAt.seconds * 1000
-                : typeof exp.createdAt === "string"
-                ? new Date(exp.createdAt).getTime()
-                : 0;
+              const d = parseTimestamp(exp.createdAt);
+              const expTime = d ? d.getTime() : 0;
 
               // Only notify if created after session start
               if (expTime < startTimeRef.current - 10000) return;
@@ -117,11 +115,8 @@ export function useNotificationWatcher() {
               if (!isInitializedRef.current) return;
 
               settlements.forEach((settle) => {
-                const settleTime = settle.createdAt?.seconds
-                  ? settle.createdAt.seconds * 1000
-                  : typeof settle.createdAt === "string"
-                  ? new Date(settle.createdAt).getTime()
-                  : 0;
+                const d = parseTimestamp(settle.createdAt);
+                const settleTime = d ? d.getTime() : 0;
 
                 if (settleTime < startTimeRef.current - 10000) return;
 

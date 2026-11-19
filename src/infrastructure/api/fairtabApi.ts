@@ -14,63 +14,44 @@ interface ApiError extends Error {
   details?: unknown;
 }
 
+const PATH_TO_FUNCTION: Record<string, string> = {
+  "expenses/create": "createExpense",
+  "expenses/update": "updateExpense",
+  "expenses/void": "voidExpense",
+  "settlements/create": "createSettlement",
+  "settlements/approve": "approveSettlement",
+  "settlements/reject": "rejectSettlement",
+  "settlements/cancel": "cancelSettlement",
+  "settlements/void": "voidSettlement",
+  "settlements/settle-split": "settleExpenseSplit",
+  "settlements/unsettle-split": "unsettleExpenseSplit",
+  "budgets/create": "createBudget",
+  "budgets/update": "updateBudget",
+  "budgets/delete": "deleteBudget",
+  "recurring/create-template": "createRecurringTemplate",
+  "recurring/update-template": "updateRecurringTemplate",
+  "recurring/generate-drafts": "generateRecurringDrafts",
+  "recurring/approve-draft": "approveRecurringDraft",
+  "recurring/skip-occurrence": "skipRecurringOccurrence",
+  "receipts/create": "createReceipt",
+  "receipts/process-ocr": "processReceiptOCR",
+  "groups/delete": "deleteGroup",
+  "groups/transfer-ownership": "transferGroupOwnership",
+  "accounts/delete": "deleteAccount",
+  "accounts/update-profile": "updateProfile",
+  "accounts/repair-profile": "repairProfile",
+  "invitations/create-email": "createEmailInvitation",
+  "invitations/accept-email": "acceptEmailInvitation",
+  "invitations/create-global": "createGlobalInviteLink",
+  "invitations/revoke-global": "revokeGlobalInviteLink",
+  "invitations/request-join-global": "requestJoinViaGlobalLink",
+  "invitations/approve-join-request": "approveJoinRequest",
+  "invitations/decline-join-request": "declineJoinRequest",
+};
+
 const mapPathToFunction = (path: string): string => {
-  const cleanPath = path.startsWith("/") ? path.slice(1) : path;
-  const parts = cleanPath.split("/");
-  if (parts[0] === "api") {
-    const category = parts[1];
-    const action = parts[2];
-    
-    if (category === "expenses") {
-      if (action === "create") return "createExpense";
-      if (action === "update") return "updateExpense";
-      if (action === "void") return "voidExpense";
-    }
-    if (category === "settlements") {
-      if (action === "create") return "createSettlement";
-      if (action === "approve") return "approveSettlement";
-      if (action === "reject") return "rejectSettlement";
-      if (action === "cancel") return "cancelSettlement";
-      if (action === "void") return "voidSettlement";
-      if (action === "settle-split") return "settleExpenseSplit";
-      if (action === "unsettle-split") return "unsettleExpenseSplit";
-    }
-    if (category === "budgets") {
-      if (action === "create") return "createBudget";
-      if (action === "update") return "updateBudget";
-      if (action === "delete") return "deleteBudget";
-    }
-    if (category === "recurring") {
-      if (action === "create-template") return "createRecurringTemplate";
-      if (action === "update-template") return "updateRecurringTemplate";
-      if (action === "generate-drafts") return "generateRecurringDrafts";
-      if (action === "approve-draft") return "approveRecurringDraft";
-      if (action === "skip-occurrence") return "skipRecurringOccurrence";
-    }
-    if (category === "receipts") {
-      if (action === "create") return "createReceipt";
-      if (action === "process-ocr") return "processReceiptOCR";
-    }
-    if (category === "groups") {
-      if (action === "delete") return "deleteGroup";
-      if (action === "transfer-ownership") return "transferGroupOwnership";
-    }
-    if (category === "accounts") {
-      if (action === "delete") return "deleteAccount";
-      if (action === "update-profile") return "updateProfile";
-      if (action === "repair-profile") return "repairProfile";
-    }
-    if (category === "invitations") {
-      if (action === "create-email") return "createEmailInvitation";
-      if (action === "accept-email") return "acceptEmailInvitation";
-      if (action === "create-global") return "createGlobalInviteLink";
-      if (action === "revoke-global") return "revokeGlobalInviteLink";
-      if (action === "request-join-global") return "requestJoinViaGlobalLink";
-      if (action === "approve-join-request") return "approveJoinRequest";
-      if (action === "decline-join-request") return "declineJoinRequest";
-    }
-  }
-  return "";
+  const cleanPath = path.replace(/^\/?api\//, "").replace(/^\//, "");
+  return PATH_TO_FUNCTION[cleanPath] || "";
 };
 
 async function postRequest<TInput = unknown, TOutput = unknown>(

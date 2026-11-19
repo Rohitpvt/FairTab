@@ -4,7 +4,6 @@ import type { OutboxOperation, OutboxAttempt } from "./db";
 import { auth } from "../firebase/firebase";
 import { receiptStorage } from "../storage/receiptStorage";
 import { fairtabApi } from "../api/fairtabApi";
-import { receiptService } from "../firebase/receiptService";
 
 export type SyncStatusListener = (status: {
   isOnline: boolean;
@@ -608,7 +607,7 @@ class ForegroundSyncManager {
           })),
         } : undefined;
 
-        await receiptService.createReceipt({
+        await fairtabApi.receipts.create({
           clientOperationId,
           groupId: draft.groupId,
           receiptId: draft.id,

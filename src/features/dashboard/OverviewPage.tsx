@@ -7,7 +7,7 @@ import { BalanceCard } from "../../components/ui/BalanceCard";
 import { formatCurrency } from "../../utils/format";
 import { ExpenseRow } from "../../components/ui/ExpenseRow";
 import { GlassPanel } from "../../components/ui/GlassPanel";
-import { Button, GradientButton } from "../../components/ui/Button";
+import { Button } from "../../components/ui/Button";
 import { Skeleton, BalanceCardSkeleton, ExpenseRowSkeleton } from "../../components/ui/Skeleton";
 import { useAppActions } from "../../app/providers/AppActionProvider";
 import { useAuth } from "../../features/auth/AuthProvider";
@@ -408,10 +408,10 @@ export const OverviewPage: React.FC = () => {
             <RefreshCw className="h-3.5 w-3.5" />
             Sync Now
           </Button>
-          <GradientButton size="sm" className="flex gap-1.5" onClick={openAddExpense}>
+          <Button variant="gradient" size="sm" className="flex gap-1.5" onClick={openAddExpense}>
             <Plus className="h-4 w-4" />
             New Expense
-          </GradientButton>
+          </Button>
         </div>
       }
     >

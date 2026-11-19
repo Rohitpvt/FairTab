@@ -12,10 +12,13 @@ import {
   updateDoc,
 } from "firebase/firestore";
 import { db, auth } from "./firebase";
-import type { GroupDocument, GroupFormData } from "../../features/groups/groupSchema";
-import type { GroupMemberDocument } from "../../features/groups/memberSchema";
-import type { UserGroupIndexDocument } from "../../features/groups/userGroupIndexSchema";
-import type { ActivityDocument } from "../../features/groups/activitySchema";
+import type {
+  GroupDocument,
+  GroupMemberDocument,
+  UserGroupIndexDocument,
+  ActivityDocument,
+} from "@fairtab/domain";
+import type { GroupFormData } from "../../features/groups/groupSchema";
 
 // Safe error helper to preserve the cause
 function wrapError(message: string, cause: unknown): Error {

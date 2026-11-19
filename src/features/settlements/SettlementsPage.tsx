@@ -4,11 +4,12 @@ import { ArrowLeftRight, Check, HandCoins, History, ArrowLeft, ArrowUpRight, Clo
 import { toast } from "sonner";
 import { PageContainer } from "../../components/layout/PageContainer";
 import { GlassPanel } from "../../components/ui/GlassPanel";
-import { Button, GradientButton } from "../../components/ui/Button";
+import { Button } from "../../components/ui/Button";
 import { Skeleton } from "../../components/ui/Skeleton";
 import { groupService } from "../../infrastructure/firebase/groupService";
 import { expenseService } from "../../infrastructure/firebase/expenseService";
 import { settlementService } from "../../infrastructure/firebase/settlementService";
+import { fairtabApi } from "../../infrastructure/api/fairtabApi";
 import { syncManager } from "../../infrastructure/offline/syncManager";
 import { formatCurrency, formatTimestamp } from "../../utils/format";
 import { DebtSimplificationPanel } from "./components/DebtSimplificationPanel";
@@ -149,13 +150,13 @@ export const SettlementsPage: React.FC = () => {
         ...(action === "reject" ? { reason: "Payment not received" } : {}),
       };
       if (action === "approve") {
-        await settlementService.approveSettlement(payload);
+        await fairtabApi.settlements.approve(payload);
         toast.success("Settlement approved and balances updated!");
       } else if (action === "reject") {
-        await settlementService.rejectSettlement(payload);
+        await fairtabApi.settlements.reject(payload);
         toast.success("Settlement request declined.");
       } else {
-        await settlementService.cancelSettlement(payload);
+        await fairtabApi.settlements.cancel(payload);
         toast.success("Pending settlement request cancelled.");
       }
     } catch (error: unknown) {
@@ -182,14 +183,15 @@ export const SettlementsPage: React.FC = () => {
             Back
           </Button>
           {!isArchived && (
-            <GradientButton
+            <Button
+              variant="gradient"
               size="sm"
               className="flex items-center gap-1.5"
               onClick={() => navigate(`/groups/${groupId}/settlements/new`)}
             >
               <HandCoins className="h-4 w-4" />
               Record Repayment
-            </GradientButton>
+            </Button>
           )}
         </div>
       }

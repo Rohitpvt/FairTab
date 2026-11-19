@@ -1,3 +1,5 @@
+import { fairtabApi } from "../api/fairtabApi";
+
 export interface ReceiptStorageMetadata {
   storageProvider: "s3";
   bucket: string;
@@ -42,10 +44,7 @@ export class S3ReceiptStorageProvider implements ReceiptStorageProvider {
       };
     }
 
-    const { receiptService } = await import("../firebase/receiptService");
-
-    // 1. Get presigned upload parameters from Vercel trusted backend
-    const result = await receiptService.presignUpload({
+    const result = await fairtabApi.receipts.presignUpload({
       groupId,
       receiptId,
       fileName,
@@ -89,8 +88,7 @@ export class S3ReceiptStorageProvider implements ReceiptStorageProvider {
     const groupId = parts[1];
     const receiptId = parts[3];
 
-    const { receiptService } = await import("../firebase/receiptService");
-    const result = await receiptService.presignDownload({
+    const result = await fairtabApi.receipts.presignDownload({
       groupId,
       receiptId,
     }) as { downloadUrl: string };

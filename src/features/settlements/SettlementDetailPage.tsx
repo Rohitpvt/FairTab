@@ -9,6 +9,7 @@ import { Dialog } from "../../components/ui/Dialogs";
 import { Skeleton } from "../../components/ui/Skeleton";
 import { groupService } from "../../infrastructure/firebase/groupService";
 import { settlementService } from "../../infrastructure/firebase/settlementService";
+import { fairtabApi } from "../../infrastructure/api/fairtabApi";
 import { syncManager } from "../../infrastructure/offline/syncManager";
 import { auth } from "../../infrastructure/firebase/firebase";
 import { formatCurrency, formatTimestamp } from "../../utils/format";
@@ -152,7 +153,7 @@ export const SettlementDetailPage: React.FC = () => {
     setIsSubmitting(true);
     try {
       const clientOperationId = `op-${crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2)}`;
-      await settlementService.approveSettlement({
+      await fairtabApi.settlements.approve({
         clientOperationId,
         groupId,
         settlementId,
@@ -173,7 +174,7 @@ export const SettlementDetailPage: React.FC = () => {
     setIsSubmitting(true);
     try {
       const clientOperationId = `op-${crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2)}`;
-      await settlementService.rejectSettlement({
+      await fairtabApi.settlements.reject({
         clientOperationId,
         groupId,
         settlementId,
@@ -195,7 +196,7 @@ export const SettlementDetailPage: React.FC = () => {
     setIsSubmitting(true);
     try {
       const clientOperationId = `op-${crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2)}`;
-      await settlementService.cancelSettlement({
+      await fairtabApi.settlements.cancel({
         clientOperationId,
         groupId,
         settlementId,

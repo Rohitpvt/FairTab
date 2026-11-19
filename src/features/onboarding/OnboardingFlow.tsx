@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useAuth } from "../auth/AuthProvider";
 import { profileService } from "../../infrastructure/firebase/profileService";
-import { CURRENCIES } from "../../utils/currencies";
+import { CURRENCY_LIST } from "@fairtab/domain";
 import { Button } from "../../components/ui/Button";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, Shield, RefreshCw, ChevronRight, ChevronLeft, Check, Smartphone } from "lucide-react";
@@ -123,7 +123,7 @@ export const OnboardingFlow: React.FC = () => {
                     onChange={(e) => setDefaultCurrency(e.target.value)}
                     className="px-3.5 py-2.5 bg-surface-primary border border-white/10 rounded-lg text-sm text-text-secondary focus:outline-none focus:border-accent-cyan cursor-pointer"
                   >
-                    {CURRENCIES.map((cur) => (
+                    {CURRENCY_LIST.map((cur) => (
                       <option key={cur.code} value={cur.code}>
                         {cur.name}
                       </option>

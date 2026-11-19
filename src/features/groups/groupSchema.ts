@@ -1,4 +1,5 @@
 import * as zod from "zod";
+export type { GroupDocument } from "@fairtab/domain";
 
 export const groupSchema = zod.object({
   name: zod
@@ -16,26 +17,3 @@ export const groupSchema = zod.object({
 });
 
 export type GroupFormData = zod.infer<typeof groupSchema>;
-
-export interface GroupDocument {
-  id: string;
-  name: string;
-  nameLower: string;
-  description?: string;
-  type: "trip" | "home" | "couple" | "event" | "project" | "other";
-  baseCurrency: string;
-  ownerUserId: string;
-  memberUserIds: string[];
-  activeMemberCount: number;
-  simplifyDebts: boolean;
-  settlementStrategy: "minimum_transactions" | "preserve_relationships";
-  status: "active" | "archived" | "deleted";
-  latestActivityAt: unknown; // Firestore serverTimestamp
-  createdAt: unknown; // Firestore serverTimestamp
-  createdBy: string;
-  updatedAt: unknown; // Firestore serverTimestamp
-  updatedBy: string;
-  version: number;
-  schemaVersion: number;
-  initialActivityId?: string;
-}

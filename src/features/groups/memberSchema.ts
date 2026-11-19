@@ -1,4 +1,5 @@
 import * as zod from "zod";
+export type { GroupMemberDocument } from "@fairtab/domain";
 
 export const memberSchema = zod.object({
   displayName: zod
@@ -10,24 +11,3 @@ export const memberSchema = zod.object({
 });
 
 export type MemberFormData = zod.infer<typeof memberSchema>;
-
-export interface GroupMemberDocument {
-  id: string; // generated ID for placeholders, UID for account-backed members
-  groupId: string;
-  kind: "account" | "placeholder";
-  userId?: string;
-  displayName: string;
-  displayNameLower: string;
-  avatarURL?: string;
-  role: "owner" | "admin" | "member" | "viewer";
-  status: "active" | "invited" | "removed" | "left";
-  joinedViaInvitationId?: string;
-  joinedAt?: unknown; // Firestore serverTimestamp
-  createdAt: unknown; // Firestore serverTimestamp
-  createdBy: string;
-  updatedAt: unknown; // Firestore serverTimestamp
-  updatedBy: string;
-  version: number;
-  schemaVersion: number;
-  activityId?: string;
-}

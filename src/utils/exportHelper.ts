@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { collection, doc, getDoc, getDocs } from "firebase/firestore";
 import { db } from "../infrastructure/firebase/firebase";
+import { parseTimestamp } from "./format";
 
 export interface ExportDataResult {
   userProfile: any;
@@ -34,12 +35,9 @@ function convertToCsv(headers: string[], rows: any[][]): string {
   return [headerLine, ...rowLines].join("\n");
 }
 
-// Formats a Firestore timestamp to a readable local string
-function formatTimestamp(ts: any): string {
-  if (!ts) return "";
-  if (ts.seconds) return new Date(ts.seconds * 1000).toISOString();
-  if (ts instanceof Date) return ts.toISOString();
-  return String(ts);
+function formatTimestamp(ts: unknown): string {
+  const d = parseTimestamp(ts);
+  return d ? d.toISOString() : (ts ? String(ts) : "");
 }
 
 // Triggers a file download in the browser

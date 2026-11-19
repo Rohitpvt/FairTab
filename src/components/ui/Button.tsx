@@ -22,7 +22,6 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     },
     ref
   ) => {
-    // Focus visible styling, transitions
     const baseStyles =
       "relative inline-flex items-center justify-center font-medium transition-all duration-150 ease-out focus-visible:outline-2 focus-visible:outline-accent-gold focus-visible:outline-offset-2 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none disabled:active:scale-100";
 
@@ -52,7 +51,6 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         className={`${baseStyles} ${variantStyles[variant]} ${sizeStyles[size]} ${className}`}
         {...props}
       >
-        {/* Width preservation loader style */}
         <span className={`inline-flex items-center justify-center gap-2 ${isLoading ? "opacity-0" : "opacity-100"}`}>
           {children}
         </span>
@@ -69,30 +67,3 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
 );
 
 Button.displayName = "Button";
-
-export const GradientButton = React.forwardRef<HTMLButtonElement, ButtonProps>((props, ref) => {
-  return <Button ref={ref} variant="gradient" {...props} />;
-});
-GradientButton.displayName = "GradientButton";
-
-export const SecondaryButton = React.forwardRef<HTMLButtonElement, ButtonProps>((props, ref) => {
-  return <Button ref={ref} variant="secondary" {...props} />;
-});
-SecondaryButton.displayName = "SecondaryButton";
-
-export const IconButton = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className = "", children, ...props }, ref) => {
-    return (
-      <Button
-        ref={ref}
-        variant="ghost"
-        size="icon"
-        className={`hover:bg-white/5 transition-colors text-text-secondary hover:text-text-primary ${className}`}
-        {...props}
-      >
-        {children}
-      </Button>
-    );
-  }
-);
-IconButton.displayName = "IconButton";

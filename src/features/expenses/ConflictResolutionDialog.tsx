@@ -1,14 +1,14 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import React from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { X, AlertTriangle } from "lucide-react";
 import { Button } from "../../components/ui/Button";
+import type { ExpenseDocument, ExpensePayer, ExpenseSplit } from "@fairtab/domain";
 
 interface ConflictResolutionDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  localData: any;
-  serverData: any;
+  localData: ExpenseDocument;
+  serverData: ExpenseDocument;
   memberNames: Record<string, string>;
   onResolve: (action: "reapply" | "keep_server") => void;
 }
@@ -93,7 +93,7 @@ export const ConflictResolutionDialog: React.FC<ConflictResolutionDialogProps> =
                 <div>
                   <span className="text-text-muted block text-[10px] uppercase font-bold mb-1">Payers</span>
                   <div className="flex flex-col gap-1">
-                    {localData.payers.map((p: any) => (
+                    {localData.payers.map((p: ExpensePayer) => (
                       <div key={p.memberId} className="flex justify-between text-text-secondary">
                         <span>{getMemberName(p.memberId)}</span>
                         <span>{formatCurrency(p.amountMinor, localData.currency)}</span>
@@ -105,7 +105,7 @@ export const ConflictResolutionDialog: React.FC<ConflictResolutionDialogProps> =
                 <div>
                   <span className="text-text-muted block text-[10px] uppercase font-bold mb-1">Splits</span>
                   <div className="flex flex-col gap-1 max-h-32 overflow-y-auto pr-1">
-                    {localData.splits.map((s: any) => (
+                    {localData.splits.map((s: ExpenseSplit) => (
                       <div key={s.memberId} className="flex justify-between text-text-secondary">
                         <span>{getMemberName(s.memberId)}</span>
                         <span>{formatCurrency(s.amountMinor, localData.currency)}</span>
@@ -147,7 +147,7 @@ export const ConflictResolutionDialog: React.FC<ConflictResolutionDialogProps> =
                 <div>
                   <span className="text-text-muted block text-[10px] uppercase font-bold mb-1">Payers</span>
                   <div className="flex flex-col gap-1">
-                    {serverData.payers.map((p: any) => (
+                    {serverData.payers.map((p: ExpensePayer) => (
                       <div key={p.memberId} className="flex justify-between text-text-secondary">
                         <span>{getMemberName(p.memberId)}</span>
                         <span>{formatCurrency(p.amountMinor, serverData.currency)}</span>
@@ -159,7 +159,7 @@ export const ConflictResolutionDialog: React.FC<ConflictResolutionDialogProps> =
                 <div>
                   <span className="text-text-muted block text-[10px] uppercase font-bold mb-1">Splits</span>
                   <div className="flex flex-col gap-1 max-h-32 overflow-y-auto pr-1">
-                    {serverData.splits.map((s: any) => (
+                    {serverData.splits.map((s: ExpenseSplit) => (
                       <div key={s.memberId} className="flex justify-between text-text-secondary">
                         <span>{getMemberName(s.memberId)}</span>
                         <span>{formatCurrency(s.amountMinor, serverData.currency)}</span>

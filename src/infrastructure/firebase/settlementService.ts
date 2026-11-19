@@ -106,29 +106,4 @@ export const settlementService = {
       }
     );
   },
-
-  async createSettlement(data: unknown): Promise<unknown> {
-    const { fairtabApi } = await import("../api/fairtabApi");
-    return fairtabApi.settlements.create(data);
-  },
-
-  async approveSettlement(data: unknown): Promise<unknown> {
-    const { fairtabApi } = await import("../api/fairtabApi");
-    return fairtabApi.settlements.approve(data);
-  },
-
-  async rejectSettlement(data: unknown): Promise<unknown> {
-    const { fairtabApi } = await import("../api/fairtabApi");
-    return fairtabApi.settlements.reject(data);
-  },
-
-  async cancelSettlement(data: unknown): Promise<unknown> {
-    const { fairtabApi } = await import("../api/fairtabApi");
-    return fairtabApi.settlements.cancel(data);
-  },
-
-  async voidSettlement(data: unknown): Promise<unknown> {
-    const { fairtabApi } = await import("../api/fairtabApi");
-    return fairtabApi.settlements.void(data);
-  },
 };

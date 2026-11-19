@@ -1,17 +1,10 @@
-export interface CurrencyMetadata {
-  code: string;
-  name: string;
-  symbol: string;
-}
+export {
+  CURRENCIES,
+  CURRENCY_LIST,
+  getCurrencyMetadata,
+  formatMinorUnit,
+} from "@fairtab/domain";
+export type { CurrencyMetadata } from "@fairtab/domain";
 
-export const CURRENCIES: CurrencyMetadata[] = [
-  { code: "INR", name: "Indian Rupee (₹)", symbol: "₹" },
-  { code: "USD", name: "US Dollar ($)", symbol: "$" },
-  { code: "EUR", name: "Euro (€)", symbol: "€" },
-  { code: "GBP", name: "British Pound (£)", symbol: "£" },
-  { code: "JPY", name: "Japanese Yen (¥)", symbol: "¥" },
-  { code: "CAD", name: "Canadian Dollar (C$)", symbol: "C$" },
-  { code: "AUD", name: "Australian Dollar (A$)", symbol: "A$" }
-];
-
-export default CURRENCIES;
+import { CURRENCY_LIST } from "@fairtab/domain";
+export default CURRENCY_LIST;

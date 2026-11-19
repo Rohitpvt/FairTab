@@ -1,35 +1,13 @@
 import { useMemo } from "react";
 import { useAuth } from "../features/auth/AuthProvider";
-import type { GroupMemberDocument } from "../features/groups/memberSchema";
+import type { GroupMemberDocument } from "@fairtab/domain";
 
-/**
- * Returns the actual userId for a GroupMemberDocument.
- * For account-backed members, this is the Firebase UID stored in `userId`.
- * For placeholders, this returns `undefined`.
- */
-export function getMemberUserId(member: GroupMemberDocument): string | undefined {
-  return member.userId;
-}
-
-/**
- * Pure name resolution logic (no React dependency).
- *
- * Priority for the currently authenticated user:
- *   1. authoritative profile.displayName
- *   2. membership cached displayName
- *   3. email / userId fallback
- *
- * Priority for any other member:
- *   1. membership cached displayName
- *   2. userId fallback
- *   3. "Unknown member"
- */
 export function resolveMemberName(
   member: GroupMemberDocument,
   currentUid: string | undefined,
   currentProfileDisplayName: string | undefined
 ): string {
-  const memberUid = getMemberUserId(member);
+  const memberUid = member.userId;
 
   // For the currently authenticated user, prefer the authoritative profile name
   if (currentUid && memberUid === currentUid && currentProfileDisplayName) {

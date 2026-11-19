@@ -37,7 +37,7 @@ interface NotificationItem {
   paymentReference?: string;
   rejectionReason?: string;
   actedByName?: string;
-  createdAt?: any;
+  createdAt?: unknown;
 }
 
 export const NotificationsPage: React.FC = () => {
@@ -141,10 +141,10 @@ export const NotificationsPage: React.FC = () => {
         ...(action === "reject" ? { reason: "Payment not received" } : {}),
       };
       if (action === "approve") {
-        await settlementService.approveSettlement(payload);
+        await fairtabApi.settlements.approve(payload);
         toast.success("Settlement approved and balances updated!");
       } else {
-        await settlementService.rejectSettlement(payload);
+        await fairtabApi.settlements.reject(payload);
         toast.success("Settlement request declined.");
       }
     } catch (err: any) {

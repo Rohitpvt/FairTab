@@ -13,7 +13,7 @@ import { ReceiptUploadStatus } from "./ReceiptUploadStatus";
 import { syncManager } from "../../infrastructure/offline/syncManager";
 import { auth } from "../../infrastructure/firebase/firebase";
 import { receiptStorage } from "../../infrastructure/storage/receiptStorage";
-import { receiptService } from "../../infrastructure/firebase/receiptService";
+import { fairtabApi } from "../../infrastructure/api/fairtabApi";
 import { toast } from "sonner";
 import { Loader2, ArrowLeft, Send, Sparkles } from "lucide-react";
 import { ReceiptScannerSkeleton } from "../../components/ui/Skeleton";
@@ -138,7 +138,7 @@ export const OCRReviewPage: React.FC = () => {
         const storagePath = meta.objectKey;
 
         // Trigger processReceiptOCR via Vercel endpoint
-        const ocrData = await receiptService.processReceiptOCR({ groupId: groupId!, storagePath }) as {
+        const ocrData = await fairtabApi.receipts.processOcr({ groupId: groupId!, storagePath }) as {
           merchant?: string;
           date?: string;
           currency?: string;
