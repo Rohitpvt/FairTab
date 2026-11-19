@@ -1,23 +1,11 @@
 import { getCurrencyMetadata } from "@fairtab/domain";
 
-const CURRENCY_LOCALES: Record<string, string> = {
-  INR: "en-IN",
-  USD: "en-US",
-  EUR: "de-DE",
-  GBP: "en-GB",
-  JPY: "ja-JP",
-  CAD: "en-CA",
-  AUD: "en-AU",
-  SGD: "en-SG",
-};
-
 export const formatCurrency = (amountMinor: number, currency = "INR") => {
   const meta = getCurrencyMetadata(currency);
   const factor = Math.pow(10, meta.minorUnit);
   const amount = amountMinor / factor;
-  const locale = CURRENCY_LOCALES[currency.toUpperCase()] || "en-US";
 
-  return new Intl.NumberFormat(locale, {
+  return new Intl.NumberFormat("en-IN", {
     style: "currency",
     currency: currency,
     minimumFractionDigits: meta.minorUnit,
@@ -52,7 +40,8 @@ export const parseTimestamp = (ts: unknown): Date | null => {
 };
 
 export const formatTimestamp = (ts: unknown, includeTime = false): string => {
+  if (!ts) return "Just now";
   const d = parseTimestamp(ts);
-  if (!d) return "Just now";
+  if (!d) return "Recently";
   return includeTime ? d.toLocaleString() : d.toLocaleDateString();
 };
